@@ -8,6 +8,24 @@ import {
   Store,
   AdminAccount,
 } from '../api/store.api';
+import client from '../api/client';
+import { DeployMenuResult } from '../api/report.api';
+
+// deploy API (report.api에서 타입만 재사용, 호출은 직접)
+const deployMenu = (data: {
+  sourceStoreId: string;
+  targetStoreIds: string[];
+  clearTarget: boolean;
+}): Promise<DeployMenuResult[]> => client.post('/menu/deploy', data);
+
+// DeployMenuResult 타입 재정의 (import 대신 inline)
+interface DeployResult {
+  targetStoreId: string;
+  success: boolean;
+  categoriesCreated: number;
+  itemsCreated: number;
+  error?: string;
+}
 
 const cardStyle: React.CSSProperties = {
   background: '#fff',
@@ -50,6 +68,14 @@ export default function StoreManagePage() {
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [adminRole, setAdminRole] = useState<'SUPER_ADMIN' | 'STORE_ADMIN'>('STORE_ADMIN');
   const [adminError, setAdminError] = useState('');
+
+  // 메뉴 배포 폼
+  const [deploySourceId, setDeploySourceId] = useState('');
+  const [deployTargetIds, setDeployTargetIds] = useState<string[]>([]);
+  const [deployClear, setDeployClear] = useState(false);
+  const [deployLoading, setDeployLoading] = useState(false);
+  const [deployResults, setDeployResults] = useState<DeployResult[] | null>(null);
+  const [deployError, setDeployError] = useState('');
 
   const load = async () => {
     const [s, a] = await Promise.all([getStores(), getAdmins()]);
@@ -95,6 +121,35 @@ export default function StoreManagePage() {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setAdminError(msg ?? '어드민 계정 생성에 실패했습니다.');
     }
+  };
+
+  const handleDeployMenu = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeployError('');
+    setDeployResults(null);
+    if (!deploySourceId || deployTargetIds.length === 0) {
+      setDeployError('소스 매장과 대상 매장을 선택하세요.');
+      return;
+    }
+    setDeployLoading(true);
+    try {
+      const results = await deployMenu({
+        sourceStoreId: deploySourceId,
+        targetStoreIds: deployTargetIds,
+        clearTarget: deployClear,
+      });
+      setDeployResults(results as DeployResult[]);
+    } catch {
+      setDeployError('배포 중 오류가 발생했습니다.');
+    } finally {
+      setDeployLoading(false);
+    }
+  };
+
+  const toggleDeployTarget = (id: string) => {
+    setDeployTargetIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   const storeAdmins = selectedStore
@@ -177,6 +232,90 @@ export default function StoreManagePage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* 메뉴 템플릿 배포 */}
+          <div style={cardStyle}>
+            <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>메뉴 템플릿 배포</h3>
+            <p style={{ margin: '0 0 16px', fontSize: 12, color: '#6b7280' }}>소스 매장 메뉴를 선택한 대상 매장에 복사합니다.</p>
+            <form onSubmit={handleDeployMenu} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>소스 매장 (복사 원본)</label>
+                <select
+                  style={inputStyle}
+                  value={deploySourceId}
+                  onChange={(e) => setDeploySourceId(e.target.value)}
+                >
+                  <option value="">-- 선택 --</option>
+                  {stores.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 6 }}>대상 매장 (복수 선택)</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {stores
+                    .filter((s) => s.id !== deploySourceId)
+                    .map((s) => (
+                      <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={deployTargetIds.includes(s.id)}
+                          onChange={() => toggleDeployTarget(s.id)}
+                        />
+                        {s.name}
+                      </label>
+                    ))}
+                </div>
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={deployClear}
+                  onChange={(e) => setDeployClear(e.target.checked)}
+                />
+                <span>대상 매장 기존 메뉴 삭제 후 복사</span>
+              </label>
+
+              {deployError && <p style={{ color: '#e53935', fontSize: 13, margin: 0 }}>{deployError}</p>}
+
+              <button
+                type="submit"
+                disabled={deployLoading}
+                style={{ ...btnPrimary, background: '#2563eb', opacity: deployLoading ? 0.6 : 1 }}
+              >
+                {deployLoading ? '배포 중...' : '메뉴 배포'}
+              </button>
+            </form>
+
+            {/* 배포 결과 */}
+            {deployResults && (
+              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>배포 결과</p>
+                {deployResults.map((r) => {
+                  const store = stores.find((s) => s.id === r.targetStoreId);
+                  return (
+                    <div
+                      key={r.targetStoreId}
+                      style={{
+                        padding: '8px 12px', borderRadius: 6,
+                        background: r.success ? '#f0fdf4' : '#fef2f2',
+                        border: `1px solid ${r.success ? '#86efac' : '#fca5a5'}`,
+                        fontSize: 13,
+                      }}
+                    >
+                      <strong>{store?.name ?? r.targetStoreId}</strong>:{' '}
+                      {r.success
+                        ? `카테고리 ${r.categoriesCreated}개, 아이템 ${r.itemsCreated}개 복사 완료`
+                        : `실패 — ${r.error}`}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

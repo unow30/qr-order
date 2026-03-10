@@ -18,7 +18,10 @@ import {
   CreateMenuItemDto,
   UpdateMenuItemDto,
   CreateMenuOptionGroupDto,
+  DeployMenuDto,
 } from '@qr-order/shared-types';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('menu')
 @Controller('menu')
@@ -93,5 +96,14 @@ export class MenuController {
   @ApiOperation({ summary: '옵션 그룹 생성' })
   createOptionGroup(@CurrentStoreId() storeId: string, @Body() dto: CreateMenuOptionGroupDto) {
     return this.menuService.createOptionGroup(storeId, dto);
+  }
+
+  @Post('deploy')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '메뉴 템플릿 배포 (SUPER_ADMIN 전용) — 소스 매장 메뉴를 여러 대상 매장에 복사' })
+  deployMenu(@Body() dto: DeployMenuDto) {
+    return this.menuService.deployMenu(dto);
   }
 }

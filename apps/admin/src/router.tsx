@@ -9,6 +9,7 @@ import TableManagePage from './pages/TableManagePage';
 import QRGeneratePage from './pages/QRGeneratePage';
 import KDSPage from './pages/KDSPage';
 import StoreManagePage from './pages/StoreManagePage';
+import ReportPage from './pages/ReportPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -54,6 +55,7 @@ export default function AdminRouter() {
               </SuperAdminRoute>
             }
           />
+          <Route path="reports" element={<ReportPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

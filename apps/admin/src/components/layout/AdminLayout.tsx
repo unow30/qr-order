@@ -10,10 +10,12 @@ const STORE_ADMIN_NAV = [
   { path: '/tables', label: '테이블 관리', icon: '🪑' },
   { path: '/qr', label: 'QR 생성', icon: '📱' },
   { path: '/kds', label: '주방 디스플레이', icon: '👨‍🍳' },
+  { path: '/reports', label: '리포트', icon: '📈' },
 ];
 
 const SUPER_ADMIN_NAV = [
   { path: '/stores', label: '매장 관리', icon: '🏪' },
+  { path: '/reports', label: '통합 리포트', icon: '📈' },
   { path: '/dashboard', label: '대시보드', icon: '📊' },
   { path: '/orders', label: '주문 관리', icon: '📋' },
   { path: '/menu', label: '메뉴 관리', icon: '🍽️' },

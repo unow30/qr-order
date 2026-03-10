@@ -13,6 +13,8 @@ import {
   CreateMenuItemDto,
   UpdateMenuItemDto,
   CreateMenuOptionGroupDto,
+  DeployMenuDto,
+  DeployMenuResult,
 } from '@qr-order/shared-types';
 
 const MENU_CACHE_TTL = 300; // 5분
@@ -111,5 +113,95 @@ export class MenuService {
     const saved = await this.optionGroupRepository.save(group);
     await this.invalidateCache(storeId);
     return saved;
+  }
+
+  /**
+   * F6: 메뉴 템플릿 배포
+   * sourceStoreId의 메뉴를 targetStoreIds 각각에 복사
+   */
+  async deployMenu(dto: DeployMenuDto): Promise<DeployMenuResult[]> {
+    const { sourceStoreId, targetStoreIds, clearTarget = false } = dto;
+
+    // 소스 메뉴 전체 조회 (옵션까지 포함)
+    const sourceCategories = await this.categoryRepository.find({
+      where: { storeId: sourceStoreId },
+      relations: ['items', 'items.optionGroups', 'items.optionGroups.options'],
+      order: { sortOrder: 'ASC' },
+    });
+
+    const results: DeployMenuResult[] = [];
+
+    for (const targetStoreId of targetStoreIds) {
+      try {
+        // clearTarget이면 대상 매장 메뉴 삭제
+        if (clearTarget) {
+          await this.categoryRepository.delete({ storeId: targetStoreId });
+          await this.invalidateCache(targetStoreId);
+        }
+
+        let categoriesCreated = 0;
+        let itemsCreated = 0;
+
+        for (const srcCategory of sourceCategories) {
+          // 카테고리 복사
+          const newCategory = this.categoryRepository.create({
+            storeId: targetStoreId,
+            name: srcCategory.name,
+            description: srcCategory.description,
+            imageUrl: srcCategory.imageUrl,
+            sortOrder: srcCategory.sortOrder,
+            isActive: srcCategory.isActive,
+          });
+          const savedCategory = await this.categoryRepository.save(newCategory);
+          categoriesCreated++;
+
+          // 아이템 복사
+          for (const srcItem of srcCategory.items ?? []) {
+            const newItem = this.itemRepository.create({
+              categoryId: savedCategory.id,
+              name: srcItem.name,
+              description: srcItem.description,
+              price: srcItem.price,
+              imageUrl: srcItem.imageUrl,
+              isAvailable: srcItem.isAvailable,
+              sortOrder: srcItem.sortOrder,
+            });
+            const savedItem = await this.itemRepository.save(newItem);
+            itemsCreated++;
+
+            // 옵션 그룹 + 옵션 복사
+            for (const srcGroup of srcItem.optionGroups ?? []) {
+              const newGroup = this.optionGroupRepository.create({
+                menuItemId: savedItem.id,
+                name: srcGroup.name,
+                isRequired: srcGroup.isRequired,
+                maxSelect: srcGroup.maxSelect,
+                options: srcGroup.options.map((opt) =>
+                  this.optionRepository.create({
+                    name: opt.name,
+                    additionalPrice: opt.additionalPrice,
+                    isAvailable: opt.isAvailable,
+                  }),
+                ),
+              });
+              await this.optionGroupRepository.save(newGroup);
+            }
+          }
+        }
+
+        await this.invalidateCache(targetStoreId);
+        results.push({ targetStoreId, success: true, categoriesCreated, itemsCreated });
+      } catch (err) {
+        results.push({
+          targetStoreId,
+          success: false,
+          categoriesCreated: 0,
+          itemsCreated: 0,
+          error: err instanceof Error ? err.message : '알 수 없는 오류',
+        });
+      }
+    }
+
+    return results;
   }
 }

@@ -11,6 +11,8 @@ import { SessionModule } from './modules/session/session.module';
 import { CartModule } from './modules/cart/cart.module';
 import { OrderModule } from './modules/order/order.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { ReportModule } from './modules/report/report.module';
+import { RlsModule } from './common/rls/rls.module';
 import { StoreContextMiddleware } from './common/middleware/store-context.middleware';
 
 @Global()
@@ -33,6 +35,8 @@ import { StoreContextMiddleware } from './common/middleware/store-context.middle
     CartModule,
     OrderModule,
     PaymentModule,
+    ReportModule,
+    RlsModule,
   ],
   providers: [
     {

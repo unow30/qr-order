@@ -50,3 +50,17 @@ export interface CreateMenuOptionDto {
   name: string;
   additionalPrice: number;
 }
+
+export interface DeployMenuDto {
+  sourceStoreId: string;
+  targetStoreIds: string[];
+  clearTarget?: boolean; // true면 대상 매장 기존 메뉴 삭제 후 복사
+}
+
+export interface DeployMenuResult {
+  targetStoreId: string;
+  success: boolean;
+  categoriesCreated: number;
+  itemsCreated: number;
+  error?: string;
+}

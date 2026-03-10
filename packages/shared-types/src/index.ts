@@ -12,3 +12,4 @@ export * from './api/menu.dto';
 export * from './api/cart.dto';
 export * from './api/order.dto';
 export * from './api/payment.dto';
+export * from './api/report.dto';
