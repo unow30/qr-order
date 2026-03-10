@@ -12,6 +12,8 @@ import { CartModule } from './modules/cart/cart.module';
 import { OrderModule } from './modules/order/order.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { ReportModule } from './modules/report/report.module';
+import { CouponModule } from './modules/coupon/coupon.module';
+import { ReviewModule } from './modules/review/review.module';
 import { RlsModule } from './common/rls/rls.module';
 import { StoreContextMiddleware } from './common/middleware/store-context.middleware';
 
@@ -36,6 +38,8 @@ import { StoreContextMiddleware } from './common/middleware/store-context.middle
     OrderModule,
     PaymentModule,
     ReportModule,
+    CouponModule,
+    ReviewModule,
     RlsModule,
   ],
   providers: [

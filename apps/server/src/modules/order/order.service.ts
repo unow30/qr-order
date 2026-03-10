@@ -6,6 +6,8 @@ import { OrderItem } from './entities/order-item.entity';
 import { CartService } from '../cart/cart.service';
 import { SessionService } from '../session/session.service';
 import { OrderSseService } from './order-sse.service';
+import { CouponService } from '../coupon/coupon.service';
+import { MenuService } from '../menu/menu.service';
 import { OrderStatus, CreateOrderDto, UpdateOrderStatusDto } from '@qr-order/shared-types';
 
 @Injectable()
@@ -18,6 +20,8 @@ export class OrderService {
     private readonly cartService: CartService,
     private readonly sessionService: SessionService,
     private readonly orderSseService: OrderSseService,
+    private readonly couponService: CouponService,
+    private readonly menuService: MenuService,
   ) {}
 
   async createOrder(sessionToken: string, dto: CreateOrderDto): Promise<Order> {
@@ -30,6 +34,24 @@ export class OrderService {
 
     const totalAmount = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
 
+    // 쿠폰 처리
+    let discountAmount = 0;
+    let couponId: string | null = null;
+    if (dto.couponCode) {
+      const validation = await this.couponService.validate(
+        session.storeId,
+        dto.couponCode,
+        totalAmount,
+      );
+      if (!validation.valid) {
+        throw new BadRequestException(validation.message ?? '유효하지 않은 쿠폰입니다.');
+      }
+      discountAmount = validation.discountAmount ?? 0;
+      couponId = validation.couponId ?? null;
+    }
+
+    const finalAmount = totalAmount - discountAmount;
+
     const order = this.orderRepository.create({
       storeId: session.storeId,
       sessionToken,
@@ -37,6 +59,9 @@ export class OrderService {
       tableNumber: session.tableNumber,
       status: OrderStatus.PENDING,
       totalAmount,
+      discountAmount,
+      finalAmount,
+      couponId,
       note: dto.note,
     });
 
@@ -56,6 +81,17 @@ export class OrderService {
 
     await this.orderItemRepository.save(orderItems);
     await this.cartService.clearCart(sessionToken);
+
+    // 쿠폰 사용 횟수 증가
+    if (couponId) {
+      await this.couponService.markUsed(couponId);
+    }
+
+    // F10: 재고 차감
+    await this.menuService.decrementStock(
+      cartItems.map((item) => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+      session.storeId,
+    );
 
     return this.findOne(savedOrder.id);
   }

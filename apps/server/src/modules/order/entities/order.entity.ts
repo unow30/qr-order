@@ -32,6 +32,15 @@ export class Order {
   @Column({ type: 'int' })
   totalAmount: number;
 
+  @Column({ type: 'int', default: 0 })
+  discountAmount: number;  // 쿠폰 할인 금액
+
+  @Column({ type: 'int' })
+  finalAmount: number;     // 실제 결제 금액 (totalAmount - discountAmount)
+
+  @Column({ nullable: true, type: 'uuid' })
+  couponId: string | null; // 사용된 쿠폰 ID
+
   @Column({ nullable: true, type: 'text' })
   note: string;
 

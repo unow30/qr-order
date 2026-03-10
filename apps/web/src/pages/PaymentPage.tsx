@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../stores/cartStore';
 import { useOrderStore } from '../stores/orderStore';
+import { useCouponStore } from '../stores/couponStore';
 import { createOrder } from '../api/order.api';
 import { createPayment, confirmPayment } from '../api/payment.api';
 import { PaymentMethod } from '@qr-order/shared-types';
@@ -10,27 +11,32 @@ export default function PaymentPage() {
   const navigate = useNavigate();
   const { items, totalAmount, clearCart } = useCartStore();
   const setOrder = useOrderStore((s) => s.setOrder);
+  const { couponCode, discountAmount, finalAmount, clearCoupon } = useCouponStore();
   const [method, setMethod] = useState<PaymentMethod>(PaymentMethod.CARD);
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState('');
+
+  const payAmount = discountAmount > 0 ? finalAmount : totalAmount;
 
   const handlePayment = async () => {
     if (items.length === 0) return;
     setLoading(true);
     try {
-      // 1. 주문 생성
-      const order = await createOrder({ note: note || undefined });
+      // 1. 주문 생성 (쿠폰 코드 포함)
+      const order = await createOrder({
+        note: note || undefined,
+        couponCode: couponCode ?? undefined,
+      });
       setOrder(order);
 
-      // 2. 결제 요청
+      // 2. 결제 요청 (finalAmount 사용)
       const paymentResult = await createPayment({
         orderId: order.id,
         method,
-        amount: order.totalAmount,
+        amount: order.finalAmount ?? order.totalAmount,
       });
 
-      // 3. PG 호스티드 결제창 (실제 구현시 PG SDK 사용)
-      // 여기서는 시뮬레이션으로 바로 confirm 처리
+      // 3. 결제 확인 (시뮬레이션)
       await confirmPayment({
         paymentId: paymentResult.paymentId,
         pgPaymentKey: `sim_${Date.now()}`,
@@ -38,6 +44,7 @@ export default function PaymentPage() {
       });
 
       clearCart();
+      clearCoupon();
       navigate(`/order-status/${order.id}`);
     } catch (err) {
       console.error(err);
@@ -65,9 +72,21 @@ export default function PaymentPage() {
             </div>
           ))}
           <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
+          {discountAmount > 0 && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 4 }}>
+                <span>소계</span>
+                <span>{totalAmount.toLocaleString()}원</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#059669', marginBottom: 8 }}>
+                <span>🏷️ 쿠폰 할인 ({couponCode})</span>
+                <span>-{discountAmount.toLocaleString()}원</span>
+              </div>
+            </>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-            <span>합계</span>
-            <span>{totalAmount.toLocaleString()}원</span>
+            <span>최종 결제 금액</span>
+            <span style={{ color: '#ff6b35' }}>{payAmount.toLocaleString()}원</span>
           </div>
         </div>
 
@@ -112,7 +131,7 @@ export default function PaymentPage() {
           disabled={loading || items.length === 0}
           style={{ width: '100%', padding: 16, background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
         >
-          {loading ? '처리 중...' : `${totalAmount.toLocaleString()}원 결제하기`}
+          {loading ? '처리 중...' : `${payAmount.toLocaleString()}원 결제하기`}
         </button>
       </div>
     </div>

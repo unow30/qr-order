@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react';
-import { getMenu, createCategory, deleteCategory, createItem, deleteItem } from '../api/menu.api';
-import { MenuCategory } from '@qr-order/shared-types';
+import { getMenu, createCategory, deleteCategory, createItem, deleteItem, updateStock } from '../api/menu.api';
+import { MenuCategory, MenuItem } from '@qr-order/shared-types';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 type DeleteTarget =
   | { type: 'category'; id: string; name: string }
   | { type: 'item'; id: string; name: string };
+
+interface StockEditState {
+  itemId: string;
+  stockEnabled: boolean;
+  stock: number;
+}
 
 export default function MenuManagePage() {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -14,6 +20,8 @@ export default function MenuManagePage() {
   const [newItemPrice, setNewItemPrice] = useState('');
   const [selectedCatId, setSelectedCatId] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [stockEdit, setStockEdit] = useState<StockEditState | null>(null);
+  const [stockSaving, setStockSaving] = useState(false);
 
   const fetchMenu = () => getMenu().then(setCategories);
 
@@ -40,6 +48,29 @@ export default function MenuManagePage() {
     else await deleteItem(deleteTarget.id);
     setDeleteTarget(null);
     fetchMenu();
+  };
+
+  const openStockEdit = (item: MenuItem) => {
+    setStockEdit({
+      itemId: item.id,
+      stockEnabled: item.stockEnabled ?? false,
+      stock: item.stock ?? 0,
+    });
+  };
+
+  const handleStockSave = async () => {
+    if (!stockEdit) return;
+    setStockSaving(true);
+    try {
+      await updateStock(stockEdit.itemId, {
+        stock: stockEdit.stock,
+        stockEnabled: stockEdit.stockEnabled,
+      });
+      setStockEdit(null);
+      fetchMenu();
+    } finally {
+      setStockSaving(false);
+    }
   };
 
   const dialogMessage = deleteTarget?.type === 'category'
@@ -93,15 +124,113 @@ export default function MenuManagePage() {
             </button>
           </div>
           {cat.items?.map((item) => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '1px solid #f0f0f0' }}>
-              <div>
-                <span style={{ fontWeight: 500 }}>{item.name}</span>
-                <span style={{ marginLeft: 12, color: '#ff6b35' }}>{item.price.toLocaleString()}원</span>
+            <div key={item.id}>
+              {/* 메뉴 아이템 행 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '1px solid #f0f0f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+                  <div>
+                    <span style={{ fontWeight: 500 }}>{item.name}</span>
+                    <span style={{ marginLeft: 12, color: '#ff6b35' }}>{item.price.toLocaleString()}원</span>
+                    {/* F10: 재고 상태 배지 */}
+                    {item.stockEnabled && (
+                      <span style={{
+                        marginLeft: 8,
+                        fontSize: 11,
+                        padding: '2px 6px',
+                        borderRadius: 10,
+                        background: item.stock > 0 ? '#dcfce7' : '#fee2e2',
+                        color: item.stock > 0 ? '#166534' : '#dc2626',
+                      }}>
+                        {item.stock > 0 ? `재고 ${item.stock}개` : '품절'}
+                      </span>
+                    )}
+                    {!item.isAvailable && (
+                      <span style={{ marginLeft: 8, fontSize: 11, padding: '2px 6px', borderRadius: 10, background: '#f3f4f6', color: '#6b7280' }}>
+                        판매중단
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={() => stockEdit?.itemId === item.id ? setStockEdit(null) : openStockEdit(item)}
+                    style={{
+                      background: stockEdit?.itemId === item.id ? '#2563eb' : 'none',
+                      color: stockEdit?.itemId === item.id ? '#fff' : '#2563eb',
+                      border: '1px solid #2563eb',
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontSize: 11,
+                    }}
+                  >
+                    재고
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
+                    style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16 }}
+                  >×</button>
+                </div>
               </div>
-              <button
-                onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
-                style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16 }}
-              >×</button>
+
+              {/* F10: 재고 편집 패널 (인라인) */}
+              {stockEdit?.itemId === item.id && (
+                <div style={{
+                  margin: '4px 0 8px',
+                  padding: '12px 16px',
+                  background: '#eff6ff',
+                  borderRadius: 8,
+                  border: '1px solid #bfdbfe',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  flexWrap: 'wrap',
+                }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={stockEdit.stockEnabled}
+                      onChange={(e) => setStockEdit((s) => s ? { ...s, stockEnabled: e.target.checked } : s)}
+                    />
+                    재고 관리 활성화
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                    재고 수량
+                    <input
+                      type="number"
+                      min={0}
+                      value={stockEdit.stock}
+                      disabled={!stockEdit.stockEnabled}
+                      onChange={(e) => setStockEdit((s) => s ? { ...s, stock: Math.max(0, parseInt(e.target.value) || 0) } : s)}
+                      style={{ width: 70, padding: '4px 8px', border: '1px solid #93c5fd', borderRadius: 6, fontSize: 13 }}
+                    />
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={handleStockSave}
+                      disabled={stockSaving}
+                      style={{
+                        padding: '5px 14px',
+                        background: '#2563eb',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: stockSaving ? 'not-allowed' : 'pointer',
+                        fontSize: 12,
+                        opacity: stockSaving ? 0.6 : 1,
+                      }}
+                    >
+                      {stockSaving ? '저장 중...' : '저장'}
+                    </button>
+                    <button
+                      onClick={() => setStockEdit(null)}
+                      style={{ padding: '5px 14px', background: 'none', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           {!cat.items?.length && <p style={{ color: '#888', fontSize: 14 }}>메뉴가 없습니다.</p>}

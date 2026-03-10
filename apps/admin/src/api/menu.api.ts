@@ -17,3 +17,5 @@ export const createItem = (dto: CreateMenuItemDto) => client.post('/menu/items',
 export const updateItem = (id: string, dto: UpdateMenuItemDto) =>
   client.put(`/menu/items/${id}`, dto);
 export const deleteItem = (id: string): Promise<void> => client.delete(`/menu/items/${id}`);
+export const updateStock = (id: string, dto: { stock: number; stockEnabled: boolean }) =>
+  client.put(`/menu/items/${id}/stock`, dto);

@@ -34,6 +34,12 @@ export class MenuItem {
   @Column({ default: true })
   isAvailable: boolean;
 
+  @Column({ default: false })
+  stockEnabled: boolean;  // true면 재고 관리 활성화
+
+  @Column({ type: 'int', default: 0 })
+  stock: number;          // 현재 재고 수량 (stockEnabled=true일 때만 유효)
+
   @Column({ default: 0 })
   sortOrder: number;
 

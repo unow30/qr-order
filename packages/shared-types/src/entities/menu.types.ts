@@ -19,6 +19,8 @@ export interface MenuItem {
   price: number;
   imageUrl?: string;
   isAvailable: boolean;
+  stockEnabled: boolean;   // F10: 재고 관리 활성화 여부
+  stock: number;           // F10: 현재 재고 수량
   sortOrder: number;
   optionGroups: MenuOptionGroup[];
   createdAt: Date;

@@ -7,12 +7,16 @@ import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { CartModule } from '../cart/cart.module';
 import { SessionModule } from '../session/session.module';
+import { CouponModule } from '../coupon/coupon.module';
+import { MenuModule } from '../menu/menu.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem]),
     CartModule,
     SessionModule,
+    CouponModule,
+    MenuModule,
   ],
   controllers: [OrderController],
   providers: [OrderService, OrderSseService],

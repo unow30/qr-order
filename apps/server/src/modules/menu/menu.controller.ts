@@ -106,4 +106,16 @@ export class MenuController {
   deployMenu(@Body() dto: DeployMenuDto) {
     return this.menuService.deployMenu(dto);
   }
+
+  @Put('items/:id/stock')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '메뉴 아이템 재고 업데이트 (어드민)' })
+  updateStock(
+    @CurrentStoreId() storeId: string,
+    @Param('id') id: string,
+    @Body() dto: { stock: number; stockEnabled: boolean },
+  ) {
+    return this.menuService.updateStock(storeId, id, dto.stock, dto.stockEnabled);
+  }
 }

@@ -116,6 +116,49 @@ export class MenuService {
   }
 
   /**
+   * F10: 재고 수량 차감 (주문 생성 시 호출)
+   * 재고 관리가 활성화된 아이템만 처리
+   */
+  async decrementStock(
+    items: { menuItemId: string; quantity: number }[],
+    storeId: string,
+  ): Promise<void> {
+    for (const { menuItemId, quantity } of items) {
+      const item = await this.itemRepository.findOne({ where: { id: menuItemId } });
+      if (!item || !item.stockEnabled) continue;
+
+      const newStock = Math.max(0, item.stock - quantity);
+      item.stock = newStock;
+      if (newStock === 0) {
+        item.isAvailable = false; // 재고 소진 시 자동 품절
+      }
+      await this.itemRepository.save(item);
+    }
+    await this.invalidateCache(storeId);
+  }
+
+  /**
+   * F10: 재고 수동 업데이트 (어드민)
+   */
+  async updateStock(
+    storeId: string,
+    itemId: string,
+    stock: number,
+    stockEnabled: boolean,
+  ): Promise<MenuItem> {
+    const item = await this.itemRepository.findOne({ where: { id: itemId } });
+    if (!item) throw new NotFoundException('메뉴 아이템을 찾을 수 없습니다.');
+    item.stockEnabled = stockEnabled;
+    item.stock = stock;
+    if (stockEnabled && stock > 0) {
+      item.isAvailable = true; // 재고 보충 시 자동 판매 재개
+    }
+    const saved = await this.itemRepository.save(item);
+    await this.invalidateCache(storeId);
+    return saved;
+  }
+
+  /**
    * F6: 메뉴 템플릿 배포
    * sourceStoreId의 메뉴를 targetStoreIds 각각에 복사
    */

@@ -24,18 +24,37 @@ export interface ReportQuery {
   endDate?: string;
 }
 
-export const getOverallSummary = (query?: ReportQuery): Promise<OverallReportSummary> => {
+export interface MenuItemStat {
+  menuItemId: string;
+  menuItemName: string;
+  totalQuantity: number;
+  totalRevenue: number;
+  orderCount: number;
+}
+
+export interface MenuAnalyticsResult {
+  storeId: string;
+  periodStart: string;
+  periodEnd: string;
+  topItems: MenuItemStat[];
+  topRevenueItems: MenuItemStat[];
+}
+
+const buildQs = (query?: ReportQuery & { storeId?: string }) => {
   const params = new URLSearchParams();
   if (query?.startDate) params.set('startDate', query.startDate);
   if (query?.endDate) params.set('endDate', query.endDate);
+  if (query?.storeId) params.set('storeId', query.storeId);
   const qs = params.toString();
-  return client.get(`/reports/summary${qs ? `?${qs}` : ''}`);
+  return qs ? `?${qs}` : '';
 };
 
-export const getStoreSummary = (storeId: string, query?: ReportQuery): Promise<StoreReportSummary> => {
-  const params = new URLSearchParams();
-  if (query?.startDate) params.set('startDate', query.startDate);
-  if (query?.endDate) params.set('endDate', query.endDate);
-  const qs = params.toString();
-  return client.get(`/reports/stores/${storeId}${qs ? `?${qs}` : ''}`);
-};
+export const getOverallSummary = (query?: ReportQuery): Promise<OverallReportSummary> =>
+  client.get(`/reports/summary${buildQs(query)}`);
+
+export const getStoreSummary = (storeId: string, query?: ReportQuery): Promise<StoreReportSummary> =>
+  client.get(`/reports/stores/${storeId}${buildQs(query)}`);
+
+/** F12: 메뉴별 판매 분석 */
+export const getMenuAnalytics = (query?: ReportQuery & { storeId?: string }): Promise<MenuAnalyticsResult> =>
+  client.get(`/reports/menu-analytics${buildQs(query)}`);

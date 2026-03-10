@@ -10,6 +10,8 @@ const STORE_ADMIN_NAV = [
   { path: '/tables', label: '테이블 관리', icon: '🪑' },
   { path: '/qr', label: 'QR 생성', icon: '📱' },
   { path: '/kds', label: '주방 디스플레이', icon: '👨‍🍳' },
+  { path: '/coupons', label: '쿠폰 관리', icon: '🏷️' },
+  { path: '/reviews', label: '리뷰 관리', icon: '⭐' },
   { path: '/reports', label: '리포트', icon: '📈' },
 ];
 
@@ -22,6 +24,8 @@ const SUPER_ADMIN_NAV = [
   { path: '/tables', label: '테이블 관리', icon: '🪑' },
   { path: '/qr', label: 'QR 생성', icon: '📱' },
   { path: '/kds', label: '주방 디스플레이', icon: '👨‍🍳' },
+  { path: '/coupons', label: '쿠폰 관리', icon: '🏷️' },
+  { path: '/reviews', label: '리뷰 관리', icon: '⭐' },
 ];
 
 export default function AdminLayout() {

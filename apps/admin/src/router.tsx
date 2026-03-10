@@ -10,6 +10,8 @@ import QRGeneratePage from './pages/QRGeneratePage';
 import KDSPage from './pages/KDSPage';
 import StoreManagePage from './pages/StoreManagePage';
 import ReportPage from './pages/ReportPage';
+import CouponManagePage from './pages/CouponManagePage';
+import ReviewManagePage from './pages/ReviewManagePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -56,6 +58,8 @@ export default function AdminRouter() {
             }
           />
           <Route path="reports" element={<ReportPage />} />
+          <Route path="coupons" element={<CouponManagePage />} />
+          <Route path="reviews" element={<ReviewManagePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
