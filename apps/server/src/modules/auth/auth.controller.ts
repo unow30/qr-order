@@ -14,7 +14,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '관리자 로그인' })
   @ApiBody({ type: LoginDto })
-  login(@Request() req: { user: { username: string } }) {
+  login(
+    @Request()
+    req: { user: { id: string; username: string; role: string; storeId: string | null } },
+  ) {
     return this.authService.login(req.user);
   }
 }

@@ -1,4 +1,6 @@
 // Entities
+export * from './entities/store.types';
+export * from './entities/admin.types';
 export * from './entities/table.types';
 export * from './entities/menu.types';
 export * from './entities/order.types';

@@ -12,6 +12,7 @@ import { TableService } from './table.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ConfigService } from '@nestjs/config';
+import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
 
 @ApiTags('tables')
 @Controller('tables')
@@ -25,25 +26,25 @@ export class TableController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '테이블 목록 조회' })
-  findAll() {
-    return this.tableService.findAll();
+  findAll(@CurrentStoreId() storeId: string) {
+    return this.tableService.findAll(storeId);
   }
 
   @Get('dev/with-tokens')
   @ApiExcludeEndpoint()
-  async findAllWithTokens() {
+  async findAllWithTokens(@CurrentStoreId() storeId: string) {
     if (this.configService.get('NODE_ENV') === 'production') {
       return { message: '프로덕션 환경에서는 사용할 수 없습니다.' };
     }
-    return this.tableService.findAllWithTokens();
+    return this.tableService.findAllWithTokens(storeId);
   }
 
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '테이블 생성' })
-  create(@Body() dto: CreateTableDto) {
-    return this.tableService.create(dto);
+  create(@CurrentStoreId() storeId: string, @Body() dto: CreateTableDto) {
+    return this.tableService.create(storeId, dto);
   }
 
   @Delete(':id')

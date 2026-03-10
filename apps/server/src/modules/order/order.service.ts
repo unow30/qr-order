@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -31,6 +31,7 @@ export class OrderService {
     const totalAmount = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
 
     const order = this.orderRepository.create({
+      storeId: session.storeId,
       sessionToken,
       tableId: session.tableId,
       tableNumber: session.tableNumber,
@@ -68,16 +69,17 @@ export class OrderService {
     return order;
   }
 
-  async findAll(): Promise<Order[]> {
+  async findAll(storeId: string): Promise<Order[]> {
     return this.orderRepository.find({
+      where: { storeId },
       relations: ['items'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findByTable(tableId: string): Promise<Order[]> {
+  async findByTable(storeId: string, tableId: string): Promise<Order[]> {
     return this.orderRepository.find({
-      where: { tableId },
+      where: { storeId, tableId },
       relations: ['items'],
       order: { createdAt: 'DESC' },
     });

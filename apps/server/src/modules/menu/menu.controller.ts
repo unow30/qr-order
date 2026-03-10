@@ -11,6 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MenuService } from './menu.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
 import {
   CreateMenuCategoryDto,
   UpdateMenuCategoryDto,
@@ -25,64 +26,72 @@ export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
   @Get()
-  @ApiOperation({ summary: '메뉴 전체 조회 (Redis 캐시)' })
-  getMenu() {
-    return this.menuService.getMenu();
+  @ApiOperation({ summary: '메뉴 전체 조회 (Redis 캐시). X-Store-Id 헤더 필수.' })
+  getMenu(@CurrentStoreId() storeId: string) {
+    return this.menuService.getMenu(storeId);
   }
 
   @Post('categories')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '카테고리 생성' })
-  createCategory(@Body() dto: CreateMenuCategoryDto) {
-    return this.menuService.createCategory(dto);
+  createCategory(@CurrentStoreId() storeId: string, @Body() dto: CreateMenuCategoryDto) {
+    return this.menuService.createCategory(storeId, dto);
   }
 
   @Put('categories/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '카테고리 수정' })
-  updateCategory(@Param('id') id: string, @Body() dto: UpdateMenuCategoryDto) {
-    return this.menuService.updateCategory(id, dto);
+  updateCategory(
+    @CurrentStoreId() storeId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateMenuCategoryDto,
+  ) {
+    return this.menuService.updateCategory(storeId, id, dto);
   }
 
   @Delete('categories/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '카테고리 삭제' })
-  deleteCategory(@Param('id') id: string) {
-    return this.menuService.deleteCategory(id);
+  deleteCategory(@CurrentStoreId() storeId: string, @Param('id') id: string) {
+    return this.menuService.deleteCategory(storeId, id);
   }
 
   @Post('items')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '메뉴 아이템 생성' })
-  createItem(@Body() dto: CreateMenuItemDto) {
-    return this.menuService.createItem(dto);
+  createItem(@CurrentStoreId() storeId: string, @Body() dto: CreateMenuItemDto) {
+    return this.menuService.createItem(storeId, dto);
   }
 
   @Put('items/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '메뉴 아이템 수정' })
-  updateItem(@Param('id') id: string, @Body() dto: UpdateMenuItemDto) {
-    return this.menuService.updateItem(id, dto);
+  updateItem(
+    @CurrentStoreId() storeId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateMenuItemDto,
+  ) {
+    return this.menuService.updateItem(storeId, id, dto);
   }
 
   @Delete('items/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '메뉴 아이템 삭제' })
-  deleteItem(@Param('id') id: string) {
-    return this.menuService.deleteItem(id);
+  deleteItem(@CurrentStoreId() storeId: string, @Param('id') id: string) {
+    return this.menuService.deleteItem(storeId, id);
   }
 
   @Post('option-groups')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '옵션 그룹 생성' })
-  createOptionGroup(@Body() dto: CreateMenuOptionGroupDto) {
-    return this.menuService.createOptionGroup(dto);
+  createOptionGroup(@CurrentStoreId() storeId: string, @Body() dto: CreateMenuOptionGroupDto) {
+    return this.menuService.createOptionGroup(storeId, dto);
   }
 }

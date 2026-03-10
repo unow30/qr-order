@@ -15,7 +15,6 @@ import {
   CreateMenuOptionGroupDto,
 } from '@qr-order/shared-types';
 
-const MENU_CACHE_KEY = 'menu:all';
 const MENU_CACHE_TTL = 300; // 5분
 
 @Injectable()
@@ -33,76 +32,84 @@ export class MenuService {
     private readonly redis: Redis,
   ) {}
 
-  async getMenu(): Promise<MenuCategory[]> {
-    const cached = await this.redis.get(MENU_CACHE_KEY);
+  private getMenuCacheKey(storeId: string): string {
+    return `menu:${storeId}:all`;
+  }
+
+  async getMenu(storeId: string): Promise<MenuCategory[]> {
+    const cacheKey = this.getMenuCacheKey(storeId);
+    const cached = await this.redis.get(cacheKey);
     if (cached) {
       return JSON.parse(cached);
     }
 
     const categories = await this.categoryRepository.find({
-      where: { isActive: true },
+      where: { storeId, isActive: true },
       relations: ['items', 'items.optionGroups', 'items.optionGroups.options'],
       order: { sortOrder: 'ASC' },
     });
 
-    await this.redis.setex(MENU_CACHE_KEY, MENU_CACHE_TTL, JSON.stringify(categories));
+    await this.redis.setex(cacheKey, MENU_CACHE_TTL, JSON.stringify(categories));
     return categories;
   }
 
-  async invalidateCache(): Promise<void> {
-    await this.redis.del(MENU_CACHE_KEY);
+  async invalidateCache(storeId: string): Promise<void> {
+    await this.redis.del(this.getMenuCacheKey(storeId));
   }
 
-  async createCategory(dto: CreateMenuCategoryDto): Promise<MenuCategory> {
-    const category = this.categoryRepository.create(dto);
+  async createCategory(storeId: string, dto: CreateMenuCategoryDto): Promise<MenuCategory> {
+    const category = this.categoryRepository.create({ ...dto, storeId });
     const saved = await this.categoryRepository.save(category);
-    await this.invalidateCache();
+    await this.invalidateCache(storeId);
     return saved;
   }
 
-  async updateCategory(id: string, dto: UpdateMenuCategoryDto): Promise<MenuCategory> {
-    const category = await this.categoryRepository.findOne({ where: { id } });
+  async updateCategory(storeId: string, id: string, dto: UpdateMenuCategoryDto): Promise<MenuCategory> {
+    const category = await this.categoryRepository.findOne({ where: { id, storeId } });
     if (!category) throw new NotFoundException('카테고리를 찾을 수 없습니다.');
     Object.assign(category, dto);
     const saved = await this.categoryRepository.save(category);
-    await this.invalidateCache();
+    await this.invalidateCache(storeId);
     return saved;
   }
 
-  async deleteCategory(id: string): Promise<void> {
-    await this.categoryRepository.delete(id);
-    await this.invalidateCache();
+  async deleteCategory(storeId: string, id: string): Promise<void> {
+    await this.categoryRepository.delete({ id, storeId });
+    await this.invalidateCache(storeId);
   }
 
-  async createItem(dto: CreateMenuItemDto): Promise<MenuItem> {
+  async createItem(storeId: string, dto: CreateMenuItemDto): Promise<MenuItem> {
     const item = this.itemRepository.create(dto);
     const saved = await this.itemRepository.save(item);
-    await this.invalidateCache();
+    await this.invalidateCache(storeId);
     return saved;
   }
 
-  async updateItem(id: string, dto: UpdateMenuItemDto): Promise<MenuItem> {
-    const item = await this.itemRepository.findOne({ where: { id } });
+  async updateItem(storeId: string, id: string, dto: UpdateMenuItemDto): Promise<MenuItem> {
+    const item = await this.itemRepository.findOne({
+      where: { id },
+      relations: ['category'],
+    });
     if (!item) throw new NotFoundException('메뉴 아이템을 찾을 수 없습니다.');
     Object.assign(item, dto);
     const saved = await this.itemRepository.save(item);
-    await this.invalidateCache();
+    await this.invalidateCache(storeId);
     return saved;
   }
 
-  async deleteItem(id: string): Promise<void> {
+  async deleteItem(storeId: string, id: string): Promise<void> {
     await this.itemRepository.delete(id);
-    await this.invalidateCache();
+    await this.invalidateCache(storeId);
   }
 
-  async createOptionGroup(dto: CreateMenuOptionGroupDto): Promise<MenuOptionGroup> {
+  async createOptionGroup(storeId: string, dto: CreateMenuOptionGroupDto): Promise<MenuOptionGroup> {
     const { options, ...groupData } = dto;
     const group = this.optionGroupRepository.create({
       ...groupData,
       options: options.map((opt) => this.optionRepository.create(opt)),
     });
     const saved = await this.optionGroupRepository.save(group);
-    await this.invalidateCache();
+    await this.invalidateCache(storeId);
     return saved;
   }
 }

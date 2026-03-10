@@ -10,12 +10,12 @@ import {
   UseGuards,
   Sse,
   MessageEvent,
-  Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiHeader, ApiBearerAuth } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { OrderService } from './order.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
 import { CreateOrderDto, UpdateOrderStatusDto } from '@qr-order/shared-types';
 
 @ApiTags('orders')
@@ -43,8 +43,8 @@ export class OrderController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '전체 주문 목록 (어드민)' })
-  findAll() {
-    return this.orderService.findAll();
+  findAll(@CurrentStoreId() storeId: string) {
+    return this.orderService.findAll(storeId);
   }
 
   @Get(':id')

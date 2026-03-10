@@ -20,20 +20,21 @@ export class CartService {
     private readonly menuItemRepository: Repository<MenuItem>,
   ) {}
 
-  private getCartKey(sessionToken: string): string {
-    return `${CART_PREFIX}${sessionToken}`;
+  private getCartKey(storeId: string, sessionToken: string): string {
+    return `${CART_PREFIX}${storeId}:${sessionToken}`;
   }
 
   async getCart(sessionToken: string): Promise<Cart> {
     const session = await this.sessionService.validateSession(sessionToken);
-    const data = await this.redis.get(this.getCartKey(sessionToken));
+    const data = await this.redis.get(this.getCartKey(session.storeId, sessionToken));
     const items: CartItem[] = data ? JSON.parse(data) : [];
     const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
     return { sessionId: session.tableId, items, totalAmount };
   }
 
   async addItem(sessionToken: string, dto: AddCartItemDto): Promise<Cart> {
-    await this.sessionService.validateSession(sessionToken);
+    const session = await this.sessionService.validateSession(sessionToken);
+    const cartKey = this.getCartKey(session.storeId, sessionToken);
 
     const menuItem = await this.menuItemRepository.findOne({
       where: { id: dto.menuItemId },
@@ -58,21 +59,23 @@ export class CartService {
       selectedOptions: dto.selectedOptions,
     };
 
-    const data = await this.redis.get(this.getCartKey(sessionToken));
+    const data = await this.redis.get(cartKey);
     const items: CartItem[] = data ? JSON.parse(data) : [];
     items.push(cartItem);
 
-    const ttl = await this.redis.ttl(`session:${sessionToken}`);
-    await this.redis.setex(this.getCartKey(sessionToken), ttl > 0 ? ttl : 7200, JSON.stringify(items));
+    const sessionKey = this.sessionService.getSessionKey(session.storeId, sessionToken);
+    const ttl = await this.redis.ttl(sessionKey);
+    await this.redis.setex(cartKey, ttl > 0 ? ttl : 7200, JSON.stringify(items));
     await this.sessionService.renewSession(sessionToken);
 
     return this.getCart(sessionToken);
   }
 
   async updateItem(sessionToken: string, cartItemId: string, dto: UpdateCartItemDto): Promise<Cart> {
-    await this.sessionService.validateSession(sessionToken);
+    const session = await this.sessionService.validateSession(sessionToken);
+    const cartKey = this.getCartKey(session.storeId, sessionToken);
 
-    const data = await this.redis.get(this.getCartKey(sessionToken));
+    const data = await this.redis.get(cartKey);
     const items: CartItem[] = data ? JSON.parse(data) : [];
     const idx = items.findIndex((i) => i.cartItemId === cartItemId);
     if (idx === -1) throw new NotFoundException('장바구니 아이템을 찾을 수 없습니다.');
@@ -85,27 +88,31 @@ export class CartService {
       items[idx].selectedOptions = dto.selectedOptions;
     }
 
-    const ttl = await this.redis.ttl(`session:${sessionToken}`);
-    await this.redis.setex(this.getCartKey(sessionToken), ttl > 0 ? ttl : 7200, JSON.stringify(items));
+    const sessionKey = this.sessionService.getSessionKey(session.storeId, sessionToken);
+    const ttl = await this.redis.ttl(sessionKey);
+    await this.redis.setex(cartKey, ttl > 0 ? ttl : 7200, JSON.stringify(items));
 
     return this.getCart(sessionToken);
   }
 
   async removeItem(sessionToken: string, cartItemId: string): Promise<Cart> {
-    await this.sessionService.validateSession(sessionToken);
+    const session = await this.sessionService.validateSession(sessionToken);
+    const cartKey = this.getCartKey(session.storeId, sessionToken);
 
-    const data = await this.redis.get(this.getCartKey(sessionToken));
+    const data = await this.redis.get(cartKey);
     const items: CartItem[] = data ? JSON.parse(data) : [];
     const filtered = items.filter((i) => i.cartItemId !== cartItemId);
 
-    const ttl = await this.redis.ttl(`session:${sessionToken}`);
-    await this.redis.setex(this.getCartKey(sessionToken), ttl > 0 ? ttl : 7200, JSON.stringify(filtered));
+    const sessionKey = this.sessionService.getSessionKey(session.storeId, sessionToken);
+    const ttl = await this.redis.ttl(sessionKey);
+    await this.redis.setex(cartKey, ttl > 0 ? ttl : 7200, JSON.stringify(filtered));
 
     return this.getCart(sessionToken);
   }
 
   async clearCart(sessionToken: string): Promise<void> {
-    await this.redis.del(this.getCartKey(sessionToken));
+    const session = await this.sessionService.validateSession(sessionToken);
+    await this.redis.del(this.getCartKey(session.storeId, sessionToken));
   }
 
   async getCartItems(sessionToken: string): Promise<CartItem[]> {

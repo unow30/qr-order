@@ -9,7 +9,10 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     super();
   }
 
-  async validate(username: string, password: string): Promise<{ username: string }> {
+  async validate(
+    username: string,
+    password: string,
+  ): Promise<{ id: string; username: string; role: string; storeId: string | null }> {
     const user = await this.authService.validateUser(username, password);
     if (!user) {
       throw new UnauthorizedException('아이디 또는 비밀번호가 올바르지 않습니다.');

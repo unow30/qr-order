@@ -15,12 +15,20 @@ export class TableService {
     private readonly qrTokenRepository: Repository<QrToken>,
   ) {}
 
-  async findAll(): Promise<TableEntity[]> {
-    return this.tableRepository.find({ order: { tableNumber: 'ASC' } });
+  async findAll(storeId: string): Promise<TableEntity[]> {
+    return this.tableRepository.find({
+      where: { storeId },
+      order: { tableNumber: 'ASC' },
+    });
   }
 
-  async findAllWithTokens(): Promise<{ table: TableEntity; token: string | null }[]> {
-    const tables = await this.tableRepository.find({ order: { tableNumber: 'ASC' } });
+  async findAllWithTokens(
+    storeId: string,
+  ): Promise<{ table: TableEntity; token: string | null }[]> {
+    const tables = await this.tableRepository.find({
+      where: { storeId },
+      order: { tableNumber: 'ASC' },
+    });
     return Promise.all(
       tables.map(async (table) => {
         const qrToken = await this.qrTokenRepository.findOne({
@@ -40,8 +48,8 @@ export class TableService {
     return table;
   }
 
-  async create(dto: CreateTableDto): Promise<TableEntity> {
-    const table = this.tableRepository.create(dto);
+  async create(storeId: string, dto: CreateTableDto): Promise<TableEntity> {
+    const table = this.tableRepository.create({ ...dto, storeId });
     return this.tableRepository.save(table);
   }
 
@@ -53,7 +61,7 @@ export class TableService {
   async generateQrToken(tableId: string): Promise<QrToken> {
     const table = await this.findOne(tableId);
 
-    // 기존 만료되지 않은 토큰 무효화
+    // 기존 토큰 무효화
     await this.qrTokenRepository.delete({ tableId });
 
     const expiresAt = new Date();
