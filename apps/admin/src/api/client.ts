@@ -7,9 +7,12 @@ const client = axios.create({
 });
 
 client.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const { accessToken, currentStoreId } = useAuthStore.getState();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  if (currentStoreId) {
+    config.headers['X-Store-Id'] = currentStoreId;
   }
   return config;
 });

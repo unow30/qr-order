@@ -8,11 +8,20 @@ import MenuManagePage from './pages/MenuManagePage';
 import TableManagePage from './pages/TableManagePage';
 import QRGeneratePage from './pages/QRGeneratePage';
 import KDSPage from './pages/KDSPage';
+import StoreManagePage from './pages/StoreManagePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
+  if (!isSuperAdmin()) {
+    return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
 }
@@ -37,6 +46,14 @@ export default function AdminRouter() {
           <Route path="tables" element={<TableManagePage />} />
           <Route path="qr" element={<QRGeneratePage />} />
           <Route path="kds" element={<KDSPage />} />
+          <Route
+            path="stores"
+            element={
+              <SuperAdminRoute>
+                <StoreManagePage />
+              </SuperAdminRoute>
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>

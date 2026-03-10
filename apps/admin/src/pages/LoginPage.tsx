@@ -17,7 +17,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await login(username, password);
-      setAuth(result.accessToken, username);
+      setAuth(result.accessToken, username, result.role, result.storeId);
       navigate('/dashboard');
     } catch {
       setError('아이디 또는 비밀번호가 올바르지 않습니다.');
