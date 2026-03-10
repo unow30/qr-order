@@ -1,0 +1,11 @@
+{
+  "name": "@qr-order/tsconfig",
+  "version": "1.0.0",
+  "private": true,
+  "description": "공유 TypeScript 설정",
+  "exports": {
+    "./base.json": "./base.json",
+    "./nestjs.json": "./nestjs.json",
+    "./react.json": "./react.json"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@qr-order/web",
+  "version": "1.0.0",
+  "description": "QR 오더 고객용 React 앱",
+  "private": true,
+  "scripts": {
+    "dev": "vite --port 3001",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-router-dom": "^6.24.0",
+    "zustand": "^4.5.0",
+    "axios": "^1.7.0",
+    "@qr-order/shared-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@qr-order/tsconfig": "workspace:*",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.0"
+  }
+}

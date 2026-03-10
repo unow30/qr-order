@@ -1,0 +1,90 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
+import { TableEntity } from './entities/table.entity';
+import { QrToken } from './entities/qr-token.entity';
+import { CreateTableDto } from './dto/create-table.dto';
+
+@Injectable()
+export class TableService {
+  constructor(
+    @InjectRepository(TableEntity)
+    private readonly tableRepository: Repository<TableEntity>,
+    @InjectRepository(QrToken)
+    private readonly qrTokenRepository: Repository<QrToken>,
+  ) {}
+
+  async findAll(): Promise<TableEntity[]> {
+    return this.tableRepository.find({ order: { tableNumber: 'ASC' } });
+  }
+
+  async findAllWithTokens(): Promise<{ table: TableEntity; token: string | null }[]> {
+    const tables = await this.tableRepository.find({ order: { tableNumber: 'ASC' } });
+    return Promise.all(
+      tables.map(async (table) => {
+        const qrToken = await this.qrTokenRepository.findOne({
+          where: { tableId: table.id },
+          order: { createdAt: 'DESC' },
+        });
+        return { table, token: qrToken?.token ?? null };
+      }),
+    );
+  }
+
+  async findOne(id: string): Promise<TableEntity> {
+    const table = await this.tableRepository.findOne({ where: { id } });
+    if (!table) {
+      throw new NotFoundException(`테이블 ID ${id}를 찾을 수 없습니다.`);
+    }
+    return table;
+  }
+
+  async create(dto: CreateTableDto): Promise<TableEntity> {
+    const table = this.tableRepository.create(dto);
+    return this.tableRepository.save(table);
+  }
+
+  async remove(id: string): Promise<void> {
+    const table = await this.findOne(id);
+    await this.tableRepository.remove(table);
+  }
+
+  async generateQrToken(tableId: string): Promise<QrToken> {
+    const table = await this.findOne(tableId);
+
+    // 기존 만료되지 않은 토큰 무효화
+    await this.qrTokenRepository.delete({ tableId });
+
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 1년 유효
+
+    const qrToken = this.qrTokenRepository.create({
+      tableId: table.id,
+      token: uuidv4(),
+      expiresAt,
+    });
+
+    return this.qrTokenRepository.save(qrToken);
+  }
+
+  async getQrToken(tableId: string): Promise<QrToken | null> {
+    return this.qrTokenRepository.findOne({
+      where: { tableId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async validateQrToken(token: string): Promise<TableEntity | null> {
+    const qrToken = await this.qrTokenRepository.findOne({
+      where: { token },
+      relations: ['table'],
+    });
+
+    if (!qrToken || qrToken.expiresAt < new Date()) {
+      return null;
+    }
+
+    return qrToken.table;
+  }
+}

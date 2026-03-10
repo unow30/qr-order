@@ -1,0 +1,26 @@
+{
+  "name": "qr-order",
+  "version": "1.0.0",
+  "description": "QR 테이블 오더 서비스 모노레포",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:server": "pnpm --filter @qr-order/server dev",
+    "dev:web": "pnpm --filter @qr-order/web dev",
+    "dev:admin": "pnpm --filter @qr-order/admin dev",
+    "type-check": "turbo run type-check",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "db:up": "docker-compose up -d",
+    "db:down": "docker-compose down",
+    "db:reset": "docker-compose down -v && docker-compose up -d",
+    "db:seed": "pnpm --filter @qr-order/server seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.5.3"
+  }
+}

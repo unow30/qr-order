@@ -1,0 +1,17 @@
+{
+  "name": "@qr-order/eslint-config",
+  "version": "1.0.0",
+  "private": true,
+  "description": "공유 ESLint 설정",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./nestjs": "./nestjs.js",
+    "./react": "./react.js"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0"
+  }
+}
