@@ -4,12 +4,14 @@ import { Table } from '@qr-order/shared-types';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useAuthStore } from '../stores/authStore';
 import { useStoreNames } from '../hooks/useStoreNames';
+import ImageManagerWidget from '../components/ImageManagerWidget';
 
 export default function TableManagePage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [tableNumber, setTableNumber] = useState('');
   const [tableName, setTableName] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [imageOpenId, setImageOpenId] = useState<string | null>(null);
   const { currentStoreId, isSuperAdmin } = useAuthStore();
   const superAdmin = isSuperAdmin();
   const isAllStores = superAdmin && !currentStoreId;
@@ -82,6 +84,27 @@ export default function TableManagePage() {
                 <button onClick={() => setDeleteTargetId(table.id)} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 18 }}>×</button>
               )}
             </div>
+            <button
+              onClick={() => setImageOpenId(imageOpenId === table.id ? null : table.id)}
+              style={{
+                marginTop: 10,
+                padding: '4px 10px',
+                background: imageOpenId === table.id ? '#ff6b35' : 'none',
+                color: imageOpenId === table.id ? '#fff' : '#ff6b35',
+                border: '1px solid #ff6b35',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: 12,
+                width: '100%',
+              }}
+            >
+              🖼️ 이미지 관리
+            </button>
+            {imageOpenId === table.id && (
+              <div style={{ marginTop: 8, borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
+                <ImageManagerWidget entityType="tables" entityId={table.id} readonly={isAllStores} />
+              </div>
+            )}
           </div>
         ))}
       </div>

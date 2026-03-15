@@ -22,7 +22,7 @@ export class MenuCategory {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, comment: 'DEPRECATED: use menu_category_images table' })
   imageUrl: string;
 
   @Column({ default: 0 })

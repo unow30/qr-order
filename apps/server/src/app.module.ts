@@ -16,6 +16,7 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { ReportModule } from './modules/report/report.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { ReviewModule } from './modules/review/review.module';
+import { ImageModule } from './modules/image/image.module';
 import { RlsModule } from './common/rls/rls.module';
 import { StoreContextMiddleware } from './common/middleware/store-context.middleware';
 
@@ -43,6 +44,7 @@ import { StoreContextMiddleware } from './common/middleware/store-context.middle
     ReportModule,
     CouponModule,
     ReviewModule,
+    ImageModule,
     RlsModule,
   ],
   providers: [

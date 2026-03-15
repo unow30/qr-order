@@ -31,7 +31,7 @@ export class MenuItem {
   @Column({ type: 'int' })
   price: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, comment: 'DEPRECATED: use menu_item_images table' })
   imageUrl: string;
 
   @Column({ default: true })

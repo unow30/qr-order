@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getCoupons, createCoupon, deactivateCoupon, Coupon, DiscountType } from '../api/coupon.api';
 import { useAuthStore } from '../stores/authStore';
 import { useStoreNames } from '../hooks/useStoreNames';
+import ImageManagerWidget from '../components/ImageManagerWidget';
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 12px', border: '1px solid #ddd',
@@ -37,6 +38,7 @@ export default function CouponManagePage() {
   const [maxUses, setMaxUses] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [formError, setFormError] = useState('');
+  const [imageOpenId, setImageOpenId] = useState<string | null>(null);
 
   const load = () => getCoupons().then(setCoupons).catch(() => {});
 
@@ -158,31 +160,53 @@ export default function CouponManagePage() {
               {coupons.map((c) => {
                 const badge = statusBadge(c);
                 return (
-                  <div key={c.id} style={{ padding: '14px 16px', background: '#fafafa', borderRadius: 8, border: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace', letterSpacing: 1 }}>{c.code}</span>
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: badge.bg, color: badge.color }}>
-                          {badge.label}
-                        </span>
-                        {isAllStores && c.storeId && storeNameMap[c.storeId] && (
-                          <span style={{ fontSize: 11, color: '#888' }}>🏪 {storeNameMap[c.storeId]}</span>
+                  <div key={c.id} style={{ background: '#fafafa', borderRadius: 8, border: '1px solid #eee', overflow: 'hidden' }}>
+                    <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace', letterSpacing: 1 }}>{c.code}</span>
+                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: badge.bg, color: badge.color }}>
+                            {badge.label}
+                          </span>
+                          {isAllStores && c.storeId && storeNameMap[c.storeId] && (
+                            <span style={{ fontSize: 11, color: '#888' }}>🏪 {storeNameMap[c.storeId]}</span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 13, color: '#555' }}>
+                          {c.discountType === 'PERCENT' ? `${c.discountValue}% 할인` : `${c.discountValue.toLocaleString()}원 할인`}
+                          {c.minOrderAmount > 0 && ` · 최소 ${c.minOrderAmount.toLocaleString()}원`}
+                          {c.maxUses > 0 && ` · ${c.usedCount}/${c.maxUses} 사용`}
+                          {c.expiresAt && ` · ~${new Date(c.expiresAt).toLocaleDateString('ko-KR')}`}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => setImageOpenId(imageOpenId === c.id ? null : c.id)}
+                          style={{
+                            padding: '5px 10px', fontSize: 12, borderRadius: 6,
+                            border: '1px solid #ff6b35',
+                            background: imageOpenId === c.id ? '#ff6b35' : '#fff',
+                            color: imageOpenId === c.id ? '#fff' : '#ff6b35',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          🖼️
+                        </button>
+                        {c.isActive && (
+                          <button
+                            onClick={() => handleDeactivate(c.id)}
+                            style={{ padding: '5px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', color: '#666' }}
+                          >
+                            비활성화
+                          </button>
                         )}
                       </div>
-                      <div style={{ fontSize: 13, color: '#555' }}>
-                        {c.discountType === 'PERCENT' ? `${c.discountValue}% 할인` : `${c.discountValue.toLocaleString()}원 할인`}
-                        {c.minOrderAmount > 0 && ` · 최소 ${c.minOrderAmount.toLocaleString()}원`}
-                        {c.maxUses > 0 && ` · ${c.usedCount}/${c.maxUses} 사용`}
-                        {c.expiresAt && ` · ~${new Date(c.expiresAt).toLocaleDateString('ko-KR')}`}
-                      </div>
                     </div>
-                    {c.isActive && (
-                      <button
-                        onClick={() => handleDeactivate(c.id)}
-                        style={{ padding: '5px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', color: '#666' }}
-                      >
-                        비활성화
-                      </button>
+                    {imageOpenId === c.id && (
+                      <div style={{ padding: '10px 16px', borderTop: '1px solid #eee', background: '#fff8f5' }}>
+                        <div style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>쿠폰 이미지 관리</div>
+                        <ImageManagerWidget entityType="coupons" entityId={c.id} readonly={isAllStores} />
+                      </div>
                     )}
                   </div>
                 );

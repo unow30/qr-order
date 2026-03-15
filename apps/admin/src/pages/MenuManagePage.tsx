@@ -4,6 +4,7 @@ import { MenuCategory, MenuItem } from '@qr-order/shared-types';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useAuthStore } from '../stores/authStore';
 import { useStoreNames } from '../hooks/useStoreNames';
+import ImageManagerWidget from '../components/ImageManagerWidget';
 
 type DeleteTarget =
   | { type: 'category'; id: string; name: string }
@@ -24,6 +25,7 @@ export default function MenuManagePage() {
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [stockEdit, setStockEdit] = useState<StockEditState | null>(null);
   const [stockSaving, setStockSaving] = useState(false);
+  const [imageOpenId, setImageOpenId] = useState<string | null>(null);
   const { currentStoreId, isSuperAdmin } = useAuthStore();
   const superAdmin = isSuperAdmin();
   const isAllStores = superAdmin && !currentStoreId;
@@ -146,15 +148,35 @@ export default function MenuManagePage() {
                 <span style={{ fontSize: 12, color: '#888' }}>🏪 {storeNameMap[cat.storeId]}</span>
               )}
             </div>
-            {!isAllStores && (
+            <div style={{ display: 'flex', gap: 6 }}>
               <button
-                onClick={() => setDeleteTarget({ type: 'category', id: cat.id, name: cat.name })}
-                style={{ background: 'none', color: '#e53935', border: '1px solid #e53935', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}
+                onClick={() => setImageOpenId(imageOpenId === `cat-${cat.id}` ? null : `cat-${cat.id}`)}
+                style={{
+                  background: imageOpenId === `cat-${cat.id}` ? '#ff6b35' : 'none',
+                  color: imageOpenId === `cat-${cat.id}` ? '#fff' : '#ff6b35',
+                  border: '1px solid #ff6b35', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12,
+                }}
               >
-                삭제
+                🖼️ 이미지
               </button>
-            )}
+              {!isAllStores && (
+                <button
+                  onClick={() => setDeleteTarget({ type: 'category', id: cat.id, name: cat.name })}
+                  style={{ background: 'none', color: '#e53935', border: '1px solid #e53935', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}
+                >
+                  삭제
+                </button>
+              )}
+            </div>
           </div>
+          {/* 카테고리 이미지 패널 */}
+          {imageOpenId === `cat-${cat.id}` && (
+            <div style={{ margin: '4px 0 12px', padding: '12px 16px', background: '#fff8f5', borderRadius: 8, border: '1px solid #ffd5c2' }}>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>카테고리 이미지 관리</div>
+              <ImageManagerWidget entityType="menu-categories" entityId={cat.id} readonly={isAllStores} />
+            </div>
+          )}
+
           {cat.items?.map((item) => (
             <div key={item.id}>
               {/* 메뉴 아이템 행 */}
@@ -198,6 +220,20 @@ export default function MenuManagePage() {
                       }}
                     >
                       재고
+                    </button>
+                    <button
+                      onClick={() => setImageOpenId(imageOpenId === `item-${item.id}` ? null : `item-${item.id}`)}
+                      style={{
+                        background: imageOpenId === `item-${item.id}` ? '#ff6b35' : 'none',
+                        color: imageOpenId === `item-${item.id}` ? '#fff' : '#ff6b35',
+                        border: '1px solid #ff6b35',
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        fontSize: 11,
+                      }}
+                    >
+                      🖼️
                     </button>
                     <button
                       onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
@@ -263,6 +299,14 @@ export default function MenuManagePage() {
                       취소
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* 아이템 이미지 패널 */}
+              {imageOpenId === `item-${item.id}` && (
+                <div style={{ margin: '4px 0 8px', padding: '12px 16px', background: '#fff8f5', borderRadius: 8, border: '1px solid #ffd5c2' }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>메뉴 이미지 관리</div>
+                  <ImageManagerWidget entityType="menu-items" entityId={item.id} readonly={isAllStores} />
                 </div>
               )}
             </div>
