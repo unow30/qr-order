@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { LoginDto } from './dto/login.dto';
+import { StoreEntity } from '../store/entities/store.entity';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -16,7 +17,7 @@ export class AuthController {
   @ApiBody({ type: LoginDto })
   login(
     @Request()
-    req: { user: { id: string; username: string; role: string; storeId: string | null } },
+    req: { user: { id: string; username: string; role: string; stores: StoreEntity[] } },
   ) {
     return this.authService.login(req.user);
   }

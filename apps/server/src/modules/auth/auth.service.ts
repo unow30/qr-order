@@ -5,11 +5,12 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { AdminEntity } from './entities/admin.entity';
+import { StoreEntity } from '../store/entities/store.entity';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { JwtPayload } from '@qr-order/shared-types';
 
@@ -18,6 +19,8 @@ export class AuthService implements OnModuleInit {
   constructor(
     @InjectRepository(AdminEntity)
     private readonly adminRepository: Repository<AdminEntity>,
+    @InjectRepository(StoreEntity)
+    private readonly storeRepository: Repository<StoreEntity>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -36,7 +39,7 @@ export class AuthService implements OnModuleInit {
         username,
         password: hashedPassword,
         role: 'SUPER_ADMIN',
-        storeId: null,
+        stores: [],
       }),
     );
   }
@@ -44,41 +47,45 @@ export class AuthService implements OnModuleInit {
   async validateUser(
     username: string,
     password: string,
-  ): Promise<{ id: string; username: string; role: string; storeId: string | null } | null> {
+  ): Promise<{ id: string; username: string; role: string; stores: StoreEntity[] } | null> {
     const admin = await this.adminRepository.findOne({
       where: { username, isActive: true },
+      relations: ['stores'],
     });
     if (!admin) return null;
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) return null;
 
-    return { id: admin.id, username: admin.username, role: admin.role, storeId: admin.storeId };
+    return { id: admin.id, username: admin.username, role: admin.role, stores: admin.stores ?? [] };
   }
 
   login(user: {
     id: string;
     username: string;
     role: string;
-    storeId: string | null;
+    stores: StoreEntity[];
   }): { accessToken: string } {
     const payload: JwtPayload = {
       sub: user.id,
       username: user.username,
       role: user.role as JwtPayload['role'],
-      storeId: user.storeId ?? undefined,
+      storeIds: user.stores?.map((s) => s.id) ?? [],
     };
     return { accessToken: this.jwtService.sign(payload) };
   }
 
   async findAllAdmins(): Promise<Omit<AdminEntity, 'password'>[]> {
-    const admins = await this.adminRepository.find({ order: { createdAt: 'ASC' } });
+    const admins = await this.adminRepository.find({
+      relations: ['stores'],
+      order: { createdAt: 'ASC' },
+    });
     return admins.map(({ password: _pw, ...rest }) => rest);
   }
 
   async createAdmin(dto: CreateAdminDto): Promise<Omit<AdminEntity, 'password'>> {
-    if (dto.role === 'STORE_ADMIN' && !dto.storeId) {
-      throw new BadRequestException('STORE_ADMIN은 storeId가 필요합니다.');
+    if (dto.role === 'STORE_ADMIN' && (!dto.storeIds || dto.storeIds.length === 0)) {
+      throw new BadRequestException('STORE_ADMIN은 storeIds가 필요합니다.');
     }
 
     const existing = await this.adminRepository.findOne({ where: { username: dto.username } });
@@ -88,10 +95,17 @@ export class AuthService implements OnModuleInit {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const admin = this.adminRepository.create({
-      ...dto,
+      username: dto.username,
       password: hashedPassword,
-      storeId: dto.storeId ?? null,
+      role: dto.role,
     });
+
+    if (dto.role === 'STORE_ADMIN' && dto.storeIds?.length) {
+      admin.stores = await this.storeRepository.findBy({ id: In(dto.storeIds) });
+    } else {
+      admin.stores = [];
+    }
+
     const saved = await this.adminRepository.save(admin);
     const { password: _pw, ...result } = saved;
     return result;

@@ -11,7 +11,7 @@ import { Request } from 'express';
 
 interface RequestWithStoreId extends Request {
   storeId?: string;
-  user?: { role?: string; storeId?: string };
+  user?: { role?: string; storeIds?: string[] };
 }
 
 /**
@@ -35,7 +35,9 @@ export class RlsInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<RequestWithStoreId>();
-    const storeId = req.storeId ?? req.user?.storeId ?? '';
+    const userStoreIds = req.user?.storeIds ?? [];
+    // X-Store-Id 헤더 우선, 없으면 STORE_ADMIN 단일 매장 자동 사용
+    const storeId = req.storeId ?? (userStoreIds.length === 1 ? userStoreIds[0] : '') ?? '';
     const role = req.user?.role ?? '';
 
     return from(this.setRlsVariables(storeId, role)).pipe(

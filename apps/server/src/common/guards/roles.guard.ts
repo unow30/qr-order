@@ -24,7 +24,7 @@ export class RolesGuard implements CanActivate {
     ]);
 
     const request = context.switchToHttp().getRequest<{
-      user: { userId: string; username: string; role: AdminRole; storeId: string | null };
+      user: { userId: string; username: string; role: AdminRole; storeIds: string[] };
       storeId: string | null;
     }>();
 
@@ -38,10 +38,10 @@ export class RolesGuard implements CanActivate {
       }
     }
 
-    // STORE_ADMIN이 다른 매장 데이터 접근 차단
+    // STORE_ADMIN이 담당하지 않는 매장 데이터 접근 차단
     if (user.role === 'STORE_ADMIN' && request.storeId) {
-      if (user.storeId !== request.storeId) {
-        throw new ForbiddenException('본인 매장의 데이터만 접근할 수 있습니다.');
+      if (!user.storeIds?.includes(request.storeId)) {
+        throw new ForbiddenException('본인 담당 매장의 데이터만 접근할 수 있습니다.');
       }
     }
 

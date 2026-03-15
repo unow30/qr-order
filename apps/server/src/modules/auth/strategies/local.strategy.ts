@@ -12,7 +12,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   async validate(
     username: string,
     password: string,
-  ): Promise<{ id: string; username: string; role: string; storeId: string | null }> {
+  ): Promise<{ id: string; username: string; role: string; stores: import('../entities/admin.entity').AdminEntity['stores'] }> {
     const user = await this.authService.validateUser(username, password);
     if (!user) {
       throw new UnauthorizedException('아이디 또는 비밀번호가 올바르지 않습니다.');

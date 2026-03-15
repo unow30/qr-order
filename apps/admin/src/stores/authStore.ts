@@ -7,11 +7,11 @@ interface AuthState {
   accessToken: string | null;
   username: string | null;
   role: AdminRole | null;
-  /** 로그인한 어드민의 고유 storeId (STORE_ADMIN이면 본인 매장, SUPER_ADMIN이면 null) */
-  storeId: string | null;
-  /** 현재 선택된 매장 ID (SUPER_ADMIN은 전환 가능, STORE_ADMIN은 storeId와 동일) */
+  /** 로그인한 어드민의 담당 매장 ID 목록 (STORE_ADMIN이면 1개 이상, SUPER_ADMIN이면 빈 배열) */
+  storeIds: string[];
+  /** 현재 선택된 매장 ID (SUPER_ADMIN/다중 담당 STORE_ADMIN은 전환 가능, 단일 담당 STORE_ADMIN은 자동 설정) */
   currentStoreId: string | null;
-  setAuth: (token: string, username: string, role: AdminRole, storeId: string | null) => void;
+  setAuth: (token: string, username: string, role: AdminRole, storeIds: string[]) => void;
   setCurrentStoreId: (storeId: string | null) => void;
   clearAuth: () => void;
   isAuthenticated: () => boolean;
@@ -24,20 +24,20 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       username: null,
       role: null,
-      storeId: null,
+      storeIds: [],
       currentStoreId: null,
-      setAuth: (accessToken, username, role, storeId) =>
+      setAuth: (accessToken, username, role, storeIds) =>
         set({
           accessToken,
           username,
           role,
-          storeId,
-          // STORE_ADMIN은 본인 매장이 currentStoreId, SUPER_ADMIN은 미선택 상태로 시작
-          currentStoreId: role === 'STORE_ADMIN' ? storeId : null,
+          storeIds,
+          // 단일 담당 STORE_ADMIN은 자동 선택, 다중 담당/SUPER_ADMIN은 미선택 상태로 시작
+          currentStoreId: role === 'STORE_ADMIN' && storeIds.length === 1 ? storeIds[0] : null,
         }),
       setCurrentStoreId: (storeId) => set({ currentStoreId: storeId }),
       clearAuth: () =>
-        set({ accessToken: null, username: null, role: null, storeId: null, currentStoreId: null }),
+        set({ accessToken: null, username: null, role: null, storeIds: [], currentStoreId: null }),
       isAuthenticated: () => !!get().accessToken,
       isSuperAdmin: () => get().role === 'SUPER_ADMIN',
     }),

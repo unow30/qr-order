@@ -12,7 +12,7 @@ export interface AdminAccount {
   id: string;
   username: string;
   role: 'SUPER_ADMIN' | 'STORE_ADMIN';
-  storeId: string | null;
+  stores: Store[];
   isActive: boolean;
   createdAt: string;
 }
@@ -35,5 +35,5 @@ export const createAdmin = (data: {
   username: string;
   password: string;
   role: 'SUPER_ADMIN' | 'STORE_ADMIN';
-  storeId?: string;
+  storeIds?: string[];
 }): Promise<AdminAccount> => client.post('/admins', data);
