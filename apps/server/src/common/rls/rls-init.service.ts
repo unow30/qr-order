@@ -17,7 +17,7 @@ const PROTECTED_TABLES = [
   'menu_categories',
   'orders',
   'tables',
-  'qr_tokens',
+  // qr_tokens는 storeId 컬럼 없음 (tables 테이블과 FK로 간접 보호됨)
 ];
 
 @Injectable()

@@ -1,6 +1,8 @@
-import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common';
+import { Injectable, NestMiddleware, ForbiddenException, Inject } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { StoreService } from '../../modules/store/store.service';
+import { REDIS_CLIENT } from '../../config/redis.config';
+import Redis from 'ioredis';
 
 export interface RequestWithStore extends Request {
   storeId: string | null;
@@ -8,24 +10,35 @@ export interface RequestWithStore extends Request {
 
 @Injectable()
 export class StoreContextMiddleware implements NestMiddleware {
-  constructor(private readonly storeService: StoreService) {}
+  constructor(
+    private readonly storeService: StoreService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+  ) {}
 
   async use(req: RequestWithStore, _res: Response, next: NextFunction): Promise<void> {
     const storeIdHeader = req.headers['x-store-id'] as string | undefined;
 
-    if (!storeIdHeader) {
-      req.storeId = null;
+    if (storeIdHeader) {
+      const store = await this.storeService.findBySlug(storeIdHeader).catch(() => null)
+        ?? await this.storeService.findOne(storeIdHeader).catch(() => null);
+
+      if (!store || !store.isActive) {
+        throw new ForbiddenException('유효하지 않거나 비활성화된 매장입니다.');
+      }
+
+      req.storeId = store.id;
       return next();
     }
 
-    const store = await this.storeService.findBySlug(storeIdHeader).catch(() => null)
-      ?? await this.storeService.findOne(storeIdHeader).catch(() => null);
-
-    if (!store || !store.isActive) {
-      throw new ForbiddenException('유효하지 않거나 비활성화된 매장입니다.');
+    // X-Store-Id 없으면 세션 토큰으로 storeId 역조회
+    const sessionToken = req.headers['x-session-token'] as string | undefined;
+    if (sessionToken) {
+      const storeId = await this.redis.get(`session-lookup:${sessionToken}`);
+      req.storeId = storeId ?? null;
+    } else {
+      req.storeId = null;
     }
 
-    req.storeId = store.id;
     next();
   }
 }

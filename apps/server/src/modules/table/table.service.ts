@@ -23,10 +23,10 @@ export class TableService {
   }
 
   async findAllWithTokens(
-    storeId: string,
+    storeId: string | null,
   ): Promise<{ table: TableEntity; token: string | null }[]> {
     const tables = await this.tableRepository.find({
-      where: { storeId },
+      where: storeId ? { storeId } : undefined,
       order: { tableNumber: 'ASC' },
     });
     return Promise.all(

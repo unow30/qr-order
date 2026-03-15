@@ -32,7 +32,7 @@ export class TableController {
 
   @Get('dev/with-tokens')
   @ApiExcludeEndpoint()
-  async findAllWithTokens(@CurrentStoreId() storeId: string) {
+  async findAllWithTokens(@CurrentStoreId(false) storeId: string | null) {
     if (this.configService.get('NODE_ENV') === 'production') {
       return { message: '프로덕션 환경에서는 사용할 수 없습니다.' };
     }

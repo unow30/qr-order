@@ -21,7 +21,7 @@ export class AdminEntity {
   @Column({ type: 'varchar', default: 'STORE_ADMIN' })
   role: AdminRole;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   storeId: string | null;
 
   @Column({ default: true })
