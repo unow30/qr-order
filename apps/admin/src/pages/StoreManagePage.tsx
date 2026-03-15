@@ -9,6 +9,7 @@ import {
   AdminAccount,
 } from '../api/store.api';
 import client from '../api/client';
+import ImageManagerWidget from '../components/ImageManagerWidget';
 
 interface DeployResult {
   targetStoreId: string;
@@ -74,6 +75,7 @@ export default function StoreManagePage() {
   const [deployLoading, setDeployLoading] = useState(false);
   const [deployResults, setDeployResults] = useState<DeployResult[] | null>(null);
   const [deployError, setDeployError] = useState('');
+  const [imageOpenId, setImageOpenId] = useState<string | null>(null);
 
   const load = async () => {
     const [s, a] = await Promise.all([getStores(), getAdmins()]);
@@ -199,42 +201,62 @@ export default function StoreManagePage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {stores.map((store) => (
-                  <div
-                    key={store.id}
-                    onClick={() => setSelectedStore(store.id === selectedStore?.id ? null : store)}
-                    style={{
-                      padding: '12px 16px',
-                      borderRadius: 8,
-                      border: `2px solid ${selectedStore?.id === store.id ? '#ff6b35' : '#eee'}`,
-                      cursor: 'pointer',
-                      background: selectedStore?.id === store.id ? '#fff3e0' : '#fafafa',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>{store.name}</span>
-                      <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>{store.slug}</span>
+                  <div key={store.id}>
+                    <div
+                      onClick={() => setSelectedStore(store.id === selectedStore?.id ? null : store)}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: imageOpenId === store.id ? '8px 8px 0 0' : 8,
+                        border: `2px solid ${selectedStore?.id === store.id ? '#ff6b35' : '#eee'}`,
+                        borderBottom: imageOpenId === store.id ? 'none' : undefined,
+                        cursor: 'pointer',
+                        background: selectedStore?.id === store.id ? '#fff3e0' : '#fafafa',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>{store.name}</span>
+                        <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>{store.slug}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{
+                          fontSize: 11, padding: '2px 8px', borderRadius: 10,
+                          background: store.isActive ? '#e8f5e9' : '#fce4ec',
+                          color: store.isActive ? '#2e7d32' : '#c62828',
+                        }}>
+                          {store.isActive ? '운영 중' : '비활성'}
+                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleToggleActive(store); }}
+                          style={{
+                            padding: '4px 10px', fontSize: 12, borderRadius: 6,
+                            border: '1px solid #ddd', background: '#fff', cursor: 'pointer',
+                          }}
+                        >
+                          {store.isActive ? '비활성화' : '활성화'}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setImageOpenId(imageOpenId === store.id ? null : store.id); }}
+                          style={{
+                            padding: '4px 10px', fontSize: 12, borderRadius: 6,
+                            border: '1px solid #ff6b35',
+                            background: imageOpenId === store.id ? '#ff6b35' : '#fff',
+                            color: imageOpenId === store.id ? '#fff' : '#ff6b35',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          🖼️
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{
-                        fontSize: 11, padding: '2px 8px', borderRadius: 10,
-                        background: store.isActive ? '#e8f5e9' : '#fce4ec',
-                        color: store.isActive ? '#2e7d32' : '#c62828',
-                      }}>
-                        {store.isActive ? '운영 중' : '비활성'}
-                      </span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleToggleActive(store); }}
-                        style={{
-                          padding: '4px 10px', fontSize: 12, borderRadius: 6,
-                          border: '1px solid #ddd', background: '#fff', cursor: 'pointer',
-                        }}
-                      >
-                        {store.isActive ? '비활성화' : '활성화'}
-                      </button>
-                    </div>
+                    {imageOpenId === store.id && (
+                      <div style={{ padding: '10px 16px', background: '#fff8f5', borderRadius: '0 0 8px 8px', border: '2px solid #eee', borderTop: '1px solid #f0f0f0' }}>
+                        <div style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>매장 이미지 관리</div>
+                        <ImageManagerWidget entityType="stores" entityId={store.id} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

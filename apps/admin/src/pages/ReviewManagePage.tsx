@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getReviews, toggleReviewVisibility, deleteReview, ReviewItem } from '../api/review.api';
 import { useAuthStore } from '../stores/authStore';
 import { useStoreNames } from '../hooks/useStoreNames';
+import ImageManagerWidget from '../components/ImageManagerWidget';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -16,6 +17,7 @@ export default function ReviewManagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'visible' | 'hidden'>('all');
+  const [imageOpenId, setImageOpenId] = useState<string | null>(null);
   const { currentStoreId, isSuperAdmin } = useAuthStore();
   const superAdmin = isSuperAdmin();
   const isAllStores = superAdmin && !currentStoreId;
@@ -167,9 +169,26 @@ export default function ReviewManagePage() {
                     </p>
                   )}
                   {/* 메타 정보 */}
-                  <p style={{ margin: 0, fontSize: 12, color: '#9ca3af' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, color: '#9ca3af' }}>
                     {new Date(review.createdAt).toLocaleString('ko-KR')}
                   </p>
+                  {/* 리뷰 이미지 토글 */}
+                  <button
+                    onClick={() => setImageOpenId(imageOpenId === review.id ? null : review.id)}
+                    style={{
+                      padding: '3px 10px', fontSize: 11, borderRadius: 6,
+                      border: '1px solid #d1d5db',
+                      background: imageOpenId === review.id ? '#f3f4f6' : '#fff',
+                      color: '#6b7280', cursor: 'pointer',
+                    }}
+                  >
+                    🖼️ 첨부 이미지
+                  </button>
+                  {imageOpenId === review.id && (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f3f4f6' }}>
+                      <ImageManagerWidget entityType="reviews" entityId={review.id} readonly={true} />
+                    </div>
+                  )}
                 </div>
 
                 {/* 액션 버튼 */}

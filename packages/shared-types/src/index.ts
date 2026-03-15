@@ -7,6 +7,7 @@ export * from './entities/order.types';
 export * from './entities/payment.types';
 export * from './entities/coupon.types';
 export * from './entities/review.types';
+export * from './entities/image.types';
 
 // API DTOs
 export * from './api/session.dto';
@@ -17,3 +18,4 @@ export * from './api/payment.dto';
 export * from './api/report.dto';
 export * from './api/coupon.dto';
 export * from './api/review.dto';
+export * from './api/image.dto';

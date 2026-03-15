@@ -14,12 +14,16 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiHeader } from '@nestjs/swagger
 import { ReviewService } from './review.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
-import { CreateReviewDto } from '@qr-order/shared-types';
+import { CreateReviewDto, CreateReviewImageDto } from '@qr-order/shared-types';
+import { ImageService } from '../image/image.service';
 
 @ApiTags('reviews')
 @Controller('reviews')
 export class ReviewController {
-  constructor(private readonly reviewService: ReviewService) {}
+  constructor(
+    private readonly reviewService: ReviewService,
+    private readonly imageService: ImageService,
+  ) {}
 
   /**
    * 고객: 리뷰 작성 (JWT 불필요, X-Session-Token 필수)
@@ -35,6 +39,39 @@ export class ReviewController {
   ) {
     if (!sessionToken) throw new UnauthorizedException('세션 토큰이 필요합니다.');
     return this.reviewService.create(storeId, sessionToken, dto);
+  }
+
+  /**
+   * 고객: 리뷰 이미지 업로드 (JWT 불필요, X-Session-Token 필수)
+   * POST /api/reviews/:id/images
+   */
+  @Post(':id/images')
+  @ApiOperation({ summary: '리뷰 이미지 추가 (고객, X-Session-Token 필수)' })
+  @ApiHeader({ name: 'X-Session-Token', required: true })
+  addReviewImage(
+    @CurrentStoreId() storeId: string,
+    @Param('id') reviewId: string,
+    @Headers('x-session-token') sessionToken: string,
+    @Body() dto: CreateReviewImageDto,
+  ) {
+    if (!sessionToken) throw new UnauthorizedException('세션 토큰이 필요합니다.');
+    return this.imageService.createReviewImage(reviewId, storeId, dto.imageUrl);
+  }
+
+  /**
+   * 어드민: 리뷰 이미지 삭제
+   * DELETE /api/reviews/:id/images/:imageId
+   */
+  @Delete(':id/images/:imageId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '리뷰 이미지 삭제 (어드민)' })
+  async removeReviewImage(
+    @Param('id') reviewId: string,
+    @Param('imageId') imageId: string,
+  ) {
+    await this.imageService.removeReviewImage(reviewId, imageId);
+    return { message: '삭제되었습니다.' };
   }
 
   /**
