@@ -19,6 +19,9 @@ export class MenuItem {
   @Column()
   categoryId: string;
 
+  @Column({ default: '' })
+  storeId: string;
+
   @Column()
   name: string;
 

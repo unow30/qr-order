@@ -29,8 +29,8 @@ export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
   @Get()
-  @ApiOperation({ summary: '메뉴 전체 조회 (Redis 캐시). X-Store-Id 헤더 필수.' })
-  getMenu(@CurrentStoreId() storeId: string) {
+  @ApiOperation({ summary: '메뉴 전체 조회 (Redis 캐시). SUPER_ADMIN은 storeId 없이 전체 조회 가능.' })
+  getMenu(@CurrentStoreId(false) storeId: string | null) {
     return this.menuService.getMenu(storeId);
   }
 

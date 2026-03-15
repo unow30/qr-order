@@ -15,6 +15,9 @@ export class PaymentEntity {
   @Column()
   orderId: string;
 
+  @Column({ default: '' })
+  storeId: string;
+
   @Column({ nullable: true })
   pgPaymentId: string;
 

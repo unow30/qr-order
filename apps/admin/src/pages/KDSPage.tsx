@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import { getOrders, updateOrderStatus } from '../api/order.api';
 import { Order, OrderStatus } from '@qr-order/shared-types';
+import { useAuthStore } from '../stores/authStore';
+import { useStoreNames } from '../hooks/useStoreNames';
 
 export default function KDSPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const { currentStoreId, isSuperAdmin } = useAuthStore();
+  const superAdmin = isSuperAdmin();
+  const isAllStores = superAdmin && !currentStoreId;
+  const storeNameMap = useStoreNames();
 
   const fetchOrders = () =>
     getOrders().then((all) =>
@@ -14,7 +20,7 @@ export default function KDSPage() {
     fetchOrders();
     const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentStoreId]);
 
   const handleStartPreparing = async (id: string) => {
     await updateOrderStatus(id, { status: OrderStatus.PREPARING });
@@ -29,7 +35,18 @@ export default function KDSPage() {
   return (
     <div style={{ height: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ margin: 0 }}>주방 디스플레이 (KDS)</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <h2 style={{ margin: 0 }}>주방 디스플레이 (KDS)</h2>
+          {superAdmin && (
+            <span style={{
+              padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+              background: isAllStores ? '#e8f5e9' : '#e3f2fd',
+              color: isAllStores ? '#1b5e20' : '#0d47a1',
+            }}>
+              {isAllStores ? '전체 매장' : (storeNameMap[currentStoreId!] || '선택된 매장')}
+            </span>
+          )}
+        </div>
         <span style={{ fontSize: 13, color: '#888' }}>5초마다 자동 갱신</span>
       </div>
 
@@ -43,12 +60,17 @@ export default function KDSPage() {
               borderTop: `4px solid ${order.status === OrderStatus.PREPARING ? '#4caf50' : '#ff9800'}`,
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <h3 style={{ margin: 0, fontSize: 20 }}>{order.tableNumber}번 테이블</h3>
               <span style={{ fontSize: 12, color: '#888' }}>
                 {new Date(order.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
+            {isAllStores && order.storeId && storeNameMap[order.storeId] && (
+              <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
+                🏪 {storeNameMap[order.storeId]}
+              </div>
+            )}
             {order.items?.map((item) => (
               <div key={item.id} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>

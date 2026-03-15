@@ -9,11 +9,12 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { AdminEntity } from './entities/admin.entity';
+import { StoreEntity } from '../store/entities/store.entity';
 import { getJwtConfig } from '../../config/jwt.config';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AdminEntity]),
+    TypeOrmModule.forFeature([AdminEntity, StoreEntity]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

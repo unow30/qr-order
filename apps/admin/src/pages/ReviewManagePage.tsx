@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getReviews, toggleReviewVisibility, deleteReview, ReviewItem } from '../api/review.api';
+import { useAuthStore } from '../stores/authStore';
+import { useStoreNames } from '../hooks/useStoreNames';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -14,6 +16,10 @@ export default function ReviewManagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'visible' | 'hidden'>('all');
+  const { currentStoreId, isSuperAdmin } = useAuthStore();
+  const superAdmin = isSuperAdmin();
+  const isAllStores = superAdmin && !currentStoreId;
+  const storeNameMap = useStoreNames();
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -28,7 +34,7 @@ export default function ReviewManagePage() {
     }
   };
 
-  useEffect(() => { fetchReviews(); }, []);
+  useEffect(() => { fetchReviews(); }, [currentStoreId]);
 
   const handleToggleVisibility = async (id: string) => {
     await toggleReviewVisibility(id);
@@ -56,7 +62,18 @@ export default function ReviewManagePage() {
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 24px' }}>리뷰 관리</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h2 style={{ margin: 0 }}>리뷰 관리</h2>
+        {superAdmin && (
+          <span style={{
+            padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+            background: isAllStores ? '#e8f5e9' : '#e3f2fd',
+            color: isAllStores ? '#1b5e20' : '#0d47a1',
+          }}>
+            {isAllStores ? '전체 매장' : (storeNameMap[currentStoreId!] || '선택된 매장')}
+          </span>
+        )}
+      </div>
 
       {/* 통계 카드 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
@@ -135,6 +152,11 @@ export default function ReviewManagePage() {
                     {!review.isVisible && (
                       <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 10, background: '#f3f4f6', color: '#6b7280' }}>
                         비공개
+                      </span>
+                    )}
+                    {isAllStores && review.storeId && storeNameMap[review.storeId] && (
+                      <span style={{ fontSize: 11, color: '#888', marginLeft: 4 }}>
+                        🏪 {storeNameMap[review.storeId]}
                       </span>
                     )}
                   </div>

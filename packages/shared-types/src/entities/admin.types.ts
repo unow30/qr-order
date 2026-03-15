@@ -4,7 +4,7 @@ export interface Admin {
   id: string;
   username: string;
   role: AdminRole;
-  storeId?: string;
+  storeIds?: string[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -14,5 +14,5 @@ export interface JwtPayload {
   sub: string;
   username: string;
   role: AdminRole;
-  storeId?: string;
+  storeIds?: string[];
 }

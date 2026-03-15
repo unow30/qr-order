@@ -43,7 +43,7 @@ export class OrderController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '전체 주문 목록 (어드민)' })
-  findAll(@CurrentStoreId() storeId: string) {
+  findAll(@CurrentStoreId(false) storeId: string | null) {
     return this.orderService.findAll(storeId);
   }
 

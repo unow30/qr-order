@@ -28,7 +28,7 @@ export class CouponController {
   @Roles('SUPER_ADMIN', 'STORE_ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: '쿠폰 목록 조회 (어드민)' })
-  findAll(@CurrentStoreId() storeId: string) {
+  findAll(@CurrentStoreId(false) storeId: string | null) {
     return this.couponService.findAll(storeId);
   }
 

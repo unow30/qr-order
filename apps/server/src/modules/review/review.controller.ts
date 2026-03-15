@@ -45,7 +45,7 @@ export class ReviewController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '전체 리뷰 조회 (어드민)' })
-  findAll(@CurrentStoreId() storeId: string) {
+  findAll(@CurrentStoreId(false) storeId: string | null) {
     return this.reviewService.findAll(storeId);
   }
 

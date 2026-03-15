@@ -4,8 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { AdminRole } from '@qr-order/shared-types';
+import { StoreEntity } from '../../store/entities/store.entity';
 
 @Entity('admins')
 export class AdminEntity {
@@ -21,8 +24,13 @@ export class AdminEntity {
   @Column({ type: 'varchar', default: 'STORE_ADMIN' })
   role: AdminRole;
 
-  @Column({ nullable: true })
-  storeId: string | null;
+  @ManyToMany(() => StoreEntity, { eager: false, cascade: false })
+  @JoinTable({
+    name: 'admin_stores',
+    joinColumn: { name: 'admin_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'store_id', referencedColumnName: 'id' },
+  })
+  stores: StoreEntity[];
 
   @Column({ default: true })
   isActive: boolean;

@@ -26,13 +26,13 @@ export class TableController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '테이블 목록 조회' })
-  findAll(@CurrentStoreId() storeId: string) {
+  findAll(@CurrentStoreId(false) storeId: string | null) {
     return this.tableService.findAll(storeId);
   }
 
   @Get('dev/with-tokens')
   @ApiExcludeEndpoint()
-  async findAllWithTokens(@CurrentStoreId() storeId: string) {
+  async findAllWithTokens(@CurrentStoreId(false) storeId: string | null) {
     if (this.configService.get('NODE_ENV') === 'production') {
       return { message: '프로덕션 환경에서는 사용할 수 없습니다.' };
     }

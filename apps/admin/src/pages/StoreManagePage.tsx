@@ -9,16 +9,7 @@ import {
   AdminAccount,
 } from '../api/store.api';
 import client from '../api/client';
-import { DeployMenuResult } from '../api/report.api';
 
-// deploy API (report.api에서 타입만 재사용, 호출은 직접)
-const deployMenu = (data: {
-  sourceStoreId: string;
-  targetStoreIds: string[];
-  clearTarget: boolean;
-}): Promise<DeployMenuResult[]> => client.post('/menu/deploy', data);
-
-// DeployMenuResult 타입 재정의 (import 대신 inline)
 interface DeployResult {
   targetStoreId: string;
   success: boolean;
@@ -26,6 +17,12 @@ interface DeployResult {
   itemsCreated: number;
   error?: string;
 }
+
+const deployMenu = (data: {
+  sourceStoreId: string;
+  targetStoreIds: string[];
+  clearTarget: boolean;
+}): Promise<DeployResult[]> => client.post('/menu/deploy', data);
 
 const cardStyle: React.CSSProperties = {
   background: '#fff',
@@ -67,6 +64,7 @@ export default function StoreManagePage() {
   const [newAdminUsername, setNewAdminUsername] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [adminRole, setAdminRole] = useState<'SUPER_ADMIN' | 'STORE_ADMIN'>('STORE_ADMIN');
+  const [adminStoreIds, setAdminStoreIds] = useState<string[]>([]);
   const [adminError, setAdminError] = useState('');
 
   // 메뉴 배포 폼
@@ -104,6 +102,12 @@ export default function StoreManagePage() {
     load();
   };
 
+  const toggleAdminStore = (id: string) => {
+    setAdminStoreIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAdminError('');
@@ -112,10 +116,11 @@ export default function StoreManagePage() {
         username: newAdminUsername,
         password: newAdminPassword,
         role: adminRole,
-        storeId: adminRole === 'STORE_ADMIN' ? selectedStore?.id : undefined,
+        storeIds: adminRole === 'STORE_ADMIN' ? adminStoreIds : undefined,
       });
       setNewAdminUsername('');
       setNewAdminPassword('');
+      setAdminStoreIds([]);
       load();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -153,7 +158,7 @@ export default function StoreManagePage() {
   };
 
   const storeAdmins = selectedStore
-    ? admins.filter((a) => a.storeId === selectedStore.id)
+    ? admins.filter((a) => a.stores?.some((s) => s.id === selectedStore.id))
     : admins.filter((a) => a.role === 'SUPER_ADMIN');
 
   return (
@@ -326,11 +331,6 @@ export default function StoreManagePage() {
           {/* 어드민 생성 폼 */}
           <div style={cardStyle}>
             <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>어드민 계정 생성</h3>
-            {adminRole === 'STORE_ADMIN' && !selectedStore && (
-              <p style={{ fontSize: 12, color: '#ff6b35', margin: '0 0 12px' }}>
-                왼쪽에서 매장을 선택하세요.
-              </p>
-            )}
             <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
               <input
                 style={inputStyle}
@@ -351,21 +351,37 @@ export default function StoreManagePage() {
               <select
                 style={inputStyle}
                 value={adminRole}
-                onChange={(e) => setAdminRole(e.target.value as 'SUPER_ADMIN' | 'STORE_ADMIN')}
+                onChange={(e) => {
+                  setAdminRole(e.target.value as 'SUPER_ADMIN' | 'STORE_ADMIN');
+                  setAdminStoreIds([]);
+                }}
               >
                 <option value="STORE_ADMIN">매장 어드민</option>
                 <option value="SUPER_ADMIN">슈퍼 어드민</option>
               </select>
-              {adminRole === 'STORE_ADMIN' && selectedStore && (
-                <div style={{ padding: '8px 12px', background: '#f0f0f0', borderRadius: 6, fontSize: 13, color: '#555' }}>
-                  연결 매장: <strong>{selectedStore.name}</strong>
+              {adminRole === 'STORE_ADMIN' && (
+                <div>
+                  <p style={{ fontSize: 12, color: '#555', margin: '0 0 6px' }}>담당 매장 선택 (1개 이상)</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 12px', background: '#f9f9f9', borderRadius: 8, border: '1px solid #eee' }}>
+                    {stores.map((s) => (
+                      <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={adminStoreIds.includes(s.id)}
+                          onChange={() => toggleAdminStore(s.id)}
+                        />
+                        <span>{s.name}</span>
+                        {!s.isActive && <span style={{ fontSize: 11, color: '#999' }}>(비활성)</span>}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
               {adminError && <p style={{ color: '#e53935', fontSize: 13, margin: 0 }}>{adminError}</p>}
               <button
                 type="submit"
-                style={{ ...btnPrimary, opacity: (adminRole === 'STORE_ADMIN' && !selectedStore) ? 0.5 : 1 }}
-                disabled={adminRole === 'STORE_ADMIN' && !selectedStore}
+                style={{ ...btnPrimary, opacity: (adminRole === 'STORE_ADMIN' && adminStoreIds.length === 0) ? 0.5 : 1 }}
+                disabled={adminRole === 'STORE_ADMIN' && adminStoreIds.length === 0}
               >
                 계정 생성
               </button>
@@ -384,23 +400,32 @@ export default function StoreManagePage() {
                 {storeAdmins.map((admin) => (
                   <div
                     key={admin.id}
-                    style={{ padding: '10px 14px', background: '#fafafa', borderRadius: 8, border: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    style={{ padding: '10px 14px', background: '#fafafa', borderRadius: 8, border: '1px solid #eee' }}
                   >
-                    <div>
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>{admin.username}</span>
-                      <span style={{
-                        fontSize: 11, padding: '2px 7px', borderRadius: 10, marginLeft: 8,
-                        background: admin.role === 'SUPER_ADMIN' ? '#e3f2fd' : '#f3e5f5',
-                        color: admin.role === 'SUPER_ADMIN' ? '#1565c0' : '#6a1b9a',
-                      }}>
-                        {admin.role === 'SUPER_ADMIN' ? '슈퍼' : '매장'}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>{admin.username}</span>
+                        <span style={{
+                          fontSize: 11, padding: '2px 7px', borderRadius: 10, marginLeft: 8,
+                          background: admin.role === 'SUPER_ADMIN' ? '#e3f2fd' : '#f3e5f5',
+                          color: admin.role === 'SUPER_ADMIN' ? '#1565c0' : '#6a1b9a',
+                        }}>
+                          {admin.role === 'SUPER_ADMIN' ? '슈퍼' : '매장'}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: 11, color: admin.isActive ? '#2e7d32' : '#999' }}>
+                        {admin.isActive ? '활성' : '비활성'}
                       </span>
                     </div>
-                    <span style={{
-                      fontSize: 11, color: admin.isActive ? '#2e7d32' : '#999',
-                    }}>
-                      {admin.isActive ? '활성' : '비활성'}
-                    </span>
+                    {admin.role === 'STORE_ADMIN' && admin.stores?.length > 0 && (
+                      <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {admin.stores.map((s) => (
+                          <span key={s.id} style={{ fontSize: 11, padding: '1px 6px', borderRadius: 8, background: '#fff3e0', color: '#e65100' }}>
+                            {s.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

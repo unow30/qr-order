@@ -30,8 +30,10 @@ const SUPER_ADMIN_NAV = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
-  const { username, role, currentStoreId, setCurrentStoreId, clearAuth } = useAuthStore();
+  const { username, role, storeIds, currentStoreId, setCurrentStoreId, clearAuth } = useAuthStore();
   const isSuperAdmin = role === 'SUPER_ADMIN';
+  const isMultiStoreAdmin = role === 'STORE_ADMIN' && storeIds.length > 1;
+  const showStoreSwitcher = isSuperAdmin || isMultiStoreAdmin;
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -42,8 +44,12 @@ export default function AdminLayout() {
   useEffect(() => {
     if (isSuperAdmin) {
       getStores().then(setStores).catch(() => {});
+    } else if (isMultiStoreAdmin) {
+      getStores()
+        .then((all) => setStores(all.filter((s) => storeIds.includes(s.id))))
+        .catch(() => {});
     }
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin, isMultiStoreAdmin]);
 
   const handleLogout = () => {
     clearAuth();
@@ -110,8 +116,8 @@ export default function AdminLayout() {
             ☰
           </button>
 
-          {/* 매장 선택기 (SUPER_ADMIN) 또는 현재 매장 뱃지 (STORE_ADMIN) */}
-          {isSuperAdmin ? (
+          {/* 매장 선택기 (SUPER_ADMIN / 다중 매장 STORE_ADMIN) 또는 현재 매장 뱃지 (단일 매장 STORE_ADMIN) */}
+          {showStoreSwitcher ? (
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setStoreDropdownOpen(!storeDropdownOpen)}
@@ -132,16 +138,19 @@ export default function AdminLayout() {
                   background: '#fff', border: '1px solid #eee', borderRadius: 8,
                   boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 100, minWidth: 200,
                 }}>
-                  <button
-                    onClick={() => { setCurrentStoreId(null); setStoreDropdownOpen(false); }}
-                    style={{
-                      display: 'block', width: '100%', padding: '10px 16px',
-                      textAlign: 'left', border: 'none', background: !currentStoreId ? '#fff3e0' : 'transparent',
-                      cursor: 'pointer', fontSize: 13, color: '#666',
-                    }}
-                  >
-                    전체 보기
-                  </button>
+                  {/* SUPER_ADMIN만 '전체 보기' 옵션 제공 */}
+                  {isSuperAdmin && (
+                    <button
+                      onClick={() => { setCurrentStoreId(null); setStoreDropdownOpen(false); }}
+                      style={{
+                        display: 'block', width: '100%', padding: '10px 16px',
+                        textAlign: 'left', border: 'none', background: !currentStoreId ? '#fff3e0' : 'transparent',
+                        cursor: 'pointer', fontSize: 13, color: '#666',
+                      }}
+                    >
+                      전체 보기
+                    </button>
+                  )}
                   {stores.filter((s) => s.isActive).map((store) => (
                     <button
                       key={store.id}

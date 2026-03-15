@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getCoupons, createCoupon, deactivateCoupon, Coupon, DiscountType } from '../api/coupon.api';
+import { useAuthStore } from '../stores/authStore';
+import { useStoreNames } from '../hooks/useStoreNames';
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 12px', border: '1px solid #ddd',
@@ -22,6 +24,10 @@ function statusBadge(c: Coupon) {
 export default function CouponManagePage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(false);
+  const { currentStoreId, isSuperAdmin } = useAuthStore();
+  const superAdmin = isSuperAdmin();
+  const isAllStores = superAdmin && !currentStoreId;
+  const storeNameMap = useStoreNames();
 
   // 폼 상태
   const [code, setCode] = useState('');
@@ -33,7 +39,8 @@ export default function CouponManagePage() {
   const [formError, setFormError] = useState('');
 
   const load = () => getCoupons().then(setCoupons).catch(() => {});
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => { load(); }, [currentStoreId]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,55 +82,74 @@ export default function CouponManagePage() {
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 24px', fontSize: 22 }}>쿠폰 관리</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h2 style={{ margin: 0, fontSize: 22 }}>쿠폰 관리</h2>
+        {superAdmin && (
+          <span style={{
+            padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+            background: isAllStores ? '#e8f5e9' : '#e3f2fd',
+            color: isAllStores ? '#1b5e20' : '#0d47a1',
+          }}>
+            {isAllStores ? '전체 매장' : (storeNameMap[currentStoreId!] || '선택된 매장')}
+          </span>
+        )}
+      </div>
 
-        {/* 쿠폰 생성 폼 */}
-        <div style={cardStyle}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>쿠폰 생성</h3>
-          <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <input
-              style={inputStyle} placeholder="쿠폰 코드 (예: SUMMER20)"
-              value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required
-            />
-            <select style={inputStyle} value={discountType}
-              onChange={(e) => setDiscountType(e.target.value as DiscountType)}>
-              <option value="PERCENT">비율 할인 (%)</option>
-              <option value="FIXED">정액 할인 (원)</option>
-            </select>
-            <input
-              style={inputStyle}
-              placeholder={discountType === 'PERCENT' ? '할인율 (1~100)' : '할인 금액 (원)'}
-              type="number" min="1" value={discountValue}
-              onChange={(e) => setDiscountValue(e.target.value)} required
-            />
-            <input
-              style={inputStyle} placeholder="최소 주문 금액 (0 = 무제한)"
-              type="number" min="0" value={minOrderAmount}
-              onChange={(e) => setMinOrderAmount(e.target.value)}
-            />
-            <input
-              style={inputStyle} placeholder="최대 사용 횟수 (0 = 무제한)"
-              type="number" min="0" value={maxUses}
-              onChange={(e) => setMaxUses(e.target.value)}
-            />
-            <div>
-              <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>만료일 (선택)</label>
-              <input style={inputStyle} type="date" value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)} />
-            </div>
-            {formError && <p style={{ color: '#e53935', fontSize: 13, margin: 0 }}>{formError}</p>}
-            <button
-              type="submit" disabled={loading}
-              style={{ padding: '9px 18px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, opacity: loading ? 0.6 : 1 }}
-            >
-              쿠폰 생성
-            </button>
-          </form>
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isAllStores ? '1fr' : '380px 1fr', gap: 24 }}>
+
+        {/* 쿠폰 생성 폼 (매장 선택 모드에서만) */}
+        {!isAllStores && (
+          <div style={cardStyle}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>쿠폰 생성</h3>
+            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <input
+                style={inputStyle} placeholder="쿠폰 코드 (예: SUMMER20)"
+                value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required
+              />
+              <select style={inputStyle} value={discountType}
+                onChange={(e) => setDiscountType(e.target.value as DiscountType)}>
+                <option value="PERCENT">비율 할인 (%)</option>
+                <option value="FIXED">정액 할인 (원)</option>
+              </select>
+              <input
+                style={inputStyle}
+                placeholder={discountType === 'PERCENT' ? '할인율 (1~100)' : '할인 금액 (원)'}
+                type="number" min="1" value={discountValue}
+                onChange={(e) => setDiscountValue(e.target.value)} required
+              />
+              <input
+                style={inputStyle} placeholder="최소 주문 금액 (0 = 무제한)"
+                type="number" min="0" value={minOrderAmount}
+                onChange={(e) => setMinOrderAmount(e.target.value)}
+              />
+              <input
+                style={inputStyle} placeholder="최대 사용 횟수 (0 = 무제한)"
+                type="number" min="0" value={maxUses}
+                onChange={(e) => setMaxUses(e.target.value)}
+              />
+              <div>
+                <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>만료일 (선택)</label>
+                <input style={inputStyle} type="date" value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)} />
+              </div>
+              {formError && <p style={{ color: '#e53935', fontSize: 13, margin: 0 }}>{formError}</p>}
+              <button
+                type="submit" disabled={loading}
+                style={{ padding: '9px 18px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, opacity: loading ? 0.6 : 1 }}
+              >
+                쿠폰 생성
+              </button>
+            </form>
+          </div>
+        )}
 
         {/* 쿠폰 목록 */}
         <div style={cardStyle}>
+          {isAllStores && (
+            <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#795548', fontSize: 13 }}>
+              전체 보기 모드입니다. 쿠폰을 생성하려면 상단에서 매장을 선택해주세요.
+            </div>
+          )}
           <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>쿠폰 목록 ({coupons.length}개)</h3>
           {coupons.length === 0 ? (
             <p style={{ color: '#999', fontSize: 14 }}>등록된 쿠폰이 없습니다.</p>
@@ -139,6 +165,9 @@ export default function CouponManagePage() {
                         <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: badge.bg, color: badge.color }}>
                           {badge.label}
                         </span>
+                        {isAllStores && c.storeId && storeNameMap[c.storeId] && (
+                          <span style={{ fontSize: 11, color: '#888' }}>🏪 {storeNameMap[c.storeId]}</span>
+                        )}
                       </div>
                       <div style={{ fontSize: 13, color: '#555' }}>
                         {c.discountType === 'PERCENT' ? `${c.discountValue}% 할인` : `${c.discountValue.toLocaleString()}원 할인`}

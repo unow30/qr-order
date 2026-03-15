@@ -15,18 +15,18 @@ export class TableService {
     private readonly qrTokenRepository: Repository<QrToken>,
   ) {}
 
-  async findAll(storeId: string): Promise<TableEntity[]> {
+  async findAll(storeId: string | null): Promise<TableEntity[]> {
     return this.tableRepository.find({
-      where: { storeId },
+      where: storeId ? { storeId } : {},
       order: { tableNumber: 'ASC' },
     });
   }
 
   async findAllWithTokens(
-    storeId: string,
+    storeId: string | null,
   ): Promise<{ table: TableEntity; token: string | null }[]> {
     const tables = await this.tableRepository.find({
-      where: { storeId },
+      where: storeId ? { storeId } : undefined,
       order: { tableNumber: 'ASC' },
     });
     return Promise.all(

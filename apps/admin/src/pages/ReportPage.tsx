@@ -79,7 +79,7 @@ function MenuStatRow({
 
 export default function ReportPage() {
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
-  const storeId = useAuthStore((s) => s.storeId);
+  const currentStoreId = useAuthStore((s) => s.currentStoreId);
 
   const [tab, setTab] = useState<Tab>('sales');
   const [overall, setOverall] = useState<OverallReportSummary | null>(null);
@@ -93,15 +93,15 @@ export default function ReportPage() {
     if (isSuperAdmin()) {
       const data = await getOverallSummary(query);
       setOverall(data);
-    } else if (storeId) {
-      const data = await getStoreSummary(storeId, query);
+    } else if (currentStoreId) {
+      const data = await getStoreSummary(currentStoreId, query);
       setStoreSummary(data);
     }
   };
 
   const loadMenuAnalytics = async () => {
     const data = await getMenuAnalytics(
-      storeId && !isSuperAdmin() ? { ...query, storeId } : query,
+      currentStoreId && !isSuperAdmin() ? { ...query, storeId: currentStoreId } : query,
     );
     setMenuAnalytics(data);
   };
