@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getDatabaseConfig } from './config/database.config';
 import { getRedisClient, REDIS_CLIENT } from './config/redis.config';
+import { createRedisLoggerProxy } from './common/logging/redis-logger.proxy';
+import { LoggingModule } from './common/logging/logging.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { StoreModule } from './modules/store/store.module';
 import { TableModule } from './modules/table/table.module';
@@ -29,6 +31,7 @@ import { StoreContextMiddleware } from './common/middleware/store-context.middle
       useFactory: getDatabaseConfig,
       inject: [ConfigService],
     }),
+    LoggingModule,  // LoggingInterceptor가 가장 바깥쪽에서 실행되도록 먼저 import
     AuthModule,
     StoreModule,
     TableModule,
@@ -45,7 +48,10 @@ import { StoreContextMiddleware } from './common/middleware/store-context.middle
   providers: [
     {
       provide: REDIS_CLIENT,
-      useFactory: getRedisClient,
+      useFactory: (configService: ConfigService) => {
+        const client = getRedisClient(configService);
+        return createRedisLoggerProxy(client);
+      },
       inject: [ConfigService],
     },
   ],
