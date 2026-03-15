@@ -1,5 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { TypeOrmQueryLogger } from '../common/logging/typeorm-query-logger';
 
 export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
   type: 'postgres',
@@ -10,6 +11,7 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   database: configService.get<string>('DATABASE_NAME', 'qrorder_db'),
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   synchronize: configService.get<string>('NODE_ENV') !== 'production',
-  logging: configService.get<string>('NODE_ENV') === 'development',
+  logger: new TypeOrmQueryLogger(),
+  maxQueryExecutionTime: parseInt(configService.get<string>('LOG_SLOW_QUERY_MS', '2000'), 10),
   autoLoadEntities: true,
 });
