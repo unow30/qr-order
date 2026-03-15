@@ -15,9 +15,9 @@ export class TableService {
     private readonly qrTokenRepository: Repository<QrToken>,
   ) {}
 
-  async findAll(storeId: string): Promise<TableEntity[]> {
+  async findAll(storeId: string | null): Promise<TableEntity[]> {
     return this.tableRepository.find({
-      where: { storeId },
+      where: storeId ? { storeId } : {},
       order: { tableNumber: 'ASC' },
     });
   }

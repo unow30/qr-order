@@ -105,9 +105,9 @@ export class OrderService {
     return order;
   }
 
-  async findAll(storeId: string): Promise<Order[]> {
+  async findAll(storeId: string | null): Promise<Order[]> {
     return this.orderRepository.find({
-      where: { storeId },
+      where: storeId ? { storeId } : {},
       relations: ['items'],
       order: { createdAt: 'DESC' },
     });

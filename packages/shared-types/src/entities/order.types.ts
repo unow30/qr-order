@@ -28,6 +28,7 @@ export interface SelectedOption {
 
 export interface Order {
   id: string;
+  storeId: string;
   sessionId: string;
   tableId: string;
   tableNumber: number;

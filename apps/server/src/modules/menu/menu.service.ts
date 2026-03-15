@@ -38,7 +38,16 @@ export class MenuService {
     return `menu:${storeId}:all`;
   }
 
-  async getMenu(storeId: string): Promise<MenuCategory[]> {
+  async getMenu(storeId: string | null): Promise<MenuCategory[]> {
+    // storeId가 null이면 (SUPER_ADMIN 전체 보기) 캐시 없이 전체 조회
+    if (!storeId) {
+      return this.categoryRepository.find({
+        where: { isActive: true },
+        relations: ['items', 'items.optionGroups', 'items.optionGroups.options'],
+        order: { sortOrder: 'ASC' },
+      });
+    }
+
     const cacheKey = this.getMenuCacheKey(storeId);
     const cached = await this.redis.get(cacheKey);
     if (cached) {
@@ -81,7 +90,7 @@ export class MenuService {
   }
 
   async createItem(storeId: string, dto: CreateMenuItemDto): Promise<MenuItem> {
-    const item = this.itemRepository.create(dto);
+    const item = this.itemRepository.create({ ...dto, storeId });
     const saved = await this.itemRepository.save(item);
     await this.invalidateCache(storeId);
     return saved;
@@ -89,7 +98,7 @@ export class MenuService {
 
   async updateItem(storeId: string, id: string, dto: UpdateMenuItemDto): Promise<MenuItem> {
     const item = await this.itemRepository.findOne({
-      where: { id },
+      where: { id, storeId },
       relations: ['category'],
     });
     if (!item) throw new NotFoundException('메뉴 아이템을 찾을 수 없습니다.');
@@ -100,7 +109,7 @@ export class MenuService {
   }
 
   async deleteItem(storeId: string, id: string): Promise<void> {
-    await this.itemRepository.delete(id);
+    await this.itemRepository.delete({ id, storeId });
     await this.invalidateCache(storeId);
   }
 
@@ -202,6 +211,7 @@ export class MenuService {
           for (const srcItem of srcCategory.items ?? []) {
             const newItem = this.itemRepository.create({
               categoryId: savedCategory.id,
+              storeId: targetStoreId,
               name: srcItem.name,
               description: srcItem.description,
               price: srcItem.price,

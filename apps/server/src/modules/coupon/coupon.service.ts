@@ -19,9 +19,9 @@ export class CouponService {
     private readonly couponRepository: Repository<CouponEntity>,
   ) {}
 
-  async findAll(storeId: string): Promise<CouponEntity[]> {
+  async findAll(storeId: string | null): Promise<CouponEntity[]> {
     return this.couponRepository.find({
-      where: { storeId },
+      where: storeId ? { storeId } : {},
       order: { createdAt: 'DESC' },
     });
   }

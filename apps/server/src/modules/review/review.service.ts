@@ -41,9 +41,9 @@ export class ReviewService {
     return this.reviewRepository.save(review);
   }
 
-  async findAll(storeId: string): Promise<ReviewEntity[]> {
+  async findAll(storeId: string | null): Promise<ReviewEntity[]> {
     return this.reviewRepository.find({
-      where: { storeId },
+      where: storeId ? { storeId } : {},
       order: { createdAt: 'DESC' },
     });
   }

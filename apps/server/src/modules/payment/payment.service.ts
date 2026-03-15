@@ -29,6 +29,7 @@ export class PaymentService {
 
     const payment = this.paymentRepository.create({
       orderId: dto.orderId,
+      storeId: order.storeId,
       amount: dto.amount,
       method: dto.method,
       status: PaymentStatus.PENDING,

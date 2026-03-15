@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getOrders, updateOrderStatus } from '../api/order.api';
 import { Order, OrderStatus } from '@qr-order/shared-types';
+import { useAuthStore } from '../stores/authStore';
+import { useStoreNames } from '../hooks/useStoreNames';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.PENDING]: '접수 대기',
@@ -21,8 +23,13 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
 export default function OrderManagePage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currentStoreId, isSuperAdmin } = useAuthStore();
+  const superAdmin = isSuperAdmin();
+  const isAllStores = superAdmin && !currentStoreId;
+  const storeNameMap = useStoreNames();
 
   const fetchOrders = () => {
+    setLoading(true);
     getOrders().then(setOrders).finally(() => setLoading(false));
   };
 
@@ -30,7 +37,7 @@ export default function OrderManagePage() {
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentStoreId]);
 
   const handleStatusChange = async (order: Order, status: OrderStatus) => {
     await updateOrderStatus(order.id, { status });
@@ -43,11 +50,22 @@ export default function OrderManagePage() {
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 24px' }}>주문 관리</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h2 style={{ margin: 0 }}>주문 관리</h2>
+        {superAdmin && (
+          <span style={{
+            padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+            background: isAllStores ? '#e8f5e9' : '#e3f2fd',
+            color: isAllStores ? '#1b5e20' : '#0d47a1',
+          }}>
+            {isAllStores ? '전체 매장' : (storeNameMap[currentStoreId!] || '선택된 매장')}
+          </span>
+        )}
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
         {activeOrders.map((order) => (
           <div key={order.id} style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <h3 style={{ margin: 0 }}>{order.tableNumber}번 테이블</h3>
               <span style={{
                 padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
@@ -57,6 +75,11 @@ export default function OrderManagePage() {
                 {STATUS_LABELS[order.status]}
               </span>
             </div>
+            {isAllStores && order.storeId && storeNameMap[order.storeId] && (
+              <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
+                🏪 {storeNameMap[order.storeId]}
+              </div>
+            )}
             {order.items?.map((item) => (
               <div key={item.id} style={{ fontSize: 14, marginBottom: 4 }}>
                 {item.menuItemName} ×{item.quantity}

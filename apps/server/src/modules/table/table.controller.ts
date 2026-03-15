@@ -26,7 +26,7 @@ export class TableController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '테이블 목록 조회' })
-  findAll(@CurrentStoreId() storeId: string) {
+  findAll(@CurrentStoreId(false) storeId: string | null) {
     return this.tableService.findAll(storeId);
   }
 
