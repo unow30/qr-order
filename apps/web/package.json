@@ -9,22 +9,30 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@qr-order/shared-types": "workspace:*",
+    "axios": "^1.7.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-router-dom": "^6.24.0",
-    "zustand": "^4.5.0",
-    "axios": "^1.7.0",
-    "@qr-order/shared-types": "workspace:*"
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
     "@qr-order/tsconfig": "workspace:*",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "jsdom": "^24.1.3",
+    "msw": "^2.12.11",
     "typescript": "^5.5.3",
-    "vite": "^5.3.0"
+    "vite": "^5.3.0",
+    "vitest": "^2.1.9"
   }
 }
