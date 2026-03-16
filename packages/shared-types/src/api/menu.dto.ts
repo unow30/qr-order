@@ -64,3 +64,11 @@ export interface DeployMenuResult {
   itemsCreated: number;
   error?: string;
 }
+
+export interface ReorderMenuCategoriesDto {
+  orders: Array<{ id: string; sortOrder: number }>;
+}
+
+export interface ReorderMenuItemsDto {
+  orders: Array<{ id: string; sortOrder: number }>;
+}

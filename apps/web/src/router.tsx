@@ -22,7 +22,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/dev" element={<DevPage />} />
         <Route path="/entry" element={<EntryPage />} />
-        <Route path="/" element={<Navigate to="/entry" replace />} />
+        <Route path="/" element={<Navigate to="/dev" replace />} />
         <Route
           path="/menu"
           element={<RequireSession><MenuPage /></RequireSession>}

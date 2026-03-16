@@ -8,13 +8,15 @@ import {
   Body,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('stores')
 @Controller('stores')
@@ -22,7 +24,20 @@ import { Roles } from '../../common/decorators/roles.decorator';
 @Roles('SUPER_ADMIN')
 @ApiBearerAuth()
 export class StoreController {
-  constructor(private readonly storeService: StoreService) {}
+  constructor(
+    private readonly storeService: StoreService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  @Get('dev/list')
+  @Public()
+  @ApiExcludeEndpoint()
+  async devList() {
+    if (this.configService.get('NODE_ENV') === 'production') {
+      return { message: '프로덕션 환경에서는 사용할 수 없습니다.' };
+    }
+    return this.storeService.findAll();
+  }
 
   @Get()
   @ApiOperation({ summary: '전체 매장 목록 조회' })

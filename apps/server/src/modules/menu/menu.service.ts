@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { REDIS_CLIENT } from '../../config/redis.config';
 import Redis from 'ioredis';
 import { MenuCategory } from './entities/menu-category.entity';
@@ -15,6 +15,8 @@ import {
   CreateMenuOptionGroupDto,
   DeployMenuDto,
   DeployMenuResult,
+  ReorderMenuCategoriesDto,
+  ReorderMenuItemsDto,
 } from '@qr-order/shared-types';
 
 const MENU_CACHE_TTL = 300; // 5분
@@ -44,7 +46,7 @@ export class MenuService {
       return this.categoryRepository.find({
         where: { isActive: true },
         relations: ['items', 'items.optionGroups', 'items.optionGroups.options'],
-        order: { sortOrder: 'ASC' },
+        order: { sortOrder: 'ASC', items: { sortOrder: 'ASC' } },
       });
     }
 
@@ -57,7 +59,7 @@ export class MenuService {
     const categories = await this.categoryRepository.find({
       where: { storeId, isActive: true },
       relations: ['items', 'items.optionGroups', 'items.optionGroups.options'],
-      order: { sortOrder: 'ASC' },
+      order: { sortOrder: 'ASC', items: { sortOrder: 'ASC' } },
     });
 
     await this.redis.setex(cacheKey, MENU_CACHE_TTL, JSON.stringify(categories));
@@ -165,6 +167,28 @@ export class MenuService {
     const saved = await this.itemRepository.save(item);
     await this.invalidateCache(storeId);
     return saved;
+  }
+
+  async reorderCategories(storeId: string, dto: ReorderMenuCategoriesDto): Promise<void> {
+    const ids = dto.orders.map((o) => o.id);
+    const categories = await this.categoryRepository.find({ where: { storeId, id: In(ids) } });
+    categories.forEach((cat) => {
+      const match = dto.orders.find((o) => o.id === cat.id);
+      if (match) cat.sortOrder = match.sortOrder;
+    });
+    await this.categoryRepository.save(categories);
+    await this.invalidateCache(storeId);
+  }
+
+  async reorderItems(storeId: string, dto: ReorderMenuItemsDto): Promise<void> {
+    const ids = dto.orders.map((o) => o.id);
+    const items = await this.itemRepository.find({ where: { storeId, id: In(ids) } });
+    items.forEach((item) => {
+      const match = dto.orders.find((o) => o.id === item.id);
+      if (match) item.sortOrder = match.sortOrder;
+    });
+    await this.itemRepository.save(items);
+    await this.invalidateCache(storeId);
   }
 
   /**

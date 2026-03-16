@@ -24,20 +24,18 @@ export class TableService {
 
   async findAllWithTokens(
     storeId: string | null,
-  ): Promise<{ table: TableEntity; token: string | null }[]> {
+  ): Promise<{ table: TableEntity; token: string | null; isActive: boolean }[]> {
     const tables = await this.tableRepository.find({
       where: storeId ? { storeId } : undefined,
       order: { tableNumber: 'ASC' },
+      relations: ['qrTokens'],
     });
-    return Promise.all(
-      tables.map(async (table) => {
-        const qrToken = await this.qrTokenRepository.findOne({
-          where: { tableId: table.id },
-          order: { createdAt: 'DESC' },
-        });
-        return { table, token: qrToken?.token ?? null };
-      }),
-    );
+    return tables.map((table) => {
+      const latestToken = table.qrTokens
+        .slice()
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+      return { table, token: latestToken?.token ?? null, isActive: table.isActive };
+    });
   }
 
   async findOne(id: string): Promise<TableEntity> {

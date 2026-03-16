@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Param,
   Body,
@@ -19,6 +20,8 @@ import {
   UpdateMenuItemDto,
   CreateMenuOptionGroupDto,
   DeployMenuDto,
+  ReorderMenuCategoriesDto,
+  ReorderMenuItemsDto,
 } from '@qr-order/shared-types';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -40,6 +43,14 @@ export class MenuController {
   @ApiOperation({ summary: '카테고리 생성' })
   createCategory(@CurrentStoreId() storeId: string, @Body() dto: CreateMenuCategoryDto) {
     return this.menuService.createCategory(storeId, dto);
+  }
+
+  @Patch('categories/reorder')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '카테고리 순서 일괄 변경' })
+  reorderCategories(@CurrentStoreId() storeId: string, @Body() dto: ReorderMenuCategoriesDto) {
+    return this.menuService.reorderCategories(storeId, dto);
   }
 
   @Put('categories/:id')
@@ -68,6 +79,14 @@ export class MenuController {
   @ApiOperation({ summary: '메뉴 아이템 생성' })
   createItem(@CurrentStoreId() storeId: string, @Body() dto: CreateMenuItemDto) {
     return this.menuService.createItem(storeId, dto);
+  }
+
+  @Patch('items/reorder')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '아이템 순서 일괄 변경' })
+  reorderItems(@CurrentStoreId() storeId: string, @Body() dto: ReorderMenuItemsDto) {
+    return this.menuService.reorderItems(storeId, dto);
   }
 
   @Put('items/:id')

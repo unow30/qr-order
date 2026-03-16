@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
 
+interface Store {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+}
+
 interface TableWithToken {
   table: {
     id: string;
@@ -12,15 +19,18 @@ interface TableWithToken {
 }
 
 export default function DevPage() {
+  const [stores, setStores] = useState<Store[]>([]);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [tables, setTables] = useState<TableWithToken[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tablesLoading, setTablesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/tables/dev/with-tokens')
+    fetch('/api/stores/dev/list')
       .then((res) => res.json())
       .then((data) => {
-        setTables(data?.data ?? data);
+        setStores(data?.data ?? data);
         setLoading(false);
       })
       .catch(() => {
@@ -29,42 +39,118 @@ export default function DevPage() {
       });
   }, []);
 
+  const handleSelectStore = (store: Store) => {
+    setSelectedStore(store);
+    setTablesLoading(true);
+    setTables([]);
+    fetch(`/api/tables/dev/with-tokens?storeId=${store.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTables(data?.data ?? data);
+        setTablesLoading(false);
+      })
+      .catch(() => {
+        setError('테이블 정보를 불러올 수 없습니다.');
+        setTablesLoading(false);
+      });
+  };
+
+  const handleBack = () => {
+    setSelectedStore(null);
+    setTables([]);
+    setError(null);
+  };
+
   const buildEntryUrl = (tableId: string, token: string) => {
     return `/entry?tableId=${tableId}&token=${token}`;
   };
 
+  // Store 상세 (테이블 목록)
+  if (selectedStore) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <button onClick={handleBack} style={styles.backButton}>
+            ← 매장 목록
+          </button>
+          <h1 style={styles.title}>🛠 {selectedStore.name}</h1>
+          <p style={styles.subtitle}>
+            {selectedStore.slug} — 테이블의 QR 링크를 클릭하면 고객 진입 화면으로 이동합니다.
+          </p>
+        </div>
+
+        {tablesLoading && <p style={styles.status}>불러오는 중...</p>}
+        {error && <p style={styles.error}>{error}</p>}
+
+        {!tablesLoading && !error && tables.length === 0 && (
+          <p style={styles.status}>등록된 테이블이 없습니다.</p>
+        )}
+
+        {!tablesLoading && !error && tables.length > 0 && (
+          <div style={styles.grid}>
+            {tables.map(({ table, token }) => (
+              <div key={table.id} style={{ ...styles.card, opacity: table.isActive ? 1 : 0.45 }}>
+                <div style={styles.cardHeader}>
+                  <span style={styles.tableNumber}>{table.tableNumber}번</span>
+                  <span style={styles.tableName}>{table.name}</span>
+                  {!table.isActive && <span style={styles.badge}>비활성</span>}
+                </div>
+                <p style={styles.capacity}>수용 인원: {table.capacity}명</p>
+                {token ? (
+                  <>
+                    <p style={styles.tokenText}>
+                      <span style={styles.tokenLabel}>Token</span>
+                      <code style={styles.tokenCode}>{token.slice(0, 18)}…</code>
+                    </p>
+                    <a href={buildEntryUrl(table.id, token)} style={styles.link}>
+                      QR 입장 링크 →
+                    </a>
+                  </>
+                ) : (
+                  <p style={styles.noToken}>QR 토큰 없음</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Store 목록
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>🛠 Dev — QR 토큰 목록</h1>
-        <p style={styles.subtitle}>각 테이블의 QR 링크를 클릭하면 고객 진입 화면으로 이동합니다.</p>
+        <h1 style={styles.title}>🛠 Dev — 매장 목록</h1>
+        <p style={styles.subtitle}>매장을 선택하면 해당 매장의 테이블과 QR 입장 링크를 확인할 수 있습니다.</p>
       </div>
 
       {loading && <p style={styles.status}>불러오는 중...</p>}
       {error && <p style={styles.error}>{error}</p>}
 
-      {!loading && !error && (
+      {!loading && !error && stores.length === 0 && (
+        <p style={styles.status}>등록된 매장이 없습니다.</p>
+      )}
+
+      {!loading && !error && stores.length > 0 && (
         <div style={styles.grid}>
-          {tables.map(({ table, token }) => (
-            <div key={table.id} style={{ ...styles.card, opacity: table.isActive ? 1 : 0.45 }}>
+          {stores.map((store) => (
+            <div
+              key={store.id}
+              style={{
+                ...styles.card,
+                ...styles.storeCard,
+                opacity: store.isActive ? 1 : 0.45,
+              }}
+              onClick={() => store.isActive && handleSelectStore(store)}
+            >
               <div style={styles.cardHeader}>
-                <span style={styles.tableNumber}>{table.tableNumber}번</span>
-                <span style={styles.tableName}>{table.name}</span>
-                {!table.isActive && <span style={styles.badge}>비활성</span>}
+                <span style={styles.storeName}>{store.name}</span>
+                {!store.isActive && <span style={styles.badge}>비활성</span>}
               </div>
-              <p style={styles.capacity}>수용 인원: {table.capacity}명</p>
-              {token ? (
-                <>
-                  <p style={styles.tokenText}>
-                    <span style={styles.tokenLabel}>Token</span>
-                    <code style={styles.tokenCode}>{token.slice(0, 18)}…</code>
-                  </p>
-                  <a href={buildEntryUrl(table.id, token)} style={styles.link}>
-                    QR 입장 링크 →
-                  </a>
-                </>
-              ) : (
-                <p style={styles.noToken}>QR 토큰 없음</p>
+              <p style={styles.storeSlug}>{store.slug}</p>
+              {store.isActive && (
+                <span style={styles.selectHint}>클릭하여 테이블 보기 →</span>
               )}
             </div>
           ))}
@@ -115,11 +201,30 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '20px',
     border: '1px solid #334155',
   },
+  storeCard: {
+    cursor: 'pointer',
+    transition: 'border-color 0.15s, transform 0.15s',
+  },
   cardHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     marginBottom: '8px',
+  },
+  storeName: {
+    fontSize: '20px',
+    fontWeight: 700,
+    flex: 1,
+  },
+  storeSlug: {
+    fontSize: '13px',
+    color: '#64748b',
+    margin: '0 0 12px',
+  },
+  selectHint: {
+    fontSize: '13px',
+    color: '#38bdf8',
+    fontWeight: 500,
   },
   tableNumber: {
     fontSize: '20px',
@@ -177,5 +282,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px',
     color: '#64748b',
     fontStyle: 'italic',
+  },
+  backButton: {
+    background: 'none',
+    border: 'none',
+    color: '#38bdf8',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    padding: '4px 0',
+    marginBottom: '12px',
   },
 };
