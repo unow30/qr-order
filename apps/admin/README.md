@@ -12,6 +12,7 @@
 | HTTP 클라이언트 | Axios |
 | 라우팅 | React Router v6 |
 | QR 코드 | qrcode.react |
+| 드래그앤드롭 | @dnd-kit/core, @dnd-kit/sortable |
 
 **포트**: `3002`
 
@@ -83,7 +84,8 @@ src/
 │   ├── table.api.ts                # 테이블 CRUD
 │   ├── coupon.api.ts               # 쿠폰 CRUD
 │   ├── review.api.ts               # 리뷰 조회
-│   └── report.api.ts               # 리포트 조회
+│   ├── report.api.ts               # 리포트 조회
+│   └── image.api.ts                # 이미지 업로드/삭제
 │
 └── components/
     ├── ConfirmDialog.tsx            # 공통 확인 다이얼로그
@@ -124,11 +126,14 @@ src/
 - 매장 간 메뉴 템플릿 배포 (`/api/menu/deploy`)
 - 전체 매장 통합 리포트 조회
 - 어드민 레이아웃 상단에서 **매장 전환** 가능
+- 매장/메뉴/쿠폰 이미지 업로드 및 관리
 
 ### STORE_ADMIN
 
 - 본인 매장(`storeId`) 데이터에만 접근 가능
 - 메뉴, 테이블, 주문, 쿠폰, 리뷰 관리
+- 이미지 업로드 및 관리
+- 메뉴 카테고리/항목 드래그앤드롭 순서 변경
 - 매장 전환 불가
 
 ---

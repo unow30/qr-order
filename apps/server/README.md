@@ -47,6 +47,11 @@ cp .env.example .env
 | `PG_MERCHANT_ID` | PG 가맹점 ID |
 | `PG_SECRET_KEY` | PG 시크릿 키 |
 | `PG_API_URL` | PG API URL |
+| `LOG_SLOW_REQUEST_MS` | 슬로우 요청 임계값 (ms, 기본 3000) |
+| `LOG_SLOW_QUERY_MS` | 슬로우 쿼리 임계값 (ms, 기본 2000) |
+| `LOG_SLACK_WEBHOOK_URL` | Slack 알림 웹훅 URL (선택) |
+| `LOG_DISCORD_WEBHOOK_URL` | Discord 알림 웹훅 URL (선택) |
+| `LOG_LOKI_URL` | Grafana Loki URL (선택) |
 
 ---
 
@@ -212,6 +217,29 @@ src/
 | POST | `/api/payments` | 결제 요청 | 세션 |
 | POST | `/api/payments/callback` | 결제 콜백 | 공개 |
 
+### 쿠폰 (`/api/coupons`)
+
+| 메서드 | 경로 | 설명 | 권한 |
+|--------|------|------|------|
+| GET | `/api/coupons` | 쿠폰 목록 | 어드민 |
+| POST | `/api/coupons` | 쿠폰 생성 | 어드민 |
+| PATCH | `/api/coupons/:id` | 쿠폰 수정 | 어드민 |
+| DELETE | `/api/coupons/:id` | 쿠폰 삭제 | 어드민 |
+
+### 리뷰 (`/api/reviews`)
+
+| 메서드 | 경로 | 설명 | 권한 |
+|--------|------|------|------|
+| GET | `/api/reviews` | 리뷰 목록 | 어드민 |
+| DELETE | `/api/reviews/:id` | 리뷰 삭제 | 어드민 |
+
+### 이미지 (`/api/images`)
+
+| 메서드 | 경로 | 설명 | 권한 |
+|--------|------|------|------|
+| POST | `/api/images` | 이미지 업로드 | 어드민 |
+| DELETE | `/api/images/:id` | 이미지 삭제 | 어드민 |
+
 ### 리포트 (`/api/reports`)
 
 | 메서드 | 경로 | 설명 | 권한 |
@@ -292,3 +320,17 @@ X-Session-Token: <sessionToken>  # 고객 앱 요청 시 사용
 - 그 외 → `store_id = app.store_id` 행만 접근 허용
 
 모든 요청은 `RlsInterceptor`를 통해 PostgreSQL 세션 변수(`set_config`)를 주입합니다.
+
+---
+
+## 로깅
+
+`common/logging/` 모듈이 슬로우 요청/쿼리를 감지하여 외부 채널로 알림을 전송합니다.
+
+| 전송 채널 | 설정 env |
+|-----------|----------|
+| Slack | `LOG_SLACK_WEBHOOK_URL` |
+| Discord | `LOG_DISCORD_WEBHOOK_URL` |
+| Grafana Loki | `LOG_LOKI_URL` |
+
+슬로우 요청 임계값은 `LOG_SLOW_REQUEST_MS`(기본 3000ms), 슬로우 쿼리 임계값은 `LOG_SLOW_QUERY_MS`(기본 2000ms)로 설정합니다. 웹훅 URL이 설정되지 않은 채널은 무시됩니다.
