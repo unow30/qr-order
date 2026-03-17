@@ -45,7 +45,7 @@ export default function PaymentPage() {
 
       clearCart();
       clearCoupon();
-      navigate(`/order-status/${order.id}`);
+      navigate(`/order-status/${order.id}`, { replace: true });
     } catch (err) {
       console.error(err);
       alert('결제 처리 중 오류가 발생했습니다.');

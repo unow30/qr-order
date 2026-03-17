@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useOrderStore } from '../stores/orderStore';
 import { useOrderSSE } from '../hooks/useOrderSSE';
 import { getOrder } from '../api/order.api';
@@ -24,6 +24,7 @@ const STATUS_STEPS = [
 
 export default function OrderStatusPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { currentOrder, orderStatus, setOrder } = useOrderStore();
   useOrderSSE(id ?? null);
 
@@ -100,6 +101,26 @@ export default function OrderStatusPage() {
           </div>
         </div>
       )}
+
+      {/* 메뉴로 이동 */}
+      <button
+        onClick={() => navigate('/menu', { replace: true })}
+        style={{
+          display: 'block',
+          width: '100%',
+          marginTop: 24,
+          padding: '14px 0',
+          background: '#ff6b35',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 12,
+          fontSize: 16,
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        🍽️ 메뉴 더 주문하기
+      </button>
     </div>
   );
 }

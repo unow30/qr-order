@@ -153,7 +153,7 @@ export default function CartPage() {
 
       <div style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: 440 }}>
         <button
-          onClick={() => navigate('/payment')}
+          onClick={() => navigate('/payment', { replace: true })}
           style={{ width: '100%', padding: 16, background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, cursor: 'pointer' }}
         >
           {payAmount.toLocaleString()}원 결제하기

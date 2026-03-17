@@ -14,7 +14,11 @@ export default function KDSPage() {
 
   const fetchOrders = useCallback(() =>
     getOrders().then((all) =>
-      setOrders(all.filter((o) => o.status === OrderStatus.CONFIRMED || o.status === OrderStatus.PREPARING)),
+      setOrders(
+        all
+          .filter((o) => o.status === OrderStatus.CONFIRMED || o.status === OrderStatus.PREPARING)
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+      ),
     ), []);
 
   useEffect(() => {
@@ -56,58 +60,88 @@ export default function KDSPage() {
           <div
             key={order.id}
             style={{
-              background: '#fff', borderRadius: 12, padding: 20,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              borderTop: `4px solid ${order.status === OrderStatus.PREPARING ? '#4caf50' : '#ff9800'}`,
+              background: '#fff', borderRadius: 12,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <h3 style={{ margin: 0, fontSize: 20 }}>{order.tableNumber}번 테이블</h3>
-              <span style={{ fontSize: 12, color: '#888' }}>
-                {new Date(order.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-            {isAllStores && order.storeId && storeNameMap[order.storeId] && (
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
-                🏪 {storeNameMap[order.storeId]}
-              </div>
-            )}
-            {order.items?.map((item) => (
-              <div key={item.id} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 600, fontSize: 16 }}>{item.menuItemName}</span>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: '#ff6b35' }}>×{item.quantity}</span>
-                </div>
-                {item.selectedOptions?.map((opt) => (
-                  <span key={opt.optionId} style={{ fontSize: 12, color: '#888', marginRight: 8 }}>
-                    {opt.optionName}
+            {/* 헤더 */}
+            <div style={{
+              padding: '14px 20px',
+              borderBottom: `3px solid ${order.status === OrderStatus.PREPARING ? '#4caf50' : '#ff9800'}`,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{order.tableNumber}번 테이블</h3>
+                {isAllStores && order.storeId && storeNameMap[order.storeId] && (
+                  <span style={{ fontSize: 12, color: '#888', marginTop: 2, display: 'block' }}>
+                    🏪 {storeNameMap[order.storeId]}
                   </span>
-                ))}
+                )}
               </div>
-            ))}
-            {order.note && (
-              <p style={{ fontSize: 13, color: '#555', marginTop: 12, padding: 8, background: '#fffde7', borderRadius: 6 }}>
-                📝 {order.note}
-              </p>
-            )}
-            <div style={{ marginTop: 16 }}>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{
+                  display: 'inline-block', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+                  background: order.status === OrderStatus.PREPARING ? '#e8f5e9' : '#fff3e0',
+                  color: order.status === OrderStatus.PREPARING ? '#2e7d32' : '#e65100',
+                  marginBottom: 4,
+                }}>
+                  {order.status === OrderStatus.PREPARING ? '조리 중' : '대기'}
+                </span>
+                <div style={{ fontSize: 12, color: '#aaa' }}>
+                  {new Date(order.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            </div>
+
+            {/* 액션 버튼 */}
+            <div style={{ padding: '12px 20px', borderBottom: '1px solid #f0f0f0' }}>
               {order.status === OrderStatus.CONFIRMED && (
                 <button
                   onClick={() => handleStartPreparing(order.id)}
-                  style={{ width: '100%', padding: 10, background: '#4caf50', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}
+                  style={{ width: '100%', padding: '10px 0', background: '#4caf50', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, letterSpacing: 0.5 }}
                 >
-                  조리 시작
+                  🍳 조리 시작
                 </button>
               )}
               {order.status === OrderStatus.PREPARING && (
                 <button
                   onClick={() => handleReady(order.id)}
-                  style={{ width: '100%', padding: 10, background: '#3f51b5', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}
+                  style={{ width: '100%', padding: '10px 0', background: '#3f51b5', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, letterSpacing: 0.5 }}
                 >
-                  서빙 준비 완료
+                  🍽️ 서빙 준비 완료
                 </button>
               )}
             </div>
+
+            {/* 주문 항목 */}
+            <div style={{ padding: '12px 20px', flex: 1 }}>
+              {order.items?.map((item) => (
+                <div key={item.id} style={{ padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{item.menuItemName}</span>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: '#ff6b35' }}>×{item.quantity}</span>
+                  </div>
+                  {item.selectedOptions?.length > 0 && (
+                    <div style={{ marginTop: 4 }}>
+                      {item.selectedOptions.map((opt) => (
+                        <span key={opt.optionId} style={{ fontSize: 12, color: '#888', marginRight: 8 }}>
+                          {opt.optionName}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* 요청사항 */}
+            {order.note && (
+              <div style={{ padding: '10px 20px', background: '#fffde7', borderTop: '1px solid #f0f0f0' }}>
+                <p style={{ margin: 0, fontSize: 13, color: '#555' }}>📝 {order.note}</p>
+              </div>
+            )}
           </div>
         ))}
         {orders.length === 0 && (
