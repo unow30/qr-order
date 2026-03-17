@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CouponEntity } from './entities/coupon.entity';
 import {
   CreateCouponDto,
@@ -107,8 +107,10 @@ export class CouponService {
 
   /**
    * 쿠폰 사용 처리 (주문 생성 시 호출)
+   * manager를 전달하면 해당 트랜잭션 컨텍스트 안에서 실행
    */
-  async markUsed(couponId: string): Promise<void> {
-    await this.couponRepository.increment({ id: couponId }, 'usedCount', 1);
+  async markUsed(couponId: string, manager?: EntityManager): Promise<void> {
+    const repo = manager ? manager.getRepository(CouponEntity) : this.couponRepository;
+    await repo.increment({ id: couponId }, 'usedCount', 1);
   }
 }
