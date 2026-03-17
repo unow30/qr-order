@@ -10,6 +10,9 @@ import { CouponService } from '../coupon/coupon.service';
 import { MenuService } from '../menu/menu.service';
 import { OrderStatus, CreateOrderDto, UpdateOrderStatusDto } from '@qr-order/shared-types';
 
+/** 더 이상 상태 변경이 불가능한 최종 주문 상태 */
+const FINAL_ORDER_STATUSES = [OrderStatus.SERVED, OrderStatus.CANCELLED];
+
 @Injectable()
 export class OrderService {
   constructor(
@@ -123,11 +126,20 @@ export class OrderService {
 
   async updateStatus(id: string, dto: UpdateOrderStatusDto): Promise<Order> {
     const order = await this.findOne(id);
+
+    // FSM 가드: 최종 상태(완료/취소)에서는 추가 변경 불가
+    if (FINAL_ORDER_STATUSES.includes(order.status)) {
+      throw new BadRequestException(
+        `이미 처리 완료된 주문입니다. (현재: ${order.status})`,
+      );
+    }
+
     order.status = dto.status;
     const updated = await this.orderRepository.save(order);
 
     this.orderSseService.emit(id, {
       orderId: id,
+      storeId: updated.storeId,
       status: dto.status,
       updatedAt: new Date().toISOString(),
     });
@@ -135,7 +147,24 @@ export class OrderService {
     return updated;
   }
 
+  /**
+   * DB 쓰기 없이 SSE 이벤트만 발행한다.
+   * confirmPayment 트랜잭션 커밋 후 어드민 UI에 실시간 알림을 보낼 때 사용.
+   */
+  emitStatusChange(orderId: string, status: OrderStatus, storeId: string): void {
+    this.orderSseService.emit(orderId, {
+      orderId,
+      storeId,
+      status,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   getOrderStream(orderId: string) {
     return this.orderSseService.getStream(orderId);
+  }
+
+  getStoreStream(storeId: string | null) {
+    return this.orderSseService.getStoreStream(storeId);
   }
 }

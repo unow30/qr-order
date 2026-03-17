@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getMenu } from '../api/menu.api';
 import { addCartItem } from '../api/cart.api';
@@ -12,7 +12,9 @@ export default function MenuDetailPage() {
   const [item, setItem] = useState<MenuItem | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<SelectedOption[]>([]);
+  const [invalidGroupIds, setInvalidGroupIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     getMenu().then((categories) => {
@@ -21,34 +23,66 @@ export default function MenuDetailPage() {
     });
   }, [id]);
 
+  /** isRequired 그룹의 선택 수가 maxSelect를 충족하는지 검사 */
+  const isGroupSatisfied = (group: MenuOptionGroup, options: SelectedOption[]) => {
+    if (!group.isRequired) return true;
+    const count = options.filter((o) => o.optionGroupId === group.id).length;
+    return count === group.maxSelect;
+  };
+
   const handleOptionToggle = (group: MenuOptionGroup, optionId: string) => {
     const option = group.options.find((o) => o.id === optionId);
     if (!option) return;
 
     setSelectedOptions((prev) => {
-      const existing = prev.find((o) => o.optionGroupId === group.id && o.optionId === optionId);
+      let next: SelectedOption[];
+      const existing = prev.find(
+        (o) => o.optionGroupId === group.id && o.optionId === optionId,
+      );
+
       if (existing) {
-        return prev.filter((o) => !(o.optionGroupId === group.id && o.optionId === optionId));
+        next = prev.filter(
+          (o) => !(o.optionGroupId === group.id && o.optionId === optionId),
+        );
+      } else {
+        const grouped = prev.filter((o) => o.optionGroupId === group.id);
+        if (grouped.length >= group.maxSelect) {
+          // maxSelect 초과 시 가장 오래된 선택 제거 후 추가
+          const filtered = prev.filter((o) => o.optionGroupId !== group.id);
+          next = [
+            ...filtered,
+            {
+              optionGroupId: group.id,
+              optionGroupName: group.name,
+              optionId: option.id,
+              optionName: option.name,
+              additionalPrice: option.additionalPrice,
+            },
+          ];
+        } else {
+          next = [
+            ...prev,
+            {
+              optionGroupId: group.id,
+              optionGroupName: group.name,
+              optionId: option.id,
+              optionName: option.name,
+              additionalPrice: option.additionalPrice,
+            },
+          ];
+        }
       }
-      const grouped = prev.filter((o) => o.optionGroupId === group.id);
-      if (grouped.length >= group.maxSelect) {
-        // 단일 선택: 기존 제거 후 추가
-        const filtered = prev.filter((o) => o.optionGroupId !== group.id);
-        return [...filtered, {
-          optionGroupId: group.id,
-          optionGroupName: group.name,
-          optionId: option.id,
-          optionName: option.name,
-          additionalPrice: option.additionalPrice,
-        }];
+
+      // 선택 변경 후 해당 그룹이 충족되면 에러 상태 즉시 해제
+      if (group.isRequired && isGroupSatisfied(group, next)) {
+        setInvalidGroupIds((ids) => {
+          const copy = new Set(ids);
+          copy.delete(group.id);
+          return copy;
+        });
       }
-      return [...prev, {
-        optionGroupId: group.id,
-        optionGroupName: group.name,
-        optionId: option.id,
-        optionName: option.name,
-        additionalPrice: option.additionalPrice,
-      }];
+
+      return next;
     });
   };
 
@@ -58,6 +92,19 @@ export default function MenuDetailPage() {
 
   const handleAddToCart = async () => {
     if (!item || !id) return;
+
+    // 필수 옵션 그룹 검사
+    const failedGroups = (item.optionGroups ?? []).filter(
+      (g) => !isGroupSatisfied(g, selectedOptions),
+    );
+
+    if (failedGroups.length > 0) {
+      setInvalidGroupIds(new Set(failedGroups.map((g) => g.id)));
+      // 첫 번째 미충족 그룹으로 스크롤
+      groupRefs.current[failedGroups[0].id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     setLoading(true);
     try {
       const cart = await addCartItem({ menuItemId: id, quantity, selectedOptions });
@@ -68,68 +115,100 @@ export default function MenuDetailPage() {
     }
   };
 
-  if (!item) return <div style={{ padding: 16 }}>메뉴를 불러오는 중...</div>;
+  if (!item) return <div className="p-4">메뉴를 불러오는 중...</div>;
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', fontFamily: 'sans-serif', paddingBottom: 100 }}>
-      <header style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>←</button>
-        <h2 style={{ margin: 0, fontSize: 18 }}>{item.name}</h2>
+    <div className="max-w-[480px] mx-auto font-sans pb-24">
+      <header className="p-4 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="bg-none border-none text-xl cursor-pointer">←</button>
+        <h2 className="m-0 text-lg">{item.name}</h2>
       </header>
 
       {item.imageUrl && (
-        <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: 240, objectFit: 'cover' }} />
+        <img src={item.imageUrl} alt={item.name} className="w-full h-60 object-cover" />
       )}
 
-      <div style={{ padding: 16 }}>
-        <h2 style={{ margin: '0 0 8px' }}>{item.name}</h2>
-        {item.description && <p style={{ color: '#666', marginBottom: 8 }}>{item.description}</p>}
-        <p style={{ fontSize: 20, fontWeight: 700, color: '#ff6b35' }}>{item.price.toLocaleString()}원</p>
+      <div className="p-4">
+        <h2 className="mb-2">{item.name}</h2>
+        {item.description && <p className="text-gray-500 mb-2">{item.description}</p>}
+        <p className="text-xl font-bold text-[#ff6b35]">{item.price.toLocaleString()}원</p>
 
         {/* 옵션 그룹 */}
-        {item.optionGroups?.map((group) => (
-          <div key={group.id} style={{ marginTop: 24 }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: 15 }}>
-              {group.name} {group.isRequired && <span style={{ color: '#e53935', fontSize: 12 }}>필수</span>}
-            </h3>
-            {group.options.map((option) => {
-              const isSelected = selectedOptions.some(
-                (o) => o.optionGroupId === group.id && o.optionId === option.id,
-              );
-              return (
-                <div
-                  key={option.id}
-                  onClick={() => handleOptionToggle(group, option.id)}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', padding: '12px 0',
-                    borderBottom: '1px solid #f0f0f0', cursor: 'pointer',
-                    color: isSelected ? '#ff6b35' : '#333',
-                  }}
-                >
-                  <span>{option.name}</span>
-                  <span>
-                    {option.additionalPrice > 0 && `+${option.additionalPrice.toLocaleString()}원`}
-                    {isSelected && ' ✓'}
+        {item.optionGroups?.map((group) => {
+          const isInvalid = invalidGroupIds.has(group.id);
+          const selectedCount = selectedOptions.filter((o) => o.optionGroupId === group.id).length;
+
+          return (
+            <div
+              key={group.id}
+              ref={(el) => { groupRefs.current[group.id] = el; }}
+              className={`mt-6 rounded-lg transition-all duration-200 ${isInvalid ? 'border-[1.5px] border-red-600 p-3' : 'border-[1.5px] border-transparent p-0'}`}
+            >
+              {/* 그룹 헤더 */}
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="m-0 text-[15px]">{group.name}</h3>
+                {group.isRequired && (
+                  <span className={`text-[11px] font-semibold text-white rounded px-1.5 py-0.5 transition-colors duration-200 ${isInvalid ? 'bg-red-600' : 'bg-[#ff6b35]'}`}>
+                    필수
                   </span>
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                )}
+                {group.isRequired && (
+                  <span className="text-xs text-gray-400 ml-auto">
+                    {selectedCount}/{group.maxSelect} 선택
+                  </span>
+                )}
+              </div>
+
+              {/* 미충족 에러 메시지 */}
+              {isInvalid && (
+                <p className="mb-2.5 text-xs text-red-600 font-medium">
+                  필수 옵션을 선택해주세요 ({group.maxSelect}개 선택 필요)
+                </p>
+              )}
+
+              {/* 옵션 목록 */}
+              {group.options.map((option) => {
+                const isSelected = selectedOptions.some(
+                  (o) => o.optionGroupId === group.id && o.optionId === option.id,
+                );
+                return (
+                  <div
+                    key={option.id}
+                    onClick={() => option.isAvailable && handleOptionToggle(group, option.id)}
+                    className={`flex justify-between items-center py-3 border-b border-gray-100 ${option.isAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {/* 라디오(maxSelect=1) / 체크박스 인디케이터 */}
+                      <span
+                        className={`w-5 h-5 flex items-center justify-center shrink-0 border-2 transition-all duration-150 ${group.maxSelect === 1 ? 'rounded-full' : 'rounded'} ${isSelected ? 'border-[#ff6b35] bg-[#ff6b35]' : 'border-gray-300 bg-transparent'}`}
+                      >
+                        {isSelected && <span className="text-white text-xs leading-none">✓</span>}
+                      </span>
+                      <span className={isSelected ? 'text-[#ff6b35]' : 'text-gray-800'}>{option.name}</span>
+                    </div>
+                    <span className={`text-sm ${isSelected ? 'text-[#ff6b35]' : 'text-gray-400'}`}>
+                      {option.additionalPrice > 0 && `+${option.additionalPrice.toLocaleString()}원`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
 
         {/* 수량 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 24 }}>
-          <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ddd', fontSize: 20, cursor: 'pointer' }}>-</button>
-          <span style={{ fontSize: 18, fontWeight: 600 }}>{quantity}</span>
-          <button onClick={() => setQuantity((q) => q + 1)} style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ddd', fontSize: 20, cursor: 'pointer' }}>+</button>
+        <div className="flex items-center gap-4 mt-6">
+          <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-9 h-9 rounded-full border border-gray-200 text-xl cursor-pointer">-</button>
+          <span className="text-lg font-semibold">{quantity}</span>
+          <button onClick={() => setQuantity((q) => q + 1)} className="w-9 h-9 rounded-full border border-gray-200 text-xl cursor-pointer">+</button>
         </div>
       </div>
 
-      <div style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: 440 }}>
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px]">
         <button
           onClick={handleAddToCart}
           disabled={loading}
-          style={{ width: '100%', padding: 16, background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, cursor: 'pointer' }}
+          className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           {totalPrice.toLocaleString()}원 · 장바구니 담기
         </button>

@@ -40,68 +40,79 @@ export default function TableManagePage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <h2 style={{ margin: 0 }}>테이블 관리</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <h2 className="m-0">테이블 관리</h2>
         {superAdmin && (
-          <span style={{
-            padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-            background: isAllStores ? '#e8f5e9' : '#e3f2fd',
-            color: isAllStores ? '#1b5e20' : '#0d47a1',
-          }}>
+          <span className={`px-3 py-1 rounded-full text-[13px] font-semibold ${
+            isAllStores ? 'bg-[#e8f5e9] text-[#1b5e20]' : 'bg-[#e3f2fd] text-[#0d47a1]'
+          }`}>
             {isAllStores ? '전체 매장' : (storeNameMap[currentStoreId!] || '선택된 매장')}
           </span>
         )}
       </div>
 
       {isAllStores ? (
-        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '16px 20px', marginBottom: 24, color: '#795548' }}>
+        <div className="bg-[#fff8e1] border border-[#ffe082] rounded-xl px-5 py-4 mb-6 text-[#795548]">
           전체 보기 모드입니다. 테이블을 추가/삭제하려면 상단에서 매장을 선택해주세요.
         </div>
       ) : (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ margin: '0 0 12px' }}>테이블 추가</h3>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} placeholder="테이블 번호" type="number" style={{ width: 120, padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8 }} />
-            <input value={tableName} onChange={(e) => setTableName(e.target.value)} placeholder="테이블 이름 (예: A-1)" style={{ flex: 1, padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8 }} />
-            <button onClick={handleCreate} style={{ padding: '8px 16px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>추가</button>
+        <div className="bg-white rounded-xl p-5 mb-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <h3 className="mt-0 mb-3">테이블 추가</h3>
+          <div className="flex gap-2">
+            <input
+              value={tableNumber}
+              onChange={(e) => setTableNumber(e.target.value)}
+              placeholder="테이블 번호"
+              type="number"
+              className="w-[120px] px-3 py-2 border border-[#ddd] rounded-lg"
+            />
+            <input
+              value={tableName}
+              onChange={(e) => setTableName(e.target.value)}
+              placeholder="테이블 이름 (예: A-1)"
+              className="flex-1 px-3 py-2 border border-[#ddd] rounded-lg"
+            />
+            <button
+              onClick={handleCreate}
+              className="px-4 py-2 bg-[#ff6b35] text-white border-none rounded-lg cursor-pointer"
+            >
+              추가
+            </button>
           </div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
         {tables.map((table) => (
-          <div key={table.id} style={{ background: '#fff', borderRadius: 12, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div key={table.id} className="bg-white rounded-xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <div className="flex justify-between items-start">
               <div>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 18 }}>{table.tableNumber}번</p>
-                <p style={{ margin: '0 0 4px', color: '#666' }}>{table.name}</p>
-                <p style={{ margin: 0, fontSize: 12, color: '#888' }}>최대 {table.capacity}인</p>
+                <p className="m-0 mb-1 font-bold text-lg">{table.tableNumber}번</p>
+                <p className="m-0 mb-1 text-[#666]">{table.name}</p>
+                <p className="m-0 text-xs text-[#888]">최대 {table.capacity}인</p>
                 {isAllStores && table.storeId && storeNameMap[table.storeId] && (
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#aaa' }}>🏪 {storeNameMap[table.storeId]}</p>
+                  <p className="mt-1 m-0 text-xs text-[#aaa]">🏪 {storeNameMap[table.storeId]}</p>
                 )}
               </div>
               {!isAllStores && (
-                <button onClick={() => setDeleteTargetId(table.id)} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 18 }}>×</button>
+                <button
+                  onClick={() => setDeleteTargetId(table.id)}
+                  className="bg-transparent border-none text-[#bbb] cursor-pointer text-lg"
+                >
+                  ×
+                </button>
               )}
             </div>
             <button
               onClick={() => setImageOpenId(imageOpenId === table.id ? null : table.id)}
-              style={{
-                marginTop: 10,
-                padding: '4px 10px',
-                background: imageOpenId === table.id ? '#ff6b35' : 'none',
-                color: imageOpenId === table.id ? '#fff' : '#ff6b35',
-                border: '1px solid #ff6b35',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 12,
-                width: '100%',
-              }}
+              className={`mt-2.5 w-full px-2.5 py-1 border border-[#ff6b35] rounded-md cursor-pointer text-xs ${
+                imageOpenId === table.id ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-[#ff6b35]'
+              }`}
             >
               🖼️ 이미지 관리
             </button>
             {imageOpenId === table.id && (
-              <div style={{ marginTop: 8, borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
+              <div className="mt-2 border-t border-[#f0f0f0] pt-2">
                 <ImageManagerWidget entityType="tables" entityId={table.id} readonly={isAllStores} />
               </div>
             )}

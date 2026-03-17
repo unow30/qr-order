@@ -18,70 +18,15 @@ export default function ConfirmDialog({
   if (!isOpen) return null;
 
   return (
-    <div style={styles.overlay} onClick={onCancel}>
-      <div style={styles.dialog} onClick={(e) => e.stopPropagation()}>
-        <h3 style={styles.title}>{title}</h3>
-        <p style={styles.message}>{message}</p>
-        <div style={styles.actions}>
-          <button style={styles.cancelBtn} onClick={onCancel}>취소</button>
-          <button style={styles.confirmBtn} onClick={onConfirm}>{confirmLabel}</button>
+    <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-[1000]" onClick={onCancel}>
+      <div className="bg-white rounded-xl pt-7 px-6 pb-5 w-[360px] shadow-[0_8px_32px_rgba(0,0,0,0.18)]" onClick={(e) => e.stopPropagation()}>
+        <h3 className="mb-2.5 text-[17px] font-bold text-gray-900">{title}</h3>
+        <p className="mb-6 text-sm text-gray-500 leading-relaxed">{message}</p>
+        <div className="flex gap-2 justify-end">
+          <button className="px-5 py-2 border border-gray-200 rounded-lg bg-white text-gray-500 cursor-pointer text-sm" onClick={onCancel}>취소</button>
+          <button className="px-5 py-2 border-none rounded-lg bg-red-600 text-white cursor-pointer text-sm font-semibold" onClick={onConfirm}>{confirmLabel}</button>
         </div>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  },
-  dialog: {
-    background: '#fff',
-    borderRadius: 12,
-    padding: '28px 24px 20px',
-    width: 360,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-  },
-  title: {
-    margin: '0 0 10px',
-    fontSize: 17,
-    fontWeight: 700,
-    color: '#1a1a1a',
-  },
-  message: {
-    margin: '0 0 24px',
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 1.6,
-  },
-  actions: {
-    display: 'flex',
-    gap: 8,
-    justifyContent: 'flex-end',
-  },
-  cancelBtn: {
-    padding: '8px 20px',
-    border: '1px solid #ddd',
-    borderRadius: 8,
-    background: '#fff',
-    color: '#555',
-    cursor: 'pointer',
-    fontSize: 14,
-  },
-  confirmBtn: {
-    padding: '8px 20px',
-    border: 'none',
-    borderRadius: 8,
-    background: '#e53935',
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: 14,
-    fontWeight: 600,
-  },
-};

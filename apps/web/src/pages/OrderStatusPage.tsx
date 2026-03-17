@@ -1,6 +1,8 @@
-import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useOrderStore } from '../stores/orderStore';
 import { useOrderSSE } from '../hooks/useOrderSSE';
+import { getOrder } from '../api/order.api';
 import { OrderStatus } from '@qr-order/shared-types';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -22,41 +24,42 @@ const STATUS_STEPS = [
 
 export default function OrderStatusPage() {
   const { id } = useParams<{ id: string }>();
-  const { currentOrder, orderStatus } = useOrderStore();
+  const navigate = useNavigate();
+  const { currentOrder, orderStatus, setOrder } = useOrderStore();
   useOrderSSE(id ?? null);
+
+  useEffect(() => {
+    if (!id) return;
+    getOrder(id).then(setOrder).catch(() => {});
+  }, [id]);
 
   const currentStepIdx = orderStatus ? STATUS_STEPS.indexOf(orderStatus) : 0;
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 24, fontFamily: 'sans-serif' }}>
-      <h1 style={{ textAlign: 'center', fontSize: 20, marginBottom: 32 }}>주문 현황</h1>
+    <div className="max-w-[480px] mx-auto p-6 font-sans">
+      <h1 className="text-center text-xl mb-8">주문 현황</h1>
 
       {/* 상태 표시 */}
-      <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>
+      <div className="text-center mb-8">
+        <div className="text-5xl mb-4">
           {orderStatus === OrderStatus.PREPARING ? '👨‍🍳' :
            orderStatus === OrderStatus.READY ? '🍽️' :
            orderStatus === OrderStatus.SERVED ? '✅' :
            orderStatus === OrderStatus.CANCELLED ? '❌' : '⏳'}
         </div>
-        <h2 style={{ margin: '0 0 8px', color: '#ff6b35' }}>
+        <h2 className="text-[#ff6b35] mb-2">
           {orderStatus ? STATUS_LABELS[orderStatus] : '처리 중...'}
         </h2>
       </div>
 
       {/* 진행 단계 */}
       {orderStatus !== OrderStatus.CANCELLED && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 32, position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 12, left: '10%', right: '10%', height: 2, background: '#f0f0f0' }} />
+        <div className="flex justify-between mb-8 relative">
+          <div className="absolute top-3 left-[10%] right-[10%] h-0.5 bg-gray-100" />
           {STATUS_STEPS.map((step, idx) => (
-            <div key={step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: '50%', zIndex: 1,
-                background: idx <= currentStepIdx ? '#ff6b35' : '#f0f0f0',
-                border: '2px solid',
-                borderColor: idx <= currentStepIdx ? '#ff6b35' : '#ddd',
-              }} />
-              <span style={{ fontSize: 10, marginTop: 8, color: idx <= currentStepIdx ? '#ff6b35' : '#aaa', textAlign: 'center' }}>
+            <div key={step} className="flex flex-col items-center flex-1">
+              <div className={`w-6 h-6 rounded-full z-10 border-2 ${idx <= currentStepIdx ? 'bg-[#ff6b35] border-[#ff6b35]' : 'bg-gray-100 border-gray-300'}`} />
+              <span className={`text-[10px] mt-2 text-center ${idx <= currentStepIdx ? 'text-[#ff6b35]' : 'text-gray-400'}`}>
                 {STATUS_LABELS[step].split(' ')[0]}
               </span>
             </div>
@@ -66,21 +69,41 @@ export default function OrderStatusPage() {
 
       {/* 주문 상세 */}
       {currentOrder && (
-        <div style={{ background: '#f8f8f8', borderRadius: 12, padding: 16 }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 15 }}>주문 내역</h3>
+        <div className="bg-gray-50 rounded-xl p-4">
+          <h3 className="text-[15px] mb-3">주문 내역</h3>
           {currentOrder.items?.map((item) => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 14 }}>{item.menuItemName} ×{item.quantity}</span>
-              <span style={{ fontSize: 14 }}>{item.totalPrice.toLocaleString()}원</span>
+            <div key={item.id} className="flex justify-between mb-2">
+              <span className="text-sm">{item.menuItemName} ×{item.quantity}</span>
+              <span className="text-sm">{item.totalPrice.toLocaleString()}원</span>
             </div>
           ))}
-          <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+          <hr className="border-t border-gray-200 my-3" />
+          {currentOrder.discountAmount > 0 && (
+            <>
+              <div className="flex justify-between mb-1 text-gray-500">
+                <span>소계</span>
+                <span>{currentOrder.totalAmount.toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between mb-2 text-red-500">
+                <span>할인</span>
+                <span>-{currentOrder.discountAmount.toLocaleString()}원</span>
+              </div>
+            </>
+          )}
+          <div className="flex justify-between font-bold">
             <span>합계</span>
-            <span>{currentOrder.totalAmount.toLocaleString()}원</span>
+            <span>{currentOrder.finalAmount.toLocaleString()}원</span>
           </div>
         </div>
       )}
+
+      {/* 메뉴로 이동 */}
+      <button
+        onClick={() => navigate('/menu', { replace: true })}
+        className="block w-full mt-6 py-[14px] bg-[#ff6b35] text-white border-none rounded-xl text-base font-semibold cursor-pointer"
+      >
+        🍽️ 메뉴 더 주문하기
+      </button>
     </div>
   );
 }

@@ -70,6 +70,8 @@ describe('useOrderSSE', () => {
       status: OrderStatus.PENDING,
       items: [],
       totalAmount: 10000,
+      discountAmount: 0,
+      finalAmount: 10000,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

@@ -35,6 +35,8 @@ export interface Order {
   status: OrderStatus;
   items: OrderItem[];
   totalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
   note?: string;
   createdAt: Date;
   updatedAt: Date;

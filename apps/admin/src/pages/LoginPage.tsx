@@ -26,40 +26,28 @@ export default function LoginPage() {
     }
   };
 
+  const inputCls = 'w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm box-border';
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f7fa' }}>
-      <div style={{ background: '#fff', padding: 40, borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.1)', width: 360 }}>
-        <h1 style={{ margin: '0 0 8px', fontSize: 24 }}>QR 오더 어드민</h1>
-        <p style={{ margin: '0 0 32px', color: '#888' }}>관리자 로그인</p>
+    <div className="flex justify-center items-center h-screen bg-[#f5f7fa]">
+      <div className="bg-white p-10 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] w-[360px]">
+        <h1 className="mb-2 text-2xl">QR 오더 어드민</h1>
+        <p className="mb-8 text-gray-400">관리자 로그인</p>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600 }}>아이디</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}
-              required
-            />
+          <div className="mb-4">
+            <label className="block mb-2 text-sm font-semibold">아이디</label>
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin" className={inputCls} required />
           </div>
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600 }}>비밀번호</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}
-              required
-            />
+          <div className="mb-6">
+            <label className="block mb-2 text-sm font-semibold">비밀번호</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputCls} required />
           </div>
-          {error && <p style={{ color: '#e53935', marginBottom: 16, fontSize: 14 }}>{error}</p>}
+          {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', padding: 14, background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
+            className={`w-full py-3.5 bg-[#ff6b35] text-white border-none rounded-lg text-base cursor-pointer ${loading ? 'opacity-70' : ''}`}
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>

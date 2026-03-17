@@ -16,7 +16,8 @@ export class StoreContextMiddleware implements NestMiddleware {
   ) {}
 
   async use(req: RequestWithStore, _res: Response, next: NextFunction): Promise<void> {
-    const storeIdHeader = req.headers['x-store-id'] as string | undefined;
+    // SSE 연결처럼 헤더를 추가할 수 없는 경우 쿼리 파라미터로도 수신
+    const storeIdHeader = (req.headers['x-store-id'] ?? req.query?.['X-Store-Id']) as string | undefined;
 
     if (storeIdHeader) {
       const store = await this.storeService.findBySlug(storeIdHeader).catch(() => null)

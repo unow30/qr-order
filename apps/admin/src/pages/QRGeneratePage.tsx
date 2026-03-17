@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { getTables, generateQrToken, getQrToken } from '../api/table.api';
 import { Table } from '@qr-order/shared-types';
@@ -7,7 +7,6 @@ export default function QRGeneratePage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [qrData, setQrData] = useState<{ token: string } | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     getTables().then(setTables);
@@ -46,57 +45,57 @@ export default function QRGeneratePage() {
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 24px' }}>QR 코드 생성</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      <h2 className="mb-6 mt-0">QR 코드 생성</h2>
+      <div className="grid grid-cols-2 gap-6">
         {/* 테이블 선택 */}
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ margin: '0 0 16px' }}>테이블 선택</h3>
+        <div className="bg-white rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <h3 className="mt-0 mb-4">테이블 선택</h3>
           {tables.map((table) => (
             <div
               key={table.id}
               onClick={() => handleSelectTable(table)}
-              style={{
-                padding: '12px 16px', borderRadius: 8, marginBottom: 8, cursor: 'pointer',
-                border: '1px solid', borderColor: selectedTable?.id === table.id ? '#ff6b35' : '#eee',
-                background: selectedTable?.id === table.id ? '#fff5f2' : '#fff',
-              }}
+              className={`px-4 py-3 rounded-lg mb-2 cursor-pointer border ${
+                selectedTable?.id === table.id
+                  ? 'border-brand bg-[#fff5f2]'
+                  : 'border-[#eee] bg-white'
+              }`}
             >
-              <span style={{ fontWeight: 600 }}>{table.tableNumber}번 - {table.name}</span>
+              <span className="font-semibold">{table.tableNumber}번 - {table.name}</span>
             </div>
           ))}
         </div>
 
         {/* QR 코드 */}
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'center' }}>
-          <h3 style={{ margin: '0 0 16px' }}>QR 코드</h3>
+        <div className="bg-white rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+          <h3 className="mt-0 mb-4">QR 코드</h3>
           {selectedTable ? (
             <>
               {qrData ? (
                 <>
-                  <div style={{ display: 'inline-block', padding: 16, background: '#fff', borderRadius: 8, border: '1px solid #eee' }}>
+                  <div className="inline-block p-4 bg-white rounded-lg border border-[#eee]">
                     <QRCodeCanvas value={getQrUrl()} size={200} />
                   </div>
-                  <p style={{ fontSize: 12, color: '#888', marginTop: 8, wordBreak: 'break-all' }}>{getQrUrl()}</p>
-                  <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16 }}>
-                    <button onClick={handleDownload} style={{ padding: '8px 16px', background: '#3f51b5', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+                  <p className="text-xs text-[#888] mt-2 break-all">{getQrUrl()}</p>
+                  <div className="flex gap-2 justify-center mt-4">
+                    <button onClick={handleDownload} className="px-4 py-2 bg-[#3f51b5] text-white border-none rounded-lg cursor-pointer">
                       다운로드
                     </button>
-                    <button onClick={handleGenerate} style={{ padding: '8px 16px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+                    <button onClick={handleGenerate} className="px-4 py-2 bg-brand text-white border-none rounded-lg cursor-pointer">
                       재발급
                     </button>
                   </div>
                 </>
               ) : (
-                <div style={{ padding: 32 }}>
-                  <p style={{ color: '#888', marginBottom: 16 }}>QR 코드가 없습니다.</p>
-                  <button onClick={handleGenerate} style={{ padding: '10px 20px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+                <div className="p-8">
+                  <p className="text-[#888] mb-4">QR 코드가 없습니다.</p>
+                  <button onClick={handleGenerate} className="px-5 py-2.5 bg-brand text-white border-none rounded-lg cursor-pointer">
                     QR 코드 발급
                   </button>
                 </div>
               )}
             </>
           ) : (
-            <p style={{ color: '#888', padding: 32 }}>왼쪽에서 테이블을 선택하세요.</p>
+            <p className="text-[#888] p-8">왼쪽에서 테이블을 선택하세요.</p>
           )}
         </div>
       </div>

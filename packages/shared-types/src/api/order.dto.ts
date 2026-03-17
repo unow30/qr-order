@@ -16,6 +16,7 @@ export interface OrderListResponse {
 
 export interface OrderSseEvent {
   orderId: string;
+  storeId: string;
   status: OrderStatus;
   updatedAt: string;
 }
