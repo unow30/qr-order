@@ -1,4 +1,4 @@
-import { RequestLogContext, LogEventType } from '../request-log.types';
+import { RequestLogContext, LogEventType } from '../../request-log.types';
 
 export class SlackTransport {
   constructor(private readonly webhookUrl: string) {}

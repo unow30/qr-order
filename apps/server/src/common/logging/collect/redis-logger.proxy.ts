@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
-import { addCacheEvent } from './request-log.store';
-import { LogEventType } from './request-log.types';
+import { addCacheEvent } from '../request-log.store';
+import { LogEventType } from '../request-log.types';
 
 const READ_CMDS = new Set(['get', 'hget', 'hgetall', 'hmget']);
 const WRITE_CMDS = new Set(['set', 'setex', 'psetex', 'setnx', 'hset', 'hmset']);
