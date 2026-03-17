@@ -115,23 +115,23 @@ export default function MenuDetailPage() {
     }
   };
 
-  if (!item) return <div style={{ padding: 16 }}>메뉴를 불러오는 중...</div>;
+  if (!item) return <div className="p-4">메뉴를 불러오는 중...</div>;
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', fontFamily: 'sans-serif', paddingBottom: 100 }}>
-      <header style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>←</button>
-        <h2 style={{ margin: 0, fontSize: 18 }}>{item.name}</h2>
+    <div className="max-w-[480px] mx-auto font-sans pb-24">
+      <header className="p-4 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="bg-none border-none text-xl cursor-pointer">←</button>
+        <h2 className="m-0 text-lg">{item.name}</h2>
       </header>
 
       {item.imageUrl && (
-        <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: 240, objectFit: 'cover' }} />
+        <img src={item.imageUrl} alt={item.name} className="w-full h-60 object-cover" />
       )}
 
-      <div style={{ padding: 16 }}>
-        <h2 style={{ margin: '0 0 8px' }}>{item.name}</h2>
-        {item.description && <p style={{ color: '#666', marginBottom: 8 }}>{item.description}</p>}
-        <p style={{ fontSize: 20, fontWeight: 700, color: '#ff6b35' }}>{item.price.toLocaleString()}원</p>
+      <div className="p-4">
+        <h2 className="mb-2">{item.name}</h2>
+        {item.description && <p className="text-gray-500 mb-2">{item.description}</p>}
+        <p className="text-xl font-bold text-[#ff6b35]">{item.price.toLocaleString()}원</p>
 
         {/* 옵션 그룹 */}
         {item.optionGroups?.map((group) => {
@@ -142,34 +142,18 @@ export default function MenuDetailPage() {
             <div
               key={group.id}
               ref={(el) => { groupRefs.current[group.id] = el; }}
-              style={{
-                marginTop: 24,
-                borderRadius: 8,
-                border: `1.5px solid ${isInvalid ? '#e53935' : 'transparent'}`,
-                padding: isInvalid ? '12px' : '0',
-                transition: 'border-color 0.2s, padding 0.2s',
-              }}
+              className={`mt-6 rounded-lg transition-all duration-200 ${isInvalid ? 'border-[1.5px] border-red-600 p-3' : 'border-[1.5px] border-transparent p-0'}`}
             >
               {/* 그룹 헤더 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 15 }}>{group.name}</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="m-0 text-[15px]">{group.name}</h3>
                 {group.isRequired && (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: '#fff',
-                      background: isInvalid ? '#e53935' : '#ff6b35',
-                      borderRadius: 4,
-                      padding: '2px 6px',
-                      transition: 'background 0.2s',
-                    }}
-                  >
+                  <span className={`text-[11px] font-semibold text-white rounded px-1.5 py-0.5 transition-colors duration-200 ${isInvalid ? 'bg-red-600' : 'bg-[#ff6b35]'}`}>
                     필수
                   </span>
                 )}
                 {group.isRequired && (
-                  <span style={{ fontSize: 12, color: '#999', marginLeft: 'auto' }}>
+                  <span className="text-xs text-gray-400 ml-auto">
                     {selectedCount}/{group.maxSelect} 선택
                   </span>
                 )}
@@ -177,7 +161,7 @@ export default function MenuDetailPage() {
 
               {/* 미충족 에러 메시지 */}
               {isInvalid && (
-                <p style={{ margin: '0 0 10px', fontSize: 12, color: '#e53935', fontWeight: 500 }}>
+                <p className="mb-2.5 text-xs text-red-600 font-medium">
                   필수 옵션을 선택해주세요 ({group.maxSelect}개 선택 필요)
                 </p>
               )}
@@ -191,37 +175,18 @@ export default function MenuDetailPage() {
                   <div
                     key={option.id}
                     onClick={() => option.isAvailable && handleOptionToggle(group, option.id)}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '12px 0',
-                      borderBottom: '1px solid #f0f0f0',
-                      cursor: option.isAvailable ? 'pointer' : 'not-allowed',
-                      opacity: option.isAvailable ? 1 : 0.4,
-                    }}
+                    className={`flex justify-between items-center py-3 border-b border-gray-100 ${option.isAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'}`}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div className="flex items-center gap-2.5">
                       {/* 라디오(maxSelect=1) / 체크박스 인디케이터 */}
                       <span
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: group.maxSelect === 1 ? '50%' : 4,
-                          border: `2px solid ${isSelected ? '#ff6b35' : '#ddd'}`,
-                          background: isSelected ? '#ff6b35' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          transition: 'all 0.15s',
-                        }}
+                        className={`w-5 h-5 flex items-center justify-center shrink-0 border-2 transition-all duration-150 ${group.maxSelect === 1 ? 'rounded-full' : 'rounded'} ${isSelected ? 'border-[#ff6b35] bg-[#ff6b35]' : 'border-gray-300 bg-transparent'}`}
                       >
-                        {isSelected && <span style={{ color: '#fff', fontSize: 12, lineHeight: 1 }}>✓</span>}
+                        {isSelected && <span className="text-white text-xs leading-none">✓</span>}
                       </span>
-                      <span style={{ color: isSelected ? '#ff6b35' : '#333' }}>{option.name}</span>
+                      <span className={isSelected ? 'text-[#ff6b35]' : 'text-gray-800'}>{option.name}</span>
                     </div>
-                    <span style={{ fontSize: 14, color: isSelected ? '#ff6b35' : '#888' }}>
+                    <span className={`text-sm ${isSelected ? 'text-[#ff6b35]' : 'text-gray-400'}`}>
                       {option.additionalPrice > 0 && `+${option.additionalPrice.toLocaleString()}원`}
                     </span>
                   </div>
@@ -232,28 +197,18 @@ export default function MenuDetailPage() {
         })}
 
         {/* 수량 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 24 }}>
-          <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ddd', fontSize: 20, cursor: 'pointer' }}>-</button>
-          <span style={{ fontSize: 18, fontWeight: 600 }}>{quantity}</span>
-          <button onClick={() => setQuantity((q) => q + 1)} style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ddd', fontSize: 20, cursor: 'pointer' }}>+</button>
+        <div className="flex items-center gap-4 mt-6">
+          <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-9 h-9 rounded-full border border-gray-200 text-xl cursor-pointer">-</button>
+          <span className="text-lg font-semibold">{quantity}</span>
+          <button onClick={() => setQuantity((q) => q + 1)} className="w-9 h-9 rounded-full border border-gray-200 text-xl cursor-pointer">+</button>
         </div>
       </div>
 
-      <div style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: 440 }}>
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px]">
         <button
           onClick={handleAddToCart}
           disabled={loading}
-          style={{
-            width: '100%',
-            padding: 16,
-            background: '#ff6b35',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 12,
-            fontSize: 16,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1,
-          }}
+          className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           {totalPrice.toLocaleString()}원 · 장바구니 담기
         </button>

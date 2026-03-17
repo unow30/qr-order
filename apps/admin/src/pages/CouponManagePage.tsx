@@ -4,22 +4,18 @@ import { useAuthStore } from '../stores/authStore';
 import { useStoreNames } from '../hooks/useStoreNames';
 import ImageManagerWidget from '../components/ImageManagerWidget';
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '8px 12px', border: '1px solid #ddd',
-  borderRadius: 8, fontSize: 14, boxSizing: 'border-box',
-};
-const cardStyle: React.CSSProperties = {
-  background: '#fff', borderRadius: 12, padding: 24,
-  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-};
+function statusBadgeCls(c: Coupon): string {
+  if (!c.isActive) return 'bg-gray-100 text-gray-500';
+  if (c.expiresAt && new Date(c.expiresAt) < new Date()) return 'bg-red-100 text-red-600';
+  if (c.maxUses > 0 && c.usedCount >= c.maxUses) return 'bg-amber-100 text-amber-700';
+  return 'bg-emerald-100 text-emerald-700';
+}
 
-function statusBadge(c: Coupon) {
-  if (!c.isActive) return { label: '비활성', color: '#9ca3af', bg: '#f3f4f6' };
-  if (c.expiresAt && new Date(c.expiresAt) < new Date())
-    return { label: '만료', color: '#dc2626', bg: '#fee2e2' };
-  if (c.maxUses > 0 && c.usedCount >= c.maxUses)
-    return { label: '소진', color: '#d97706', bg: '#fef3c7' };
-  return { label: '사용 가능', color: '#059669', bg: '#d1fae5' };
+function statusBadgeLabel(c: Coupon): string {
+  if (!c.isActive) return '비활성';
+  if (c.expiresAt && new Date(c.expiresAt) < new Date()) return '만료';
+  if (c.maxUses > 0 && c.usedCount >= c.maxUses) return '소진';
+  return '사용 가능';
 }
 
 export default function CouponManagePage() {
@@ -84,60 +80,67 @@ export default function CouponManagePage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <h2 style={{ margin: 0, fontSize: 22 }}>쿠폰 관리</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <h2 className="m-0 text-[22px]">쿠폰 관리</h2>
         {superAdmin && (
-          <span style={{
-            padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-            background: isAllStores ? '#e8f5e9' : '#e3f2fd',
-            color: isAllStores ? '#1b5e20' : '#0d47a1',
-          }}>
+          <span className={`px-3 py-1 rounded-full text-[13px] font-semibold ${
+            isAllStores ? 'bg-[#e8f5e9] text-[#1b5e20]' : 'bg-[#e3f2fd] text-[#0d47a1]'
+          }`}>
             {isAllStores ? '전체 매장' : (storeNameMap[currentStoreId!] || '선택된 매장')}
           </span>
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isAllStores ? '1fr' : '380px 1fr', gap: 24 }}>
+      <div className={`grid gap-6 ${isAllStores ? 'grid-cols-1' : 'grid-cols-[380px_1fr]'}`}>
 
         {/* 쿠폰 생성 폼 (매장 선택 모드에서만) */}
         {!isAllStores && (
-          <div style={cardStyle}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>쿠폰 생성</h3>
-            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <h3 className="mt-0 mb-4 text-base">쿠폰 생성</h3>
+            <form onSubmit={handleCreate} className="flex flex-col gap-2.5">
               <input
-                style={inputStyle} placeholder="쿠폰 코드 (예: SUMMER20)"
+                className="w-full box-border px-3 py-2 border border-[#ddd] rounded-lg text-sm"
+                placeholder="쿠폰 코드 (예: SUMMER20)"
                 value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required
               />
-              <select style={inputStyle} value={discountType}
-                onChange={(e) => setDiscountType(e.target.value as DiscountType)}>
+              <select
+                className="w-full box-border px-3 py-2 border border-[#ddd] rounded-lg text-sm"
+                value={discountType}
+                onChange={(e) => setDiscountType(e.target.value as DiscountType)}
+              >
                 <option value="PERCENT">비율 할인 (%)</option>
                 <option value="FIXED">정액 할인 (원)</option>
               </select>
               <input
-                style={inputStyle}
+                className="w-full box-border px-3 py-2 border border-[#ddd] rounded-lg text-sm"
                 placeholder={discountType === 'PERCENT' ? '할인율 (1~100)' : '할인 금액 (원)'}
                 type="number" min="1" value={discountValue}
                 onChange={(e) => setDiscountValue(e.target.value)} required
               />
               <input
-                style={inputStyle} placeholder="최소 주문 금액 (0 = 무제한)"
+                className="w-full box-border px-3 py-2 border border-[#ddd] rounded-lg text-sm"
+                placeholder="최소 주문 금액 (0 = 무제한)"
                 type="number" min="0" value={minOrderAmount}
                 onChange={(e) => setMinOrderAmount(e.target.value)}
               />
               <input
-                style={inputStyle} placeholder="최대 사용 횟수 (0 = 무제한)"
+                className="w-full box-border px-3 py-2 border border-[#ddd] rounded-lg text-sm"
+                placeholder="최대 사용 횟수 (0 = 무제한)"
                 type="number" min="0" value={maxUses}
                 onChange={(e) => setMaxUses(e.target.value)}
               />
               <div>
-                <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>만료일 (선택)</label>
-                <input style={inputStyle} type="date" value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)} />
+                <label className="text-xs text-[#555] block mb-1">만료일 (선택)</label>
+                <input
+                  className="w-full box-border px-3 py-2 border border-[#ddd] rounded-lg text-sm"
+                  type="date" value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                />
               </div>
-              {formError && <p style={{ color: '#e53935', fontSize: 13, margin: 0 }}>{formError}</p>}
+              {formError && <p className="text-[#e53935] text-[13px] m-0">{formError}</p>}
               <button
                 type="submit" disabled={loading}
-                style={{ padding: '9px 18px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, opacity: loading ? 0.6 : 1 }}
+                className={`px-4 py-2 bg-[#ff6b35] text-white border-none rounded-lg cursor-pointer text-sm ${loading ? 'opacity-60' : ''}`}
               >
                 쿠폰 생성
               </button>
@@ -146,71 +149,64 @@ export default function CouponManagePage() {
         )}
 
         {/* 쿠폰 목록 */}
-        <div style={cardStyle}>
+        <div className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
           {isAllStores && (
-            <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#795548', fontSize: 13 }}>
+            <div className="bg-[#fff8e1] border border-[#ffe082] rounded-lg px-4 py-3 mb-4 text-[#795548] text-[13px]">
               전체 보기 모드입니다. 쿠폰을 생성하려면 상단에서 매장을 선택해주세요.
             </div>
           )}
-          <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>쿠폰 목록 ({coupons.length}개)</h3>
+          <h3 className="mt-0 mb-4 text-base">쿠폰 목록 ({coupons.length}개)</h3>
           {coupons.length === 0 ? (
-            <p style={{ color: '#999', fontSize: 14 }}>등록된 쿠폰이 없습니다.</p>
+            <p className="text-[#999] text-sm">등록된 쿠폰이 없습니다.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {coupons.map((c) => {
-                const badge = statusBadge(c);
-                return (
-                  <div key={c.id} style={{ background: '#fafafa', borderRadius: 8, border: '1px solid #eee', overflow: 'hidden' }}>
-                    <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace', letterSpacing: 1 }}>{c.code}</span>
-                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: badge.bg, color: badge.color }}>
-                            {badge.label}
-                          </span>
-                          {isAllStores && c.storeId && storeNameMap[c.storeId] && (
-                            <span style={{ fontSize: 11, color: '#888' }}>🏪 {storeNameMap[c.storeId]}</span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 13, color: '#555' }}>
-                          {c.discountType === 'PERCENT' ? `${c.discountValue}% 할인` : `${c.discountValue.toLocaleString()}원 할인`}
-                          {c.minOrderAmount > 0 && ` · 최소 ${c.minOrderAmount.toLocaleString()}원`}
-                          {c.maxUses > 0 && ` · ${c.usedCount}/${c.maxUses} 사용`}
-                          {c.expiresAt && ` · ~${new Date(c.expiresAt).toLocaleDateString('ko-KR')}`}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          onClick={() => setImageOpenId(imageOpenId === c.id ? null : c.id)}
-                          style={{
-                            padding: '5px 10px', fontSize: 12, borderRadius: 6,
-                            border: '1px solid #ff6b35',
-                            background: imageOpenId === c.id ? '#ff6b35' : '#fff',
-                            color: imageOpenId === c.id ? '#fff' : '#ff6b35',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          🖼️
-                        </button>
-                        {c.isActive && (
-                          <button
-                            onClick={() => handleDeactivate(c.id)}
-                            style={{ padding: '5px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', color: '#666' }}
-                          >
-                            비활성화
-                          </button>
+            <div className="flex flex-col gap-2">
+              {coupons.map((c) => (
+                <div key={c.id} className="bg-[#fafafa] rounded-lg border border-[#eee] overflow-hidden">
+                  <div className="px-4 py-3.5 flex items-center justify-between">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[15px] font-mono tracking-wider">{c.code}</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${statusBadgeCls(c)}`}>
+                          {statusBadgeLabel(c)}
+                        </span>
+                        {isAllStores && c.storeId && storeNameMap[c.storeId] && (
+                          <span className="text-[11px] text-[#888]">🏪 {storeNameMap[c.storeId]}</span>
                         )}
                       </div>
-                    </div>
-                    {imageOpenId === c.id && (
-                      <div style={{ padding: '10px 16px', borderTop: '1px solid #eee', background: '#fff8f5' }}>
-                        <div style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>쿠폰 이미지 관리</div>
-                        <ImageManagerWidget entityType="coupons" entityId={c.id} readonly={isAllStores} />
+                      <div className="text-[13px] text-[#555]">
+                        {c.discountType === 'PERCENT' ? `${c.discountValue}% 할인` : `${c.discountValue.toLocaleString()}원 할인`}
+                        {c.minOrderAmount > 0 && ` · 최소 ${c.minOrderAmount.toLocaleString()}원`}
+                        {c.maxUses > 0 && ` · ${c.usedCount}/${c.maxUses} 사용`}
+                        {c.expiresAt && ` · ~${new Date(c.expiresAt).toLocaleDateString('ko-KR')}`}
                       </div>
-                    )}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => setImageOpenId(imageOpenId === c.id ? null : c.id)}
+                        className={`px-2.5 py-1 text-xs rounded-md border border-[#ff6b35] cursor-pointer ${
+                          imageOpenId === c.id ? 'bg-[#ff6b35] text-white' : 'bg-white text-[#ff6b35]'
+                        }`}
+                      >
+                        🖼️
+                      </button>
+                      {c.isActive && (
+                        <button
+                          onClick={() => handleDeactivate(c.id)}
+                          className="px-3 py-1 text-xs rounded-md border border-[#ddd] bg-white cursor-pointer text-[#666]"
+                        >
+                          비활성화
+                        </button>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
+                  {imageOpenId === c.id && (
+                    <div className="px-4 py-2.5 border-t border-[#eee] bg-[#fff8f5]">
+                      <div className="font-semibold text-xs text-[#555] mb-2">쿠폰 이미지 관리</div>
+                      <ImageManagerWidget entityType="coupons" entityId={c.id} readonly={isAllStores} />
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

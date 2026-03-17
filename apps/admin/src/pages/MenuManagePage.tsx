@@ -72,6 +72,7 @@ function SortableMenuItemRow({
     disabled: isAllStores,
   });
 
+  // dnd-kit transform style 유지 (라이브러리 요구사항)
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -80,73 +81,56 @@ function SortableMenuItemRow({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+      <div className="flex justify-between items-center py-2 border-t border-[#f0f0f0]">
+        <div className="flex items-center gap-1.5 flex-1">
           {!isAllStores && (
             <span
               {...attributes}
               {...listeners}
-              style={{ cursor: 'grab', color: '#ccc', fontSize: 16, padding: '0 4px', userSelect: 'none' }}
+              className="cursor-grab text-[#ccc] text-base px-1 select-none"
               title="드래그하여 순서 변경"
             >
               ⠿
             </span>
           )}
           <div>
-            <span style={{ fontWeight: 500 }}>{item.name}</span>
-            <span style={{ marginLeft: 12, color: '#ff6b35' }}>{item.price.toLocaleString()}원</span>
+            <span className="font-medium">{item.name}</span>
+            <span className="ml-3 text-[#ff6b35]">{item.price.toLocaleString()}원</span>
             {item.stockEnabled && (
-              <span style={{
-                marginLeft: 8,
-                fontSize: 11,
-                padding: '2px 6px',
-                borderRadius: 10,
-                background: item.stock > 0 ? '#dcfce7' : '#fee2e2',
-                color: item.stock > 0 ? '#166534' : '#dc2626',
-              }}>
+              <span className={`ml-2 text-[11px] px-1.5 py-0.5 rounded-full ${
+                item.stock > 0 ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#fee2e2] text-[#dc2626]'
+              }`}>
                 {item.stock > 0 ? `재고 ${item.stock}개` : '품절'}
               </span>
             )}
             {!item.isAvailable && (
-              <span style={{ marginLeft: 8, fontSize: 11, padding: '2px 6px', borderRadius: 10, background: '#f3f4f6', color: '#6b7280' }}>
+              <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#6b7280]">
                 판매중단
               </span>
             )}
           </div>
         </div>
         {!isAllStores && (
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className="flex gap-1.5">
             <button
               onClick={() => stockEdit?.itemId === item.id ? onCloseStockEdit() : onOpenStockEdit(item)}
-              style={{
-                background: stockEdit?.itemId === item.id ? '#2563eb' : 'none',
-                color: stockEdit?.itemId === item.id ? '#fff' : '#2563eb',
-                border: '1px solid #2563eb',
-                padding: '3px 8px',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 11,
-              }}
+              className={`px-2 py-0.5 border border-[#2563eb] rounded-md cursor-pointer text-[11px] ${
+                stockEdit?.itemId === item.id ? 'bg-[#2563eb] text-white' : 'bg-transparent text-[#2563eb]'
+              }`}
             >
               재고
             </button>
             <button
               onClick={() => onImageToggle(`item-${item.id}`)}
-              style={{
-                background: imageOpenId === `item-${item.id}` ? '#ff6b35' : 'none',
-                color: imageOpenId === `item-${item.id}` ? '#fff' : '#ff6b35',
-                border: '1px solid #ff6b35',
-                padding: '3px 8px',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 11,
-              }}
+              className={`px-2 py-0.5 border border-[#ff6b35] rounded-md cursor-pointer text-[11px] ${
+                imageOpenId === `item-${item.id}` ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-[#ff6b35]'
+              }`}
             >
               🖼️
             </button>
             <button
               onClick={() => onDeleteRequest(item)}
-              style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16 }}
+              className="bg-transparent border-none text-[#bbb] cursor-pointer text-base"
             >×</button>
           </div>
         )}
@@ -154,18 +138,8 @@ function SortableMenuItemRow({
 
       {/* 재고 편집 패널 */}
       {!isAllStores && stockEdit?.itemId === item.id && (
-        <div style={{
-          margin: '4px 0 8px',
-          padding: '12px 16px',
-          background: '#eff6ff',
-          borderRadius: 8,
-          border: '1px solid #bfdbfe',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          flexWrap: 'wrap',
-        }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+        <div className="my-1 mb-2 px-4 py-3 bg-[#eff6ff] rounded-lg border border-[#bfdbfe] flex items-center gap-4 flex-wrap">
+          <label className="flex items-center gap-1.5 text-[13px] cursor-pointer">
             <input
               type="checkbox"
               checked={stockEdit.stockEnabled}
@@ -173,7 +147,7 @@ function SortableMenuItemRow({
             />
             재고 관리 활성화
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          <label className="flex items-center gap-1.5 text-[13px]">
             재고 수량
             <input
               type="number"
@@ -181,29 +155,20 @@ function SortableMenuItemRow({
               value={stockEdit.stock}
               disabled={!stockEdit.stockEnabled}
               onChange={(e) => onStockChange('stock', Math.max(0, parseInt(e.target.value) || 0))}
-              style={{ width: 70, padding: '4px 8px', border: '1px solid #93c5fd', borderRadius: 6, fontSize: 13 }}
+              className="w-[70px] px-2 py-1 border border-[#93c5fd] rounded-md text-[13px]"
             />
           </label>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex gap-2">
             <button
               onClick={onStockSave}
               disabled={stockSaving}
-              style={{
-                padding: '5px 14px',
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                cursor: stockSaving ? 'not-allowed' : 'pointer',
-                fontSize: 12,
-                opacity: stockSaving ? 0.6 : 1,
-              }}
+              className={`px-3.5 py-1 bg-[#2563eb] text-white border-none rounded-md text-xs ${stockSaving ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {stockSaving ? '저장 중...' : '저장'}
             </button>
             <button
               onClick={onCloseStockEdit}
-              style={{ padding: '5px 14px', background: 'none', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}
+              className="px-3.5 py-1 bg-transparent border border-[#d1d5db] rounded-md cursor-pointer text-xs"
             >
               취소
             </button>
@@ -213,8 +178,8 @@ function SortableMenuItemRow({
 
       {/* 아이템 이미지 패널 */}
       {imageOpenId === `item-${item.id}` && (
-        <div style={{ margin: '4px 0 8px', padding: '12px 16px', background: '#fff8f5', borderRadius: 8, border: '1px solid #ffd5c2' }}>
-          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>메뉴 이미지 관리</div>
+        <div className="my-1 mb-2 px-4 py-3 bg-[#fff8f5] rounded-lg border border-[#ffd5c2]">
+          <div className="font-semibold text-[13px] mb-2">메뉴 이미지 관리</div>
           <ImageManagerWidget entityType="menu-items" entityId={item.id} readonly={isAllStores} />
         </div>
       )}
@@ -260,6 +225,7 @@ function SortableCategoryCard({
     disabled: isAllStores,
   });
 
+  // dnd-kit transform style 유지 (라이브러리 요구사항)
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -273,41 +239,39 @@ function SortableCategoryCard({
   );
 
   return (
-    <div ref={setNodeRef} style={{ ...style, background: '#fff', borderRadius: 12, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div ref={setNodeRef} style={style} className="bg-white rounded-xl p-5 mb-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center gap-2">
           {!isAllStores && (
             <span
               {...attributes}
               {...listeners}
-              style={{ cursor: 'grab', color: '#bbb', fontSize: 20, userSelect: 'none', padding: '0 4px' }}
+              className="cursor-grab text-[#bbb] text-xl select-none px-1"
               title="드래그하여 카테고리 순서 변경"
             >
               ⠿
             </span>
           )}
           <div>
-            <h3 style={{ margin: 0 }}>{cat.name}</h3>
+            <h3 className="m-0">{cat.name}</h3>
             {isAllStores && cat.storeId && storeNameMap[cat.storeId] && (
-              <span style={{ fontSize: 12, color: '#888' }}>🏪 {storeNameMap[cat.storeId]}</span>
+              <span className="text-xs text-[#888]">🏪 {storeNameMap[cat.storeId]}</span>
             )}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="flex gap-1.5">
           <button
             onClick={() => onImageToggle(`cat-${cat.id}`)}
-            style={{
-              background: imageOpenId === `cat-${cat.id}` ? '#ff6b35' : 'none',
-              color: imageOpenId === `cat-${cat.id}` ? '#fff' : '#ff6b35',
-              border: '1px solid #ff6b35', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12,
-            }}
+            className={`px-2.5 py-1 border border-[#ff6b35] rounded-md cursor-pointer text-xs ${
+              imageOpenId === `cat-${cat.id}` ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-[#ff6b35]'
+            }`}
           >
             🖼️ 이미지
           </button>
           {!isAllStores && (
             <button
               onClick={() => onDeleteCategoryRequest(cat)}
-              style={{ background: 'none', color: '#e53935', border: '1px solid #e53935', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}
+              className="bg-transparent text-[#e53935] border border-[#e53935] px-2.5 py-1 rounded-md cursor-pointer text-xs"
             >
               삭제
             </button>
@@ -317,8 +281,8 @@ function SortableCategoryCard({
 
       {/* 카테고리 이미지 패널 */}
       {imageOpenId === `cat-${cat.id}` && (
-        <div style={{ margin: '4px 0 12px', padding: '12px 16px', background: '#fff8f5', borderRadius: 8, border: '1px solid #ffd5c2' }}>
-          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>카테고리 이미지 관리</div>
+        <div className="mt-1 mb-3 px-4 py-3 bg-[#fff8f5] rounded-lg border border-[#ffd5c2]">
+          <div className="font-semibold text-[13px] mb-2">카테고리 이미지 관리</div>
           <ImageManagerWidget entityType="menu-categories" entityId={cat.id} readonly={isAllStores} />
         </div>
       )}
@@ -348,7 +312,7 @@ function SortableCategoryCard({
           ))}
         </SortableContext>
       </DndContext>
-      {!cat.items?.length && <p style={{ color: '#888', fontSize: 14 }}>메뉴가 없습니다.</p>}
+      {!cat.items?.length && <p className="text-[#888] text-sm">메뉴가 없습니다.</p>}
     </div>
   );
 }
@@ -472,52 +436,73 @@ export default function MenuManagePage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <h2 style={{ margin: 0 }}>메뉴 관리</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <h2 className="m-0">메뉴 관리</h2>
         {superAdmin && (
-          <span style={{
-            padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-            background: isAllStores ? '#e8f5e9' : '#e3f2fd',
-            color: isAllStores ? '#1b5e20' : '#0d47a1',
-          }}>
+          <span className={`px-3 py-1 rounded-full text-[13px] font-semibold ${
+            isAllStores ? 'bg-[#e8f5e9] text-[#1b5e20]' : 'bg-[#e3f2fd] text-[#0d47a1]'
+          }`}>
             {isAllStores ? '전체 매장' : (storeNameMap[currentStoreId!] || '선택된 매장')}
           </span>
         )}
       </div>
 
       {isAllStores ? (
-        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '16px 20px', marginBottom: 24, color: '#795548' }}>
+        <div className="bg-[#fff8e1] border border-[#ffe082] rounded-xl px-5 py-4 mb-6 text-[#795548]">
           전체 보기 모드입니다. 메뉴를 추가/수정하려면 상단에서 매장을 선택해주세요.
         </div>
       ) : (
         <>
           {/* 카테고리 추가 */}
-          <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ margin: '0 0 12px' }}>카테고리 추가</h3>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div className="bg-white rounded-xl p-5 mb-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <h3 className="mt-0 mb-3">카테고리 추가</h3>
+            <div className="flex gap-2">
               <input
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 placeholder="카테고리명"
-                style={{ flex: 1, padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8 }}
+                className="flex-1 px-3 py-2 border border-[#ddd] rounded-lg"
               />
-              <button onClick={handleAddCategory} style={{ padding: '8px 16px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+              <button
+                onClick={handleAddCategory}
+                className="px-4 py-2 bg-[#ff6b35] text-white border-none rounded-lg cursor-pointer"
+              >
                 추가
               </button>
             </div>
           </div>
 
           {/* 메뉴 아이템 추가 */}
-          <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ margin: '0 0 12px' }}>메뉴 아이템 추가</h3>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <select value={selectedCatId} onChange={(e) => setSelectedCatId(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
+          <div className="bg-white rounded-xl p-5 mb-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <h3 className="mt-0 mb-3">메뉴 아이템 추가</h3>
+            <div className="flex gap-2 flex-wrap">
+              <select
+                value={selectedCatId}
+                onChange={(e) => setSelectedCatId(e.target.value)}
+                className="px-3 py-2 border border-[#ddd] rounded-lg"
+              >
                 <option value="">카테고리 선택</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-              <input value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="메뉴명" style={{ flex: 1, padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8 }} />
-              <input value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} placeholder="가격" type="number" style={{ width: 100, padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8 }} />
-              <button onClick={handleAddItem} style={{ padding: '8px 16px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>추가</button>
+              <input
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder="메뉴명"
+                className="flex-1 px-3 py-2 border border-[#ddd] rounded-lg"
+              />
+              <input
+                value={newItemPrice}
+                onChange={(e) => setNewItemPrice(e.target.value)}
+                placeholder="가격"
+                type="number"
+                className="w-[100px] px-3 py-2 border border-[#ddd] rounded-lg"
+              />
+              <button
+                onClick={handleAddItem}
+                className="px-4 py-2 bg-[#ff6b35] text-white border-none rounded-lg cursor-pointer"
+              >
+                추가
+              </button>
             </div>
           </div>
         </>

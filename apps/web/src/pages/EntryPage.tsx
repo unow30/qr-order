@@ -40,7 +40,7 @@ export default function EntryPage() {
 
   if (loading && !error) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div className="flex justify-center items-center h-screen">
         <p>세션을 초기화하는 중...</p>
       </div>
     );
@@ -48,8 +48,8 @@ export default function EntryPage() {
 
   if (error) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: 16 }}>
-        <p style={{ color: 'red' }}>{error}</p>
+      <div className="flex flex-col justify-center items-center h-screen gap-4">
+        <p className="text-red-500">{error}</p>
         <p>QR 코드를 다시 스캔해 주세요.</p>
       </div>
     );

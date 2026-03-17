@@ -26,6 +26,8 @@ describe('useOrderStore', () => {
         status: OrderStatus.PENDING,
         items: [],
         totalAmount: 14000,
+        discountAmount: 0,
+        finalAmount: 14000,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -49,6 +51,8 @@ describe('useOrderStore', () => {
         status: OrderStatus.PENDING,
         items: [],
         totalAmount: 14000,
+        discountAmount: 0,
+        finalAmount: 14000,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -81,6 +85,8 @@ describe('useOrderStore', () => {
         status: OrderStatus.PENDING,
         items: [],
         totalAmount: 14000,
+        discountAmount: 0,
+        finalAmount: 14000,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

@@ -55,44 +55,44 @@ export default function PaymentPage() {
   };
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', fontFamily: 'sans-serif', paddingBottom: 100 }}>
-      <header style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>←</button>
-        <h2 style={{ margin: 0 }}>결제</h2>
+    <div className="max-w-[480px] mx-auto font-sans pb-24">
+      <header className="p-4 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
+        <h2 className="m-0">결제</h2>
       </header>
 
-      <div style={{ padding: '0 16px' }}>
+      <div className="px-4">
         {/* 주문 요약 */}
-        <div style={{ background: '#f8f8f8', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 15 }}>주문 요약</h3>
+        <div className="bg-gray-50 rounded-xl p-4 mb-4">
+          <h3 className="text-[15px] mb-3">주문 요약</h3>
           {items.map((item) => (
-            <div key={item.cartItemId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 14 }}>{item.menuItemName} ×{item.quantity}</span>
-              <span style={{ fontSize: 14 }}>{item.totalPrice.toLocaleString()}원</span>
+            <div key={item.cartItemId} className="flex justify-between mb-2">
+              <span className="text-sm">{item.menuItemName} ×{item.quantity}</span>
+              <span className="text-sm">{item.totalPrice.toLocaleString()}원</span>
             </div>
           ))}
-          <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
+          <hr className="border-t border-gray-200 my-3" />
           {discountAmount > 0 && (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 4 }}>
+              <div className="flex justify-between text-[13px] text-gray-500 mb-1">
                 <span>소계</span>
                 <span>{totalAmount.toLocaleString()}원</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#059669', marginBottom: 8 }}>
+              <div className="flex justify-between text-[13px] text-emerald-600 mb-2">
                 <span>🏷️ 쿠폰 할인 ({couponCode})</span>
                 <span>-{discountAmount.toLocaleString()}원</span>
               </div>
             </>
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+          <div className="flex justify-between font-bold">
             <span>최종 결제 금액</span>
-            <span style={{ color: '#ff6b35' }}>{payAmount.toLocaleString()}원</span>
+            <span className="text-[#ff6b35]">{payAmount.toLocaleString()}원</span>
           </div>
         </div>
 
         {/* 결제 수단 */}
-        <div style={{ marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>결제 수단</h3>
+        <div className="mb-4">
+          <h3 className="text-[15px] mb-3">결제 수단</h3>
           {[
             { value: PaymentMethod.CARD, label: '카드' },
             { value: PaymentMethod.MOBILE, label: '간편결제' },
@@ -100,12 +100,7 @@ export default function PaymentPage() {
             <div
               key={opt.value}
               onClick={() => setMethod(opt.value)}
-              style={{
-                padding: 16, borderRadius: 8, border: '1px solid',
-                borderColor: method === opt.value ? '#ff6b35' : '#ddd',
-                marginBottom: 8, cursor: 'pointer',
-                background: method === opt.value ? '#fff5f2' : '#fff',
-              }}
+              className={`p-4 rounded-lg border mb-2 cursor-pointer ${method === opt.value ? 'border-[#ff6b35] bg-orange-50' : 'border-gray-200 bg-white'}`}
             >
               {opt.label}
             </div>
@@ -113,23 +108,23 @@ export default function PaymentPage() {
         </div>
 
         {/* 요청사항 */}
-        <div style={{ marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 8 }}>요청사항</h3>
+        <div className="mb-4">
+          <h3 className="text-[15px] mb-2">요청사항</h3>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="주문 요청사항을 입력해 주세요."
-            style={{ width: '100%', padding: 12, borderRadius: 8, border: '1px solid #ddd', fontSize: 14, resize: 'none', boxSizing: 'border-box' }}
+            className="w-full p-3 rounded-lg border border-gray-200 text-sm resize-none box-border"
             rows={3}
           />
         </div>
       </div>
 
-      <div style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: 440 }}>
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px]">
         <button
           onClick={handlePayment}
           disabled={loading || items.length === 0}
-          style={{ width: '100%', padding: 16, background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
+          className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${loading ? 'opacity-70' : ''}`}
         >
           {loading ? '처리 중...' : `${payAmount.toLocaleString()}원 결제하기`}
         </button>

@@ -137,15 +137,17 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
     fetchImages();
   };
 
+  const inputCls = 'w-full px-2.5 py-1 border border-gray-200 rounded text-[11px] box-border mb-1';
+
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="mt-3">
       {/* 이미지 목록 */}
       {loading ? (
-        <div style={{ color: '#999', fontSize: 13 }}>로딩 중...</div>
+        <div className="text-gray-400 text-[13px]">로딩 중...</div>
       ) : images.length === 0 ? (
-        <div style={{ color: '#bbb', fontSize: 13, marginBottom: 8 }}>등록된 이미지가 없습니다.</div>
+        <div className="text-gray-300 text-[13px] mb-2">등록된 이미지가 없습니다.</div>
       ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+        <div className="flex flex-wrap gap-2.5 mb-3">
           {images.map((img) => {
             const scheduled = !isReview && isEventImage(img as EntityImage);
             const active = !isReview && isActive(img as EntityImage);
@@ -154,28 +156,20 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
             return (
               <div
                 key={img.id}
-                style={{
-                  border: `1px solid ${active && !isReview ? '#4caf50' : '#e0e0e0'}`,
-                  borderRadius: 8,
-                  padding: 10,
-                  background: '#fafafa',
-                  minWidth: 160,
-                  maxWidth: 220,
-                  fontSize: 12,
-                }}
+                className={`rounded-lg p-2.5 bg-gray-50 text-xs min-w-[160px] max-w-[220px] border ${active && !isReview ? 'border-green-500' : 'border-gray-200'}`}
               >
                 {/* 썸네일 */}
-                <div style={{ marginBottom: 6 }}>
+                <div className="mb-1.5">
                   <img
                     src={(img as EntityImage).imageUrl}
                     alt={(img as EntityImage).altText ?? ''}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 4, background: '#eee' }}
+                    className="w-full h-20 object-cover rounded bg-gray-200"
                   />
                 </div>
 
                 {/* URL (말줄임) */}
-                <div style={{ color: '#555', wordBreak: 'break-all', fontSize: 11, marginBottom: 4 }}>
+                <div className="text-gray-500 break-all text-[11px] mb-1">
                   {(img as EntityImage).imageUrl.length > 40
                     ? (img as EntityImage).imageUrl.slice(0, 40) + '...'
                     : (img as EntityImage).imageUrl}
@@ -183,21 +177,15 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
 
                 {/* 배지 */}
                 {!isReview && (
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
+                  <div className="flex gap-1 flex-wrap mb-1.5">
                     {scheduled && (
-                      <span style={{ background: '#e3f2fd', color: '#1565c0', padding: '1px 6px', borderRadius: 10, fontSize: 10 }}>
-                        이벤트
-                      </span>
+                      <span className="bg-blue-50 text-blue-800 px-1.5 py-0.5 rounded-full text-[10px]">이벤트</span>
                     )}
-                    <span style={{
-                      background: active ? '#e8f5e9' : '#f5f5f5',
-                      color: active ? '#2e7d32' : '#9e9e9e',
-                      padding: '1px 6px', borderRadius: 10, fontSize: 10,
-                    }}>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${active ? 'bg-green-50 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
                       {active ? '활성' : '비활성'}
                     </span>
                     {(img as EntityImage).priority > 0 && (
-                      <span style={{ background: '#fff3e0', color: '#e65100', padding: '1px 6px', borderRadius: 10, fontSize: 10 }}>
+                      <span className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded-full text-[10px]">
                         우선순위 {(img as EntityImage).priority}
                       </span>
                     )}
@@ -206,87 +194,44 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
 
                 {/* 이벤트 기간 표시 */}
                 {scheduled && (img as EntityImage).startAt && (
-                  <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
+                  <div className="text-[10px] text-gray-500 mb-1">
                     {(img as EntityImage).startAt?.slice(0, 10)} ~ {(img as EntityImage).endAt?.slice(0, 10) ?? '∞'}
                   </div>
                 )}
 
                 {/* 수정 폼 (인라인 확장) */}
                 {isEditing && !isReview && (
-                  <div style={{ marginTop: 8, borderTop: '1px solid #eee', paddingTop: 8 }}>
-                    <input
-                      value={editForm.imageUrl}
-                      onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
-                      placeholder="이미지 URL"
-                      style={{ width: '100%', padding: '4px 6px', border: '1px solid #ddd', borderRadius: 4, fontSize: 11, marginBottom: 4, boxSizing: 'border-box' }}
-                    />
-                    <input
-                      value={editForm.altText}
-                      onChange={(e) => setEditForm({ ...editForm, altText: e.target.value })}
-                      placeholder="alt 텍스트"
-                      style={{ width: '100%', padding: '4px 6px', border: '1px solid #ddd', borderRadius: 4, fontSize: 11, marginBottom: 4, boxSizing: 'border-box' }}
-                    />
-                    <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-                      <input
-                        type="number"
-                        value={editForm.priority}
-                        onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                        placeholder="우선순위"
-                        min={0}
-                        style={{ flex: 1, padding: '4px 6px', border: '1px solid #ddd', borderRadius: 4, fontSize: 11 }}
-                      />
-                      <input
-                        type="number"
-                        value={editForm.sortOrder}
-                        onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })}
-                        placeholder="순서"
-                        min={0}
-                        style={{ flex: 1, padding: '4px 6px', border: '1px solid #ddd', borderRadius: 4, fontSize: 11 }}
-                      />
+                  <div className="mt-2 border-t border-gray-100 pt-2">
+                    <input value={editForm.imageUrl} onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })} placeholder="이미지 URL" className={inputCls} />
+                    <input value={editForm.altText} onChange={(e) => setEditForm({ ...editForm, altText: e.target.value })} placeholder="alt 텍스트" className={inputCls} />
+                    <div className="flex gap-1 mb-1">
+                      <input type="number" value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })} placeholder="우선순위" min={0} className="flex-1 px-1.5 py-1 border border-gray-200 rounded text-[11px]" />
+                      <input type="number" value={editForm.sortOrder} onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })} placeholder="순서" min={0} className="flex-1 px-1.5 py-1 border border-gray-200 rounded text-[11px]" />
                     </div>
-                    <div style={{ fontSize: 10, color: '#999', marginBottom: 2 }}>이벤트 기간 (비워두면 영구)</div>
-                    <input
-                      type="datetime-local"
-                      value={editForm.startAt}
-                      onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })}
-                      style={{ width: '100%', padding: '4px 6px', border: '1px solid #ddd', borderRadius: 4, fontSize: 11, marginBottom: 4, boxSizing: 'border-box' }}
-                    />
-                    <input
-                      type="datetime-local"
-                      value={editForm.endAt}
-                      onChange={(e) => setEditForm({ ...editForm, endAt: e.target.value })}
-                      style={{ width: '100%', padding: '4px 6px', border: '1px solid #ddd', borderRadius: 4, fontSize: 11, marginBottom: 6, boxSizing: 'border-box' }}
-                    />
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button onClick={handleEditSave} style={{ flex: 1, padding: '4px', background: '#ff6b35', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>저장</button>
-                      <button onClick={() => setEditId(null)} style={{ flex: 1, padding: '4px', background: '#f5f5f5', color: '#555', border: '1px solid #ddd', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>취소</button>
+                    <div className="text-[10px] text-gray-400 mb-0.5">이벤트 기간 (비워두면 영구)</div>
+                    <input type="datetime-local" value={editForm.startAt} onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })} className={inputCls} />
+                    <input type="datetime-local" value={editForm.endAt} onChange={(e) => setEditForm({ ...editForm, endAt: e.target.value })} className="w-full px-2.5 py-1 border border-gray-200 rounded text-[11px] box-border mb-1.5" />
+                    <div className="flex gap-1">
+                      <button onClick={handleEditSave} className="flex-1 py-1 bg-[#ff6b35] text-white border-none rounded cursor-pointer text-[11px]">저장</button>
+                      <button onClick={() => setEditId(null)} className="flex-1 py-1 bg-gray-100 text-gray-500 border border-gray-200 rounded cursor-pointer text-[11px]">취소</button>
                     </div>
                   </div>
                 )}
 
                 {/* 액션 버튼 */}
                 {!isEditing && (
-                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                  <div className="flex gap-1 mt-1.5">
                     {!readonly && !isReview && (
                       <>
-                        <button
-                          onClick={() => handleToggleActive(img as EntityImage)}
-                          style={{ flex: 1, padding: '3px 0', background: 'none', color: '#666', border: '1px solid #ddd', borderRadius: 4, cursor: 'pointer', fontSize: 10 }}
-                        >
+                        <button onClick={() => handleToggleActive(img as EntityImage)} className="flex-1 py-0.5 bg-transparent text-gray-500 border border-gray-200 rounded cursor-pointer text-[10px]">
                           {(img as EntityImage).isActive ? '비활성화' : '활성화'}
                         </button>
-                        <button
-                          onClick={() => openEdit(img as EntityImage)}
-                          style={{ flex: 1, padding: '3px 0', background: 'none', color: '#2563eb', border: '1px solid #2563eb', borderRadius: 4, cursor: 'pointer', fontSize: 10 }}
-                        >
+                        <button onClick={() => openEdit(img as EntityImage)} className="flex-1 py-0.5 bg-transparent text-blue-600 border border-blue-600 rounded cursor-pointer text-[10px]">
                           수정
                         </button>
                       </>
                     )}
-                    <button
-                      onClick={() => handleDelete(img)}
-                      style={{ flex: 1, padding: '3px 0', background: 'none', color: '#e53935', border: '1px solid #e53935', borderRadius: 4, cursor: 'pointer', fontSize: 10 }}
-                    >
+                    <button onClick={() => handleDelete(img)} className="flex-1 py-0.5 bg-transparent text-red-600 border border-red-600 rounded cursor-pointer text-[10px]">
                       삭제
                     </button>
                   </div>
@@ -299,79 +244,35 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
 
       {/* 이미지 추가 폼 */}
       {!readonly && !isReview && (
-        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10 }}>
-          <div style={{ fontWeight: 600, fontSize: 12, color: '#555', marginBottom: 8 }}>이미지 추가</div>
-          <input
-            value={form.imageUrl}
-            onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-            placeholder="이미지 URL *"
-            style={{ width: '100%', padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, marginBottom: 6, boxSizing: 'border-box' }}
-          />
-          <input
-            value={form.altText}
-            onChange={(e) => setForm({ ...form, altText: e.target.value })}
-            placeholder="alt 텍스트 (선택)"
-            style={{ width: '100%', padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, marginBottom: 6, boxSizing: 'border-box' }}
-          />
-          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: '#999', marginBottom: 2 }}>우선순위 (기본: 0)</div>
-              <input
-                type="number"
-                value={form.priority}
-                onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                min={0}
-                style={{ width: '100%', padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' }}
-              />
+        <div className="border-t border-gray-100 pt-2.5">
+          <div className="font-semibold text-xs text-gray-500 mb-2">이미지 추가</div>
+          <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="이미지 URL *" className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs mb-1.5 box-border" />
+          <input value={form.altText} onChange={(e) => setForm({ ...form, altText: e.target.value })} placeholder="alt 텍스트 (선택)" className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs mb-1.5 box-border" />
+          <div className="flex gap-1.5 mb-1.5">
+            <div className="flex-1">
+              <div className="text-[10px] text-gray-400 mb-0.5">우선순위 (기본: 0)</div>
+              <input type="number" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} min={0} className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs box-border" />
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: '#999', marginBottom: 2 }}>표시 순서</div>
-              <input
-                type="number"
-                value={form.sortOrder}
-                onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
-                min={0}
-                style={{ width: '100%', padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' }}
-              />
+            <div className="flex-1">
+              <div className="text-[10px] text-gray-400 mb-0.5">표시 순서</div>
+              <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} min={0} className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs box-border" />
             </div>
           </div>
-          <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>
-            이벤트 기간 (비워두면 영구 노출. 기간 중복 시 우선순위 높은 이미지 표시)
-          </div>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: '#999', marginBottom: 2 }}>시작일시</div>
-              <input
-                type="datetime-local"
-                value={form.startAt}
-                onChange={(e) => setForm({ ...form, startAt: e.target.value })}
-                style={{ width: '100%', padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' }}
-              />
+          <div className="text-[10px] text-gray-400 mb-1">이벤트 기간 (비워두면 영구 노출. 기간 중복 시 우선순위 높은 이미지 표시)</div>
+          <div className="flex gap-1.5 mb-2">
+            <div className="flex-1">
+              <div className="text-[10px] text-gray-400 mb-0.5">시작일시</div>
+              <input type="datetime-local" value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} className="w-full px-2 py-1.5 border border-gray-200 rounded-md text-[11px] box-border" />
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: '#999', marginBottom: 2 }}>종료일시</div>
-              <input
-                type="datetime-local"
-                value={form.endAt}
-                onChange={(e) => setForm({ ...form, endAt: e.target.value })}
-                style={{ width: '100%', padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' }}
-              />
+            <div className="flex-1">
+              <div className="text-[10px] text-gray-400 mb-0.5">종료일시</div>
+              <input type="datetime-local" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} className="w-full px-2 py-1.5 border border-gray-200 rounded-md text-[11px] box-border" />
             </div>
           </div>
           <button
             onClick={handleAdd}
             disabled={adding || !form.imageUrl.trim()}
-            style={{
-              width: '100%',
-              padding: '7px',
-              background: adding || !form.imageUrl.trim() ? '#ccc' : '#ff6b35',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              cursor: adding || !form.imageUrl.trim() ? 'not-allowed' : 'pointer',
-              fontSize: 12,
-              fontWeight: 600,
-            }}
+            className={`w-full py-1.5 text-white border-none rounded-md cursor-pointer text-xs font-semibold ${adding || !form.imageUrl.trim() ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#ff6b35]'}`}
           >
             {adding ? '추가 중...' : '이미지 추가'}
           </button>

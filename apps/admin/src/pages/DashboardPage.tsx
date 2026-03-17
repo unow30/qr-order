@@ -18,34 +18,41 @@ export default function DashboardPage() {
       .reduce((s, o) => s + o.totalAmount, 0),
   };
 
+  const cardColors: Record<string, string> = {
+    '전체 주문': 'text-indigo-600',
+    '대기 중': 'text-orange-500',
+    '조리 중': 'text-green-600',
+    '총 매출': 'text-[#ff6b35]',
+  };
+
   return (
     <div>
-      <h2 style={{ margin: '0 0 24px' }}>대시보드</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
+      <h2 className="mb-6">대시보드</h2>
+      <div className="grid gap-4 mb-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         {[
-          { label: '전체 주문', value: `${stats.total}건`, color: '#3f51b5' },
-          { label: '대기 중', value: `${stats.pending}건`, color: '#ff9800' },
-          { label: '조리 중', value: `${stats.preparing}건`, color: '#4caf50' },
-          { label: '총 매출', value: `${stats.revenue.toLocaleString()}원`, color: '#ff6b35' },
+          { label: '전체 주문', value: `${stats.total}건` },
+          { label: '대기 중', value: `${stats.pending}건` },
+          { label: '조리 중', value: `${stats.preparing}건` },
+          { label: '총 매출', value: `${stats.revenue.toLocaleString()}원` },
         ].map((card) => (
-          <div key={card.label} style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <p style={{ margin: '0 0 8px', color: '#888', fontSize: 14 }}>{card.label}</p>
-            <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: card.color }}>{card.value}</p>
+          <div key={card.label} className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <p className="mb-2 text-gray-400 text-sm">{card.label}</p>
+            <p className={`m-0 text-[28px] font-bold ${cardColors[card.label]}`}>{card.value}</p>
           </div>
         ))}
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-        <h3 style={{ margin: '0 0 16px' }}>최근 주문</h3>
+      <div className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+        <h3 className="mb-4">최근 주문</h3>
         {orders.slice(0, 10).map((order) => (
-          <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
+          <div key={order.id} className="flex justify-between py-3 border-b border-gray-100">
             <div>
-              <span style={{ fontWeight: 600 }}>{order.tableNumber}번 테이블</span>
-              <span style={{ marginLeft: 12, color: '#888', fontSize: 13 }}>{order.items?.length}개 메뉴</span>
+              <span className="font-semibold">{order.tableNumber}번 테이블</span>
+              <span className="ml-3 text-gray-400 text-[13px]">{order.items?.length}개 메뉴</span>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ color: '#ff6b35', fontWeight: 600 }}>{order.totalAmount.toLocaleString()}원</span>
-              <span style={{ marginLeft: 12, color: '#888', fontSize: 12 }}>{order.status}</span>
+            <div className="text-right">
+              <span className="text-[#ff6b35] font-semibold">{order.totalAmount.toLocaleString()}원</span>
+              <span className="ml-3 text-gray-400 text-xs">{order.status}</span>
             </div>
           </div>
         ))}
