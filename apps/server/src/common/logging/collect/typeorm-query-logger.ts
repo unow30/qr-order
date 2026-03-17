@@ -1,6 +1,6 @@
 import { Logger, QueryRunner } from 'typeorm';
-import { addEvent } from './request-log.store';
-import { LogEventType } from './request-log.types';
+import { addEvent } from '../request-log.store';
+import { LogEventType } from '../request-log.types';
 
 const MUTATION_RE = /^\s*(INSERT|UPDATE|DELETE|TRUNCATE)\b/i;
 const SENSITIVE_COLS = /("password"|"token"|"secret")\s*=/gi;

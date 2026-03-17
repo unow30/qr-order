@@ -1,4 +1,4 @@
-import { RequestLogContext } from '../request-log.types';
+import { RequestLogContext } from '../../request-log.types';
 
 export class LokiTransport {
   constructor(private readonly lokiUrl: string) {}

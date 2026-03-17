@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { RequestLogContext, LogEventType } from './request-log.types';
+import { RequestLogContext, LogEventType } from '../request-log.types';
 import { SlackTransport } from './transports/slack.transport';
 import { DiscordTransport } from './transports/discord.transport';
 import { LokiTransport } from './transports/loki.transport';

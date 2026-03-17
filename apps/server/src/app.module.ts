@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getDatabaseConfig } from './config/database.config';
 import { getRedisClient, REDIS_CLIENT } from './config/redis.config';
-import { createRedisLoggerProxy } from './common/logging/redis-logger.proxy';
+import { createRedisLoggerProxy } from './common/logging/collect/redis-logger.proxy';
 import { LoggingModule } from './common/logging/logging.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { StoreModule } from './modules/store/store.module';

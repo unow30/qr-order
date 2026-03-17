@@ -91,27 +91,16 @@ export class PaymentService {
 
     // 트랜잭션: 결제 완료 + 주문 상태 업데이트를 원자적으로 처리
     // → 둘 중 하나라도 실패하면 전체 롤백
-    const qr = this.dataSource.createQueryRunner();
-    await qr.connect();
-    await qr.startTransaction();
+    payment.pgPaymentId = dto.pgPaymentKey;
+    payment.status = PaymentStatus.COMPLETED;
+    payment.paidAt = new Date();
 
-    let saved: PaymentEntity;
-    try {
-      payment.pgPaymentId = dto.pgPaymentKey;
-      payment.status = PaymentStatus.COMPLETED;
-      payment.paidAt = new Date();
-      saved = await qr.manager.save(PaymentEntity, payment);
-
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const savedPayment = await manager.save(PaymentEntity, payment);
       // 주문 상태를 CONFIRMED로 직접 업데이트 (트랜잭션 내)
-      await qr.manager.update(Order, payment.orderId, { status: OrderStatus.CONFIRMED });
-
-      await qr.commitTransaction();
-    } catch (err) {
-      await qr.rollbackTransaction();
-      throw err;
-    } finally {
-      await qr.release();
-    }
+      await manager.update(Order, payment.orderId, { status: OrderStatus.CONFIRMED });
+      return savedPayment;
+    });
 
     // 커밋 성공 후 SSE 이벤트 발행 (베스트-에포트: 실패해도 결제는 유지됨)
     this.orderService.emitStatusChange(payment.orderId, OrderStatus.CONFIRMED, payment.storeId);

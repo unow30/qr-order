@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { CartService } from '../cart/cart.service';
@@ -18,13 +18,12 @@ export class OrderService {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
-    @InjectRepository(OrderItem)
-    private readonly orderItemRepository: Repository<OrderItem>,
     private readonly cartService: CartService,
     private readonly sessionService: SessionService,
     private readonly orderSseService: OrderSseService,
     private readonly couponService: CouponService,
     private readonly menuService: MenuService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createOrder(sessionToken: string, dto: CreateOrderDto): Promise<Order> {
@@ -55,48 +54,54 @@ export class OrderService {
 
     const finalAmount = totalAmount - discountAmount;
 
-    const order = this.orderRepository.create({
-      storeId: session.storeId,
-      sessionToken,
-      tableId: session.tableId,
-      tableNumber: session.tableNumber,
-      status: OrderStatus.PENDING,
-      totalAmount,
-      discountAmount,
-      finalAmount,
-      couponId,
-      note: dto.note,
+    const savedOrderId = await this.dataSource.transaction(async (manager) => {
+      const order = manager.create(Order, {
+        storeId: session.storeId,
+        sessionToken,
+        tableId: session.tableId,
+        tableNumber: session.tableNumber,
+        status: OrderStatus.PENDING,
+        totalAmount,
+        discountAmount,
+        finalAmount,
+        couponId,
+        note: dto.note,
+      });
+      const savedOrder = await manager.save(Order, order);
+
+      const orderItems = cartItems.map((item) =>
+        manager.create(OrderItem, {
+          orderId: savedOrder.id,
+          menuItemId: item.menuItemId,
+          menuItemName: item.menuItemName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          selectedOptions: item.selectedOptions,
+        }),
+      );
+      await manager.save(OrderItem, orderItems);
+
+      // 쿠폰 사용 횟수 증가
+      if (couponId) {
+        await this.couponService.markUsed(couponId, manager);
+      }
+
+      // F10: 재고 차감
+      await this.menuService.decrementStock(
+        cartItems.map((item) => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+        session.storeId,
+        manager,
+      );
+
+      return savedOrder.id;
     });
 
-    const savedOrder = await this.orderRepository.save(order);
+    // 커밋 후 Redis best-effort 처리
+    await this.cartService.clearCart(sessionToken).catch(() => {});
+    await this.menuService.invalidateCache(session.storeId).catch(() => {});
 
-    const orderItems = cartItems.map((item) =>
-      this.orderItemRepository.create({
-        orderId: savedOrder.id,
-        menuItemId: item.menuItemId,
-        menuItemName: item.menuItemName,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
-        selectedOptions: item.selectedOptions,
-      }),
-    );
-
-    await this.orderItemRepository.save(orderItems);
-    await this.cartService.clearCart(sessionToken);
-
-    // 쿠폰 사용 횟수 증가
-    if (couponId) {
-      await this.couponService.markUsed(couponId);
-    }
-
-    // F10: 재고 차감
-    await this.menuService.decrementStock(
-      cartItems.map((item) => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
-      session.storeId,
-    );
-
-    return this.findOne(savedOrder.id);
+    return this.findOne(savedOrderId);
   }
 
   async findOne(id: string): Promise<Order> {

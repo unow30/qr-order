@@ -109,6 +109,22 @@ src/
 │   │   └── http-exception.filter.ts        # 전역 예외 필터
 │   ├── interceptors/
 │   │   └── transform.interceptor.ts        # 응답 변환
+│   ├── logging/                            # 요청 로깅 파이프라인
+│   │   ├── start/
+│   │   │   └── logging.interceptor.ts      # 요청 컨텍스트 초기화 (AsyncLocalStorage)
+│   │   ├── collect/
+│   │   │   ├── log-event.service.ts        # 서비스 코드용 수동 이벤트 수집 API
+│   │   │   ├── redis-logger.proxy.ts       # Redis 명령어 자동 추적 Proxy
+│   │   │   └── typeorm-query-logger.ts     # TypeORM 쿼리 자동 추적
+│   │   ├── flush/
+│   │   │   ├── log-transport.service.ts    # 콘솔 출력 + 외부 전송 (fire-and-forget)
+│   │   │   └── transports/
+│   │   │       ├── slack.transport.ts
+│   │   │       ├── discord.transport.ts
+│   │   │       └── loki.transport.ts
+│   │   ├── request-log.store.ts            # AsyncLocalStorage 저장소 + addEvent 헬퍼
+│   │   ├── request-log.types.ts            # LogEventType, RequestLogContext 타입
+│   │   └── logging.module.ts
 │   └── rls/
 │       ├── rls.module.ts                   # RLS 모듈
 │       ├── rls-init.service.ts             # DB 정책 초기화 (OnModuleInit)
@@ -325,12 +341,43 @@ X-Session-Token: <sessionToken>  # 고객 앱 요청 시 사용
 
 ## 로깅
 
-`common/logging/` 모듈이 슬로우 요청/쿼리를 감지하여 외부 채널로 알림을 전송합니다.
+`common/logging/` 모듈은 HTTP 요청별로 이벤트를 수집하는 3단계 파이프라인 구조입니다.
 
-| 전송 채널 | 설정 env |
-|-----------|----------|
+```
+요청 진입
+  → [1-start] LoggingInterceptor
+      AsyncLocalStorage로 RequestLogContext 생성, X-Request-Id 헤더 설정
+          ↓
+  → [2-collect] 이벤트 자동/수동 수집
+      · TypeOrmQueryLogger   — TypeORM 쿼리 자동 추적 (SELECT / MUTATION)
+      · createRedisLoggerProxy — Redis 명령어 자동 추적 (HIT / MISS / SET / DEL)
+      · LogEventService.logic() / .warning() — 서비스 코드에서 수동 기록
+          ↓
+  → [3-flush] LogTransportService.flush()
+      · 개발 환경: 컬러 pretty-print (요청 요약 + 이벤트 타임라인)
+      · 프로덕션: JSON 한 줄 출력
+      · 외부 전송 (fire-and-forget): Slack / Discord / Grafana Loki
+```
+
+### 이벤트 타입
+
+| 타입 | 아이콘 | 설명 |
+|------|--------|------|
+| `cache_hit` | 💾 HIT | Redis 캐시 명중 |
+| `cache_miss` | 💾 MISS | Redis 캐시 미스 |
+| `cache_set` | 💾 SET | Redis 값 저장 |
+| `cache_del` | 💾 DEL | Redis 키 삭제 |
+| `query_select` | 🔍 SELECT | TypeORM SELECT 쿼리 |
+| `query_mutation` | ✏️ MUTATION | TypeORM INSERT/UPDATE/DELETE |
+| `logic` | 🔧 LOGIC | 서비스 코드 수동 기록 |
+| `warning` | ⚠️ WARNING | 경고 (슬로우 쿼리 포함) |
+
+### 외부 전송 채널
+
+| 채널 | 설정 env |
+|------|----------|
 | Slack | `LOG_SLACK_WEBHOOK_URL` |
 | Discord | `LOG_DISCORD_WEBHOOK_URL` |
 | Grafana Loki | `LOG_LOKI_URL` |
 
-슬로우 요청 임계값은 `LOG_SLOW_REQUEST_MS`(기본 3000ms), 슬로우 쿼리 임계값은 `LOG_SLOW_QUERY_MS`(기본 2000ms)로 설정합니다. 웹훅 URL이 설정되지 않은 채널은 무시됩니다.
+웹훅 URL이 없으면 해당 채널은 무시됩니다. 외부 전송은 메인 요청 흐름에 영향을 주지 않습니다.
