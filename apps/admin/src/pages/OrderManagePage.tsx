@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getOrders, updateOrderStatus } from '../api/order.api';
 import { Order, OrderStatus } from '@qr-order/shared-types';
 import { useAuthStore } from '../stores/authStore';
 import { useStoreNames } from '../hooks/useStoreNames';
+import { useOrdersSSE } from '../hooks/useOrdersSSE';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.PENDING]: '접수 대기',
@@ -28,16 +29,16 @@ export default function OrderManagePage() {
   const isAllStores = superAdmin && !currentStoreId;
   const storeNameMap = useStoreNames();
 
-  const fetchOrders = () => {
+  const fetchOrders = useCallback(() => {
     setLoading(true);
     getOrders().then(setOrders).finally(() => setLoading(false));
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
-  }, [currentStoreId]);
+  }, [currentStoreId, fetchOrders]);
+
+  useOrdersSSE(fetchOrders);
 
   const handleStatusChange = async (order: Order, status: OrderStatus) => {
     await updateOrderStatus(order.id, { status });

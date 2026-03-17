@@ -61,6 +61,14 @@ export class OrderController {
     return this.orderService.updateStatus(id, dto);
   }
 
+  @Sse('stream/all')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '어드민/KDS용 전체 주문 변경 SSE 스트림 (?token=JWT)' })
+  streamAll(@CurrentStoreId(false) storeId: string | null): Observable<MessageEvent> {
+    return this.orderService.getStoreStream(storeId);
+  }
+
   @Sse(':id/stream')
   @ApiOperation({ summary: 'SSE 주문 상태 스트림' })
   stream(@Param('id') id: string): Observable<MessageEvent> {

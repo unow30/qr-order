@@ -19,12 +19,15 @@ export class OrderSseService {
   getStream(orderId: string): Observable<MessageEvent> {
     return this.subject.asObservable().pipe(
       filter((msg) => msg.orderId === orderId),
-      map((msg) => {
-        const messageEvent = new MessageEvent('message', {
-          data: JSON.stringify(msg.event),
-        });
-        return messageEvent;
-      }),
+      map((msg) => new MessageEvent('message', { data: JSON.stringify(msg.event) })),
+    );
+  }
+
+  /** 어드민/KDS용: storeId가 일치하는 모든 주문 변경 이벤트를 스트리밍 */
+  getStoreStream(storeId: string | null): Observable<MessageEvent> {
+    return this.subject.asObservable().pipe(
+      filter((msg) => storeId === null || msg.event.storeId === storeId),
+      map((msg) => new MessageEvent('message', { data: JSON.stringify(msg.event) })),
     );
   }
 }

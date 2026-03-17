@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useOrderStore } from '../stores/orderStore';
 import { useOrderSSE } from '../hooks/useOrderSSE';
+import { getOrder } from '../api/order.api';
 import { OrderStatus } from '@qr-order/shared-types';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -22,8 +24,13 @@ const STATUS_STEPS = [
 
 export default function OrderStatusPage() {
   const { id } = useParams<{ id: string }>();
-  const { currentOrder, orderStatus } = useOrderStore();
+  const { currentOrder, orderStatus, setOrder } = useOrderStore();
   useOrderSSE(id ?? null);
+
+  useEffect(() => {
+    if (!id) return;
+    getOrder(id).then(setOrder).catch(() => {});
+  }, [id]);
 
   const currentStepIdx = orderStatus ? STATUS_STEPS.indexOf(orderStatus) : 0;
 
@@ -75,9 +82,21 @@ export default function OrderStatusPage() {
             </div>
           ))}
           <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
+          {currentOrder.discountAmount > 0 && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, color: '#888' }}>
+                <span>소계</span>
+                <span>{currentOrder.totalAmount.toLocaleString()}원</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#e74c3c' }}>
+                <span>할인</span>
+                <span>-{currentOrder.discountAmount.toLocaleString()}원</span>
+              </div>
+            </>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
             <span>합계</span>
-            <span>{currentOrder.totalAmount.toLocaleString()}원</span>
+            <span>{currentOrder.finalAmount.toLocaleString()}원</span>
           </div>
         </div>
       )}

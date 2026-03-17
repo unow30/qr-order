@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getOrders, updateOrderStatus } from '../api/order.api';
 import { Order, OrderStatus } from '@qr-order/shared-types';
 import { useAuthStore } from '../stores/authStore';
 import { useStoreNames } from '../hooks/useStoreNames';
+import { useOrdersSSE } from '../hooks/useOrdersSSE';
 
 export default function KDSPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -11,16 +12,16 @@ export default function KDSPage() {
   const isAllStores = superAdmin && !currentStoreId;
   const storeNameMap = useStoreNames();
 
-  const fetchOrders = () =>
+  const fetchOrders = useCallback(() =>
     getOrders().then((all) =>
       setOrders(all.filter((o) => o.status === OrderStatus.CONFIRMED || o.status === OrderStatus.PREPARING)),
-    );
+    ), []);
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
-  }, [currentStoreId]);
+  }, [currentStoreId, fetchOrders]);
+
+  useOrdersSSE(fetchOrders);
 
   const handleStartPreparing = async (id: string) => {
     await updateOrderStatus(id, { status: OrderStatus.PREPARING });
@@ -47,7 +48,7 @@ export default function KDSPage() {
             </span>
           )}
         </div>
-        <span style={{ fontSize: 13, color: '#888' }}>5초마다 자동 갱신</span>
+        <span style={{ fontSize: 13, color: '#888' }}>실시간 업데이트</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
