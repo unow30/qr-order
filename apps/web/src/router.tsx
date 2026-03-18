@@ -4,7 +4,7 @@ import EntryPage from './pages/EntryPage';
 import MenuPage from './pages/MenuPage';
 import MenuDetailPage from './pages/MenuDetailPage';
 import CartPage from './pages/CartPage';
-import PaymentPage from './pages/PaymentPage';
+import OrderHistoryPage from './pages/OrderHistoryPage';
 import OrderStatusPage from './pages/OrderStatusPage';
 import DevPage from './pages/DevPage';
 
@@ -36,8 +36,8 @@ export default function AppRouter() {
           element={<RequireSession><CartPage /></RequireSession>}
         />
         <Route
-          path="/payment"
-          element={<RequireSession><PaymentPage /></RequireSession>}
+          path="/order-history"
+          element={<RequireSession><OrderHistoryPage /></RequireSession>}
         />
         <Route
           path="/order-status/:id"

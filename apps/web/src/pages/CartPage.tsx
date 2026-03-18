@@ -2,17 +2,22 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCart, removeCartItem } from '../api/cart.api';
 import { validateCoupon, CouponValidationResult } from '../api/coupon.api';
+import { createOrder } from '../api/order.api';
 import { useCartStore } from '../stores/cartStore';
 import { useCouponStore } from '../stores/couponStore';
+import { useOrderStore } from '../stores/orderStore';
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { items, totalAmount, setCart } = useCartStore();
+  const { items, totalAmount, setCart, clearCart } = useCartStore();
   const { couponCode, setCoupon, clearCoupon, discountAmount, finalAmount } = useCouponStore();
+  const setOrder = useOrderStore((s) => s.setOrder);
 
   const [couponInput, setCouponInput] = useState(couponCode ?? '');
   const [couponResult, setCouponResult] = useState<CouponValidationResult | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [note, setNote] = useState('');
+  const [orderLoading, setOrderLoading] = useState(false);
 
   useEffect(() => {
     getCart().then(setCart);
@@ -50,6 +55,25 @@ export default function CartPage() {
   };
 
   const payAmount = discountAmount > 0 ? finalAmount : totalAmount;
+
+  const handleOrder = async () => {
+    if (items.length === 0) return;
+    setOrderLoading(true);
+    try {
+      const order = await createOrder({
+        note: note || undefined,
+        couponCode: couponCode ?? undefined,
+      });
+      setOrder(order);
+      clearCart();
+      clearCoupon();
+      navigate('/menu', { replace: true });
+    } catch {
+      alert('주문 처리 중 오류가 발생했습니다.');
+    } finally {
+      setOrderLoading(false);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -132,6 +156,18 @@ export default function CartPage() {
           )}
         </div>
 
+        {/* 요청사항 */}
+        <div className="py-4 border-b border-gray-100">
+          <p className="mb-2 font-semibold text-sm">요청사항</p>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="주문 요청사항을 입력해 주세요."
+            className="w-full p-3 rounded-lg border border-gray-200 text-sm resize-none box-border"
+            rows={3}
+          />
+        </div>
+
         {/* 금액 합계 */}
         <div className="py-4">
           <div className="flex justify-between text-sm text-gray-500 mb-2">
@@ -153,10 +189,11 @@ export default function CartPage() {
 
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px]">
         <button
-          onClick={() => navigate('/payment', { replace: true })}
-          className="w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer"
+          onClick={handleOrder}
+          disabled={orderLoading}
+          className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${orderLoading ? 'opacity-70' : ''}`}
         >
-          {payAmount.toLocaleString()}원 결제하기
+          {orderLoading ? '주문 중...' : `${payAmount.toLocaleString()}원 주문하기`}
         </button>
       </div>
     </div>
