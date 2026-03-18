@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { useSessionStore } from '../stores/sessionStore';
+import { useSessionStore } from '@web/stores/sessionStore';
 
 const server = setupServer(
   http.get('/api/test', () => {

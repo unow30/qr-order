@@ -1,4 +1,4 @@
-import client from './client';
+import client from '@admin/api/client';
 import { Table, CreateTableDto } from '@qr-order/shared-types';
 
 export const getTables = (): Promise<Table[]> => client.get('/tables');

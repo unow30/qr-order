@@ -6,8 +6,8 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { MenuItem } from './menu-item.entity';
-import { MenuOption } from './menu-option.entity';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
+import { MenuOption } from '@server/modules/menu/entities/menu-option.entity';
 
 @Entity('menu_option_groups')
 export class MenuOptionGroup {

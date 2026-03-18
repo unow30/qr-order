@@ -1,24 +1,24 @@
 import { Module, Global, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { getDatabaseConfig } from './config/database.config';
-import { getRedisClient, REDIS_CLIENT } from './config/redis.config';
-import { createRedisLoggerProxy } from './common/logging/collect/redis-logger.proxy';
-import { LoggingModule } from './common/logging/logging.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { StoreModule } from './modules/store/store.module';
-import { TableModule } from './modules/table/table.module';
-import { MenuModule } from './modules/menu/menu.module';
-import { SessionModule } from './modules/session/session.module';
-import { CartModule } from './modules/cart/cart.module';
-import { OrderModule } from './modules/order/order.module';
-import { PaymentModule } from './modules/payment/payment.module';
-import { ReportModule } from './modules/report/report.module';
-import { CouponModule } from './modules/coupon/coupon.module';
-import { ReviewModule } from './modules/review/review.module';
-import { ImageModule } from './modules/image/image.module';
-import { RlsModule } from './common/rls/rls.module';
-import { StoreContextMiddleware } from './common/middleware/store-context.middleware';
+import { getDatabaseConfig } from '@server/config/database.config';
+import { getRedisClient, REDIS_CLIENT } from '@server/config/redis.config';
+import { createRedisLoggerProxy } from '@server/common/logging/collect/redis-logger.proxy';
+import { LoggingModule } from '@server/common/logging/logging.module';
+import { AuthModule } from '@server/modules/auth/auth.module';
+import { StoreModule } from '@server/modules/store/store.module';
+import { TableModule } from '@server/modules/table/table.module';
+import { MenuModule } from '@server/modules/menu/menu.module';
+import { SessionModule } from '@server/modules/session/session.module';
+import { CartModule } from '@server/modules/cart/cart.module';
+import { OrderModule } from '@server/modules/order/order.module';
+import { PaymentModule } from '@server/modules/payment/payment.module';
+import { ReportModule } from '@server/modules/report/report.module';
+import { CouponModule } from '@server/modules/coupon/coupon.module';
+import { ReviewModule } from '@server/modules/review/review.module';
+import { ImageModule } from '@server/modules/image/image.module';
+import { RlsModule } from '@server/common/rls/rls.module';
+import { StoreContextMiddleware } from '@server/common/middleware/store-context.middleware';
 
 @Global()
 @Module({

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { RlsInitService } from './rls-init.service';
-import { RlsInterceptor } from './rls.interceptor';
+import { RlsInitService } from '@server/common/rls/rls-init.service';
+import { RlsInterceptor } from '@server/common/rls/rls.interceptor';
 
 @Module({
   providers: [

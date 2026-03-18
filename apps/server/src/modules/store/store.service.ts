@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { StoreEntity } from './entities/store.entity';
-import { CreateStoreDto } from './dto/create-store.dto';
-import { UpdateStoreDto } from './dto/update-store.dto';
+import { StoreEntity } from '@server/modules/store/entities/store.entity';
+import { CreateStoreDto } from '@server/modules/store/dto/create-store.dto';
+import { UpdateStoreDto } from '@server/modules/store/dto/update-store.dto';
 
 @Injectable()
 export class StoreService {

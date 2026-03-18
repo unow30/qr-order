@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@admin/stores/authStore';
 
 const server = setupServer(
   http.get('/api/test', () => {

@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { PaymentEntity } from './entities/payment.entity';
-import { Order } from '../order/entities/order.entity';
-import { OrderService } from '../order/order.service';
+import { PaymentEntity } from '@server/modules/payment/entities/payment.entity';
+import { Order } from '@server/modules/order/entities/order.entity';
+import { OrderService } from '@server/modules/order/order.service';
 import {
   CreatePaymentDto,
   ConfirmPaymentDto,

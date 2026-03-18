@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { OrderStatus } from '@qr-order/shared-types';
-import { useOrderStore } from '../stores/orderStore';
 
-export function useOrderSSE(orderId: string | null) {
-  const updateStatus = useOrderStore((s) => s.updateStatus);
+export function useOrderSSE(
+  orderId: string | null,
+  onStatusChange?: (status: OrderStatus) => void,
+) {
   const esRef = useRef<EventSource | null>(null);
   const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -18,7 +19,7 @@ export function useOrderSSE(orderId: string | null) {
 
       es.onmessage = (event) => {
         const data = JSON.parse(event.data) as { status: OrderStatus };
-        updateStatus(data.status);
+        onStatusChange?.(data.status);
         reconnectDelay = 1000;
       };
 
@@ -37,5 +38,5 @@ export function useOrderSSE(orderId: string | null) {
       esRef.current?.close();
       if (retryRef.current) clearTimeout(retryRef.current);
     };
-  }, [orderId, updateStatus]);
+  }, [orderId, onStatusChange]);
 }

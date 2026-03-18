@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useSessionStore } from './stores/sessionStore';
-import EntryPage from './pages/EntryPage';
-import MenuPage from './pages/MenuPage';
-import MenuDetailPage from './pages/MenuDetailPage';
-import CartPage from './pages/CartPage';
-import OrderHistoryPage from './pages/OrderHistoryPage';
-import OrderStatusPage from './pages/OrderStatusPage';
-import DevPage from './pages/DevPage';
+import { useSessionStore } from '@web/stores/sessionStore';
+import EntryPage from '@web/pages/EntryPage';
+import MenuPage from '@web/pages/MenuPage';
+import MenuDetailPage from '@web/pages/MenuDetailPage';
+import CartPage from '@web/pages/CartPage';
+import OrderHistoryPage from '@web/pages/OrderHistoryPage';
+import OrderStatusPage from '@web/pages/OrderStatusPage';
+import DevPage from '@web/pages/DevPage';
 
 function RequireSession({ children }: { children: React.ReactNode }) {
   const isSessionValid = useSessionStore((s) => s.isSessionValid);

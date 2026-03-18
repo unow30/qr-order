@@ -16,6 +16,7 @@ export interface OrderItem {
   unitPrice: number;
   totalPrice: number;
   selectedOptions: SelectedOption[];
+  cancelledAt?: string | null;
 }
 
 export interface SelectedOption {

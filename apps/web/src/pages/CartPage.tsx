@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCart, removeCartItem } from '../api/cart.api';
-import { validateCoupon, CouponValidationResult } from '../api/coupon.api';
-import { createOrder } from '../api/order.api';
-import { useCartStore } from '../stores/cartStore';
-import { useCouponStore } from '../stores/couponStore';
-import { useOrderStore } from '../stores/orderStore';
+import { getCart, removeCartItem } from '@web/api/cart.api';
+import { validateCoupon, CouponValidationResult } from '@web/api/coupon.api';
+import { createOrder } from '@web/api/order.api';
+import { useCartStore } from '@web/stores/cartStore';
+import { useCouponStore } from '@web/stores/couponStore';
+import { useOrderStore } from '@web/stores/orderStore';
+import { OrderStatus } from '@qr-order/shared-types';
 
 export default function CartPage() {
   const navigate = useNavigate();
   const { items, totalAmount, setCart, clearCart } = useCartStore();
   const { couponCode, setCoupon, clearCoupon, discountAmount, finalAmount } = useCouponStore();
-  const setOrder = useOrderStore((s) => s.setOrder);
+  const addOrder = useOrderStore((s) => s.addOrder);
+  const hasPendingOrder = useOrderStore((s) => s.orders.some((o) => o.status === OrderStatus.PENDING));
 
   const [couponInput, setCouponInput] = useState(couponCode ?? '');
   const [couponResult, setCouponResult] = useState<CouponValidationResult | null>(null);
@@ -64,12 +66,13 @@ export default function CartPage() {
         note: note || undefined,
         couponCode: couponCode ?? undefined,
       });
-      setOrder(order);
+      addOrder(order);
       clearCart();
       clearCoupon();
-      navigate('/menu', { replace: true });
-    } catch {
-      alert('주문 처리 중 오류가 발생했습니다.');
+      navigate('/order-history', { replace: true });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || '알 수 없는 오류';
+      alert(`주문 처리 중 오류: ${msg}`);
     } finally {
       setOrderLoading(false);
     }
@@ -98,6 +101,11 @@ export default function CartPage() {
       </header>
 
       <div className="px-4">
+        {hasPendingOrder && (
+          <div className="mb-3 px-3 py-2.5 bg-orange-50 border border-orange-200 rounded-lg text-[13px] text-orange-700">
+            기존 주문에 추가됩니다
+          </div>
+        )}
         {items.map((item) => (
           <div key={item.cartItemId} className="py-4 border-b border-gray-100">
             <div className="flex justify-between items-start">

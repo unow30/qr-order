@@ -7,9 +7,9 @@ import {
   createAdmin,
   Store,
   AdminAccount,
-} from '../api/store.api';
-import client from '../api/client';
-import ImageManagerWidget from '../components/ImageManagerWidget';
+} from '@admin/api/store.api';
+import client from '@admin/api/client';
+import ImageManagerWidget from '@admin/components/ImageManagerWidget';
 
 interface DeployResult {
   targetStoreId: string;

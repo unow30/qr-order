@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { CouponEntity } from '../../coupon/entities/coupon.entity';
+import { CouponEntity } from '@server/modules/coupon/entities/coupon.entity';
 
 @Entity('coupon_images')
 export class CouponImageEntity {

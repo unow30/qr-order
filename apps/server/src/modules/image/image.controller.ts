@@ -10,12 +10,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { ImageService, ScheduledEntityType } from './image.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
-import { CreateImageDto } from './dto/create-image.dto';
-import { UpdateImageDto } from './dto/update-image.dto';
+import { ImageService, ScheduledEntityType } from '@server/modules/image/image.service';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@server/common/guards/roles.guard';
+import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
+import { CreateImageDto } from '@server/modules/image/dto/create-image.dto';
+import { UpdateImageDto } from '@server/modules/image/dto/update-image.dto';
 
 @ApiTags('images')
 @Controller('images')

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getReviews, toggleReviewVisibility, deleteReview, ReviewItem } from '../api/review.api';
-import { useAuthStore } from '../stores/authStore';
-import { useStoreNames } from '../hooks/useStoreNames';
-import ImageManagerWidget from '../components/ImageManagerWidget';
+import { getReviews, toggleReviewVisibility, deleteReview, ReviewItem } from '@admin/api/review.api';
+import { useAuthStore } from '@admin/stores/authStore';
+import { useStoreNames } from '@admin/hooks/useStoreNames';
+import ImageManagerWidget from '@admin/components/ImageManagerWidget';
 
 function StarRating({ rating }: { rating: number }) {
   return (

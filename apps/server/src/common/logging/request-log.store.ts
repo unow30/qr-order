@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { LogEvent, LogEventType, RequestLogContext } from './request-log.types';
+import { LogEvent, LogEventType, RequestLogContext } from '@server/common/logging/request-log.types';
 
 export const requestLogStorage = new AsyncLocalStorage<RequestLogContext>();
 

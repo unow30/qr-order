@@ -7,7 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { OrderStatus } from '@qr-order/shared-types';
-import { OrderItem } from './order-item.entity';
+import { OrderItem } from '@server/modules/order/entities/order-item.entity';
 
 @Entity('orders')
 export class Order {

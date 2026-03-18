@@ -10,9 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { MenuService } from './menu.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
+import { MenuService } from '@server/modules/menu/menu.service';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
+import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
 import {
   CreateMenuCategoryDto,
   UpdateMenuCategoryDto,
@@ -23,8 +23,8 @@ import {
   ReorderMenuCategoriesDto,
   ReorderMenuItemsDto,
 } from '@qr-order/shared-types';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '@server/common/guards/roles.guard';
+import { Roles } from '@server/common/decorators/roles.decorator';
 
 @ApiTags('menu')
 @Controller('menu')

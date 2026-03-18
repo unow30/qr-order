@@ -1,5 +1,5 @@
-import client from './client';
-import type { AdminRole } from '../stores/authStore';
+import client from '@admin/api/client';
+import type { AdminRole } from '@admin/stores/authStore';
 
 interface LoginResult {
   accessToken: string;

@@ -2,9 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { TableEntity } from './entities/table.entity';
-import { QrToken } from './entities/qr-token.entity';
-import { CreateTableDto } from './dto/create-table.dto';
+import { TableEntity } from '@server/modules/table/entities/table.entity';
+import { QrToken } from '@server/modules/table/entities/qr-token.entity';
+import { CreateTableDto } from '@server/modules/table/dto/create-table.dto';
 
 @Injectable()
 export class TableService {

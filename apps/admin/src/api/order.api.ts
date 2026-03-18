@@ -1,4 +1,4 @@
-import client from './client';
+import client from '@admin/api/client';
 import { Order, UpdateOrderStatusDto } from '@qr-order/shared-types';
 
 export const getOrders = (): Promise<Order[]> => client.get('/orders');

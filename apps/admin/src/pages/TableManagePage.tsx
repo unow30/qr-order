@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { getTables, createTable, deleteTable } from '../api/table.api';
+import { getTables, createTable, deleteTable } from '@admin/api/table.api';
 import { Table } from '@qr-order/shared-types';
-import ConfirmDialog from '../components/ConfirmDialog';
-import { useAuthStore } from '../stores/authStore';
-import { useStoreNames } from '../hooks/useStoreNames';
-import ImageManagerWidget from '../components/ImageManagerWidget';
+import ConfirmDialog from '@admin/components/ConfirmDialog';
+import { useAuthStore } from '@admin/stores/authStore';
+import { useStoreNames } from '@admin/hooks/useStoreNames';
+import ImageManagerWidget from '@admin/components/ImageManagerWidget';
 
 export default function TableManagePage() {
   const [tables, setTables] = useState<Table[]>([]);

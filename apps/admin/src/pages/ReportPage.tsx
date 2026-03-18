@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@admin/stores/authStore';
 import {
   getOverallSummary,
   getStoreSummary,
@@ -9,7 +9,7 @@ import {
   ReportQuery,
   MenuAnalyticsResult,
   MenuItemStat,
-} from '../api/report.api';
+} from '@admin/api/report.api';
 
 type Tab = 'sales' | 'menu';
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getOrders } from '../api/order.api';
+import { getOrders } from '@admin/api/order.api';
 import { Order, OrderStatus } from '@qr-order/shared-types';
 
 export default function DashboardPage() {

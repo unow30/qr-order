@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { QrToken } from './qr-token.entity';
+import { QrToken } from '@server/modules/table/entities/qr-token.entity';
 
 @Entity('tables')
 export class TableEntity {

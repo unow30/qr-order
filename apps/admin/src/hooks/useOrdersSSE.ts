@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@admin/stores/authStore';
 
 /**
  * 어드민/KDS용 전체 주문 변경 SSE 훅.

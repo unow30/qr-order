@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useSessionStore } from '../stores/sessionStore';
+import { useSessionStore } from '@web/stores/sessionStore';
 
 const client = axios.create({
   baseURL: '/api',

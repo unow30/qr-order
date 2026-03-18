@@ -9,9 +9,9 @@ import { In, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { AdminEntity } from './entities/admin.entity';
-import { StoreEntity } from '../store/entities/store.entity';
-import { CreateAdminDto } from './dto/create-admin.dto';
+import { AdminEntity } from '@server/modules/auth/entities/admin.entity';
+import { StoreEntity } from '@server/modules/store/entities/store.entity';
+import { CreateAdminDto } from '@server/modules/auth/dto/create-admin.dto';
 import { JwtPayload } from '@qr-order/shared-types';
 
 @Injectable()

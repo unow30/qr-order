@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MenuController } from './menu.controller';
-import { MenuService } from './menu.service';
-import { MenuCategory } from './entities/menu-category.entity';
-import { MenuItem } from './entities/menu-item.entity';
-import { MenuOptionGroup } from './entities/menu-option-group.entity';
-import { MenuOption } from './entities/menu-option.entity';
+import { MenuController } from '@server/modules/menu/menu.controller';
+import { MenuService } from '@server/modules/menu/menu.service';
+import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
+import { MenuOptionGroup } from '@server/modules/menu/entities/menu-option-group.entity';
+import { MenuOption } from '@server/modules/menu/entities/menu-option.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([MenuCategory, MenuItem, MenuOptionGroup, MenuOption])],

@@ -9,11 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { CouponService } from './coupon.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
+import { CouponService } from '@server/modules/coupon/coupon.service';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@server/common/guards/roles.guard';
+import { Roles } from '@server/common/decorators/roles.decorator';
+import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
 import { CreateCouponDto, ApplyCouponDto } from '@qr-order/shared-types';
 
 @ApiTags('coupons')

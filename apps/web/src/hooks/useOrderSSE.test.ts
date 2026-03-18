@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useOrderSSE } from './useOrderSSE';
-import { useOrderStore } from '../stores/orderStore';
+import { useOrderSSE } from '@web/hooks/useOrderSSE';
 import { OrderStatus } from '@qr-order/shared-types';
 
 class MockEventSource {
@@ -36,7 +35,6 @@ vi.stubGlobal('EventSource', MockEventSource);
 describe('useOrderSSE', () => {
   beforeEach(() => {
     MockEventSource.reset();
-    useOrderStore.getState().clearOrder();
     vi.useFakeTimers();
   });
 
@@ -59,31 +57,28 @@ describe('useOrderSSE', () => {
     );
   });
 
-  it('메시지를 받으면 orderStore의 상태를 업데이트해야 한다', () => {
-    // 먼저 주문 설정
-    useOrderStore.getState().setOrder({
-      id: 'order-1',
-      storeId: 'store-1',
-      sessionId: 'session-1',
-      tableId: 'table-1',
-      tableNumber: 5,
-      status: OrderStatus.PENDING,
-      items: [],
-      totalAmount: 10000,
-      discountAmount: 0,
-      finalAmount: 10000,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  it('메시지를 받으면 onStatusChange 콜백을 호출해야 한다', () => {
+    const onStatusChange = vi.fn();
 
-    renderHook(() => useOrderSSE('order-1'));
+    renderHook(() => useOrderSSE('order-1', onStatusChange));
 
     const es = MockEventSource.instances[0];
     act(() => {
       es.simulateMessage({ status: OrderStatus.CONFIRMED });
     });
 
-    expect(useOrderStore.getState().orderStatus).toBe(OrderStatus.CONFIRMED);
+    expect(onStatusChange).toHaveBeenCalledWith(OrderStatus.CONFIRMED);
+  });
+
+  it('onStatusChange가 없어도 에러 없이 동작해야 한다', () => {
+    renderHook(() => useOrderSSE('order-1'));
+
+    const es = MockEventSource.instances[0];
+    expect(() => {
+      act(() => {
+        es.simulateMessage({ status: OrderStatus.CONFIRMED });
+      });
+    }).not.toThrow();
   });
 
   it('에러 발생 시 재연결을 시도해야 한다', () => {
@@ -92,14 +87,12 @@ describe('useOrderSSE', () => {
     expect(MockEventSource.instances).toHaveLength(1);
     const firstEs = MockEventSource.instances[0];
 
-    // 에러 발생
     act(() => {
       firstEs.simulateError();
     });
 
     expect(firstEs.close).toHaveBeenCalled();
 
-    // 1초 후 재연결
     act(() => {
       vi.advanceTimersByTime(1000);
     });

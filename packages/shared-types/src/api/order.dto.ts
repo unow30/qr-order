@@ -20,3 +20,7 @@ export interface OrderSseEvent {
   status: OrderStatus;
   updatedAt: string;
 }
+
+export interface CancelOrderItemResponse {
+  order: Order;
+}

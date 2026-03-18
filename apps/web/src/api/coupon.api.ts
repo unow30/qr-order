@@ -1,4 +1,4 @@
-import client from './client';
+import client from '@web/api/client';
 
 export interface CouponValidationResult {
   valid: boolean;

@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { MenuItem } from '../../menu/entities/menu-item.entity';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
 
 @Entity('menu_item_images')
 export class MenuItemImageEntity {

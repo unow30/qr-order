@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrderController } from './order.controller';
-import { OrderService } from './order.service';
-import { OrderSseService } from './order-sse.service';
-import { Order } from './entities/order.entity';
-import { OrderItem } from './entities/order-item.entity';
-import { CartModule } from '../cart/cart.module';
-import { SessionModule } from '../session/session.module';
-import { CouponModule } from '../coupon/coupon.module';
-import { MenuModule } from '../menu/menu.module';
+import { OrderController } from '@server/modules/order/order.controller';
+import { OrderService } from '@server/modules/order/order.service';
+import { OrderSseService } from '@server/modules/order/order-sse.service';
+import { Order } from '@server/modules/order/entities/order.entity';
+import { OrderItem } from '@server/modules/order/entities/order-item.entity';
+import { CartModule } from '@server/modules/cart/cart.module';
+import { SessionModule } from '@server/modules/session/session.module';
+import { CouponModule } from '@server/modules/coupon/coupon.module';
+import { MenuModule } from '@server/modules/menu/menu.module';
 
 @Module({
   imports: [

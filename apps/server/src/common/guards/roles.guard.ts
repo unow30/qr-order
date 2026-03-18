@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from '../decorators/roles.decorator';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { ROLES_KEY } from '@server/common/decorators/roles.decorator';
+import { IS_PUBLIC_KEY } from '@server/common/decorators/public.decorator';
 import { AdminRole } from '@qr-order/shared-types';
 
 /**

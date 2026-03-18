@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { getTables, generateQrToken, getQrToken } from '../api/table.api';
+import { getTables, generateQrToken, getQrToken } from '@admin/api/table.api';
 import { Table } from '@qr-order/shared-types';
 
 export default function QRGeneratePage() {

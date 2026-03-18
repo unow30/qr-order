@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
-import { REDIS_CLIENT } from '../../config/redis.config';
+import { REDIS_CLIENT } from '@server/config/redis.config';
 import Redis from 'ioredis';
-import { MenuCategory } from './entities/menu-category.entity';
-import { MenuItem } from './entities/menu-item.entity';
-import { MenuOptionGroup } from './entities/menu-option-group.entity';
-import { MenuOption } from './entities/menu-option.entity';
+import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
+import { MenuOptionGroup } from '@server/modules/menu/entities/menu-option-group.entity';
+import { MenuOption } from '@server/modules/menu/entities/menu-option.entity';
 import {
   CreateMenuCategoryDto,
   UpdateMenuCategoryDto,
@@ -152,6 +152,29 @@ export class MenuService {
     }
 
     // manager가 있으면(createOrder 컨텍스트) 호출자가 커밋 후 캐시 무효화 처리
+    if (!manager) {
+      await this.invalidateCache(storeId);
+    }
+  }
+
+  async incrementStock(
+    items: { menuItemId: string; quantity: number }[],
+    storeId: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const itemRepo = manager ? manager.getRepository(MenuItem) : this.itemRepository;
+
+    for (const { menuItemId, quantity } of items) {
+      const item = await itemRepo.findOne({ where: { id: menuItemId } });
+      if (!item || !item.stockEnabled) continue;
+
+      item.stock += quantity;
+      if (item.stock > 0) {
+        item.isAvailable = true;
+      }
+      await itemRepo.save(item);
+    }
+
     if (!manager) {
       await this.invalidateCache(storeId);
     }

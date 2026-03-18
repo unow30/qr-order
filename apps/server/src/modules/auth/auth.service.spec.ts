@@ -6,9 +6,9 @@ import {
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { AuthService } from './auth.service';
-import { AdminEntity } from './entities/admin.entity';
-import { StoreEntity } from '../store/entities/store.entity';
+import { AuthService } from '@server/modules/auth/auth.service';
+import { AdminEntity } from '@server/modules/auth/entities/admin.entity';
+import { StoreEntity } from '@server/modules/store/entities/store.entity';
 import {
   createMockRepository,
   MockRepository,

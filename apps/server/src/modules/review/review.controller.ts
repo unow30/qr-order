@@ -11,11 +11,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
-import { ReviewService } from './review.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
+import { ReviewService } from '@server/modules/review/review.service';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
+import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
 import { CreateReviewDto, CreateReviewImageDto } from '@qr-order/shared-types';
-import { ImageService } from '../image/image.service';
+import { ImageService } from '@server/modules/image/image.service';
 
 @ApiTags('reviews')
 @Controller('reviews')

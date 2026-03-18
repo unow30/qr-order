@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@admin/*": ["src/*"]
     }
   },
   "include": ["src", "vite.config.mts"],

@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { OrderService } from './order.service';
-import { Order } from './entities/order.entity';
-import { OrderItem } from './entities/order-item.entity';
-import { CartService } from '../cart/cart.service';
-import { SessionService } from '../session/session.service';
-import { OrderSseService } from './order-sse.service';
-import { CouponService } from '../coupon/coupon.service';
-import { MenuService } from '../menu/menu.service';
+import { OrderService } from '@server/modules/order/order.service';
+import { Order } from '@server/modules/order/entities/order.entity';
+import { OrderItem } from '@server/modules/order/entities/order-item.entity';
+import { CartService } from '@server/modules/cart/cart.service';
+import { SessionService } from '@server/modules/session/session.service';
+import { OrderSseService } from '@server/modules/order/order-sse.service';
+import { CouponService } from '@server/modules/coupon/coupon.service';
+import { MenuService } from '@server/modules/menu/menu.service';
 import { createMockRepository, MockRepository } from '../../../test/helpers/mock-repository';
 import { OrderStatus } from '@qr-order/shared-types';
 

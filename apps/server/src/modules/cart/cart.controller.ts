@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
-import { CartService } from './cart.service';
+import { CartService } from '@server/modules/cart/cart.service';
 import { AddCartItemDto, UpdateCartItemDto } from '@qr-order/shared-types';
 
 @ApiTags('cart')

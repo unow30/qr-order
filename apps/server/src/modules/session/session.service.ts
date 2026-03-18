@@ -1,7 +1,7 @@
 import { Injectable, Inject, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { REDIS_CLIENT } from '../../config/redis.config';
-import { TableService } from '../table/table.service';
+import { REDIS_CLIENT } from '@server/config/redis.config';
+import { TableService } from '@server/modules/table/table.service';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import { CreateSessionDto, SessionResponse } from '@qr-order/shared-types';

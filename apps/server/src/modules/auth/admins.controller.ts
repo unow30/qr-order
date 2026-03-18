@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { AuthService } from '@server/modules/auth/auth.service';
+import { CreateAdminDto } from '@server/modules/auth/dto/create-admin.dto';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@server/common/guards/roles.guard';
+import { Roles } from '@server/common/decorators/roles.decorator';
 
 @ApiTags('admins')
 @Controller('admins')

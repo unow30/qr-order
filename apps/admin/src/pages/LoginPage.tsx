@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../api/auth.api';
-import { useAuthStore } from '../stores/authStore';
+import { login } from '@admin/api/auth.api';
+import { useAuthStore } from '@admin/stores/authStore';
 
 export default function LoginPage() {
   const navigate = useNavigate();

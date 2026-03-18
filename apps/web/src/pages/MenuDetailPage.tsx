@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getMenu } from '../api/menu.api';
-import { addCartItem } from '../api/cart.api';
-import { useCartStore } from '../stores/cartStore';
+import { getMenu } from '@web/api/menu.api';
+import { addCartItem } from '@web/api/cart.api';
+import { useCartStore } from '@web/stores/cartStore';
 import { MenuItem, MenuOptionGroup, SelectedOption } from '@qr-order/shared-types';
 
 export default function MenuDetailPage() {

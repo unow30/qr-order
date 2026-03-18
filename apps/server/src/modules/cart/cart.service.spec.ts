@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { CartService } from './cart.service';
-import { SessionService } from '../session/session.service';
-import { MenuItem } from '../menu/entities/menu-item.entity';
-import { REDIS_CLIENT } from '../../config/redis.config';
+import { CartService } from '@server/modules/cart/cart.service';
+import { SessionService } from '@server/modules/session/session.service';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
+import { REDIS_CLIENT } from '@server/config/redis.config';
 import { createMockRepository, MockRepository } from '../../../test/helpers/mock-repository';
-import { SessionData } from '../session/session.service';
+import { SessionData } from '@server/modules/session/session.service';
 
 jest.mock('uuid', () => ({ v4: () => 'mock-cart-item-id' }));
 
