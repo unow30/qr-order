@@ -199,7 +199,13 @@ export class OrderService {
         await this.couponService.markUsed(couponId, manager);
       }
 
-      await manager.save(Order, existingOrder);
+      await manager.update(Order, existingOrder.id, {
+        totalAmount: existingOrder.totalAmount,
+        discountAmount: existingOrder.discountAmount,
+        couponId: existingOrder.couponId,
+        finalAmount: existingOrder.finalAmount,
+        note: existingOrder.note,
+      });
 
       // 재고 차감 (새 항목만)
       await this.menuService.decrementStock(
@@ -290,7 +296,7 @@ export class OrderService {
 
   async findBySession(sessionToken: string): Promise<Order[]> {
     return this.orderRepository.find({
-      where: { sessionToken },
+      where: { sessionToken, status: OrderStatus.PENDING },
       relations: ['items'],
       order: { createdAt: 'ASC' },
     });

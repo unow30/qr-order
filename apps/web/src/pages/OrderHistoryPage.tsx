@@ -24,7 +24,7 @@ export default function OrderHistoryPage() {
   useEffect(() => {
     getMyOrders()
       .then((data) => {
-        setOrders(data.filter((o) => o.status !== OrderStatus.CANCELLED));
+        setOrders(data.filter((o) => o.status === OrderStatus.PENDING));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -68,12 +68,12 @@ export default function OrderHistoryPage() {
   };
 
   if (loading) {
-    return <div className="max-w-[480px] mx-auto p-4">주문내역을 불러오는 중...</div>;
+    return <div className="max-w-120 mx-auto p-4">주문내역을 불러오는 중...</div>;
   }
 
   if (orders.length === 0) {
     return (
-      <div className="max-w-[480px] mx-auto p-8 font-sans text-center">
+      <div className="max-w-120 mx-auto p-8 font-sans text-center">
         <header className="flex items-center gap-3 mb-8">
           <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
           <h2 className="m-0">주문내역</h2>
@@ -81,7 +81,7 @@ export default function OrderHistoryPage() {
         <p className="text-gray-400">주문 내역이 없습니다.</p>
         <button
           onClick={() => navigate('/menu')}
-          className="mt-4 px-6 py-3 bg-[#ff6b35] text-white border-none rounded-lg cursor-pointer"
+          className="mt-4 px-6 py-3 bg-brand text-white border-none rounded-lg cursor-pointer"
         >
           메뉴 보기
         </button>
@@ -90,14 +90,14 @@ export default function OrderHistoryPage() {
   }
 
   return (
-    <div className="max-w-[480px] mx-auto font-sans pb-6">
+    <div className="max-w-120 mx-auto font-sans pb-6">
       <header className="p-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
         <h2 className="m-0">주문내역</h2>
       </header>
 
       <div className="px-4 space-y-4">
-        {orders.map((order, idx) => {
+        {orders.map((order) => {
           const isPending = order.status === OrderStatus.PENDING;
           const activeItems = order.items?.filter((i) => !i.cancelledAt) ?? [];
           const cfg = STATUS_CONFIG[order.status];
@@ -164,7 +164,7 @@ export default function OrderHistoryPage() {
               )}
               <div className="flex justify-between font-bold">
                 <span>결제 금액</span>
-                <span className="text-[#ff6b35]">{order.finalAmount.toLocaleString()}원</span>
+                <span className="text-brand">{order.finalAmount.toLocaleString()}원</span>
               </div>
 
               {/* PENDING: 추가 주문 + 결제 버튼 */}
@@ -179,7 +179,7 @@ export default function OrderHistoryPage() {
                   <button
                     onClick={() => handlePayment(order)}
                     disabled={payingOrderId === order.id}
-                    className={`flex-1 p-3 bg-[#ff6b35] text-white border-none rounded-lg text-sm cursor-pointer ${payingOrderId === order.id ? 'opacity-70' : ''}`}
+                    className={`flex-1 p-3 bg-brand text-white border-none rounded-lg text-sm cursor-pointer ${payingOrderId === order.id ? 'opacity-70' : ''}`}
                   >
                     {payingOrderId === order.id
                       ? '처리 중...'
