@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@web': resolve(__dirname, 'src'),
       '@qr-order/shared-types': resolve(__dirname, '../../packages/shared-types/src/index.ts'),
     },
   },

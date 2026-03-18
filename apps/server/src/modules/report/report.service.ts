@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { Order } from '../order/entities/order.entity';
-import { OrderItem } from '../order/entities/order-item.entity';
-import { StoreEntity } from '../store/entities/store.entity';
+import { Order } from '@server/modules/order/entities/order.entity';
+import { OrderItem } from '@server/modules/order/entities/order-item.entity';
+import { StoreEntity } from '@server/modules/store/entities/store.entity';
 import { OrderStatus } from '@qr-order/shared-types';
 import { OverallReportSummary, StoreReportSummary, ReportQueryDto } from '@qr-order/shared-types';
 

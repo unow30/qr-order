@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getStores } from '../api/store.api';
-import { useAuthStore } from '../stores/authStore';
+import { getStores } from '@admin/api/store.api';
+import { useAuthStore } from '@admin/stores/authStore';
 
 /**
  * SUPER_ADMIN 전용: storeId → storeName 맵 반환.

@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { MenuService } from './menu.service';
-import { MenuCategory } from './entities/menu-category.entity';
-import { MenuItem } from './entities/menu-item.entity';
-import { MenuOptionGroup } from './entities/menu-option-group.entity';
-import { MenuOption } from './entities/menu-option.entity';
-import { REDIS_CLIENT } from '../../config/redis.config';
+import { MenuService } from '@server/modules/menu/menu.service';
+import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
+import { MenuOptionGroup } from '@server/modules/menu/entities/menu-option-group.entity';
+import { MenuOption } from '@server/modules/menu/entities/menu-option.entity';
+import { REDIS_CLIENT } from '@server/config/redis.config';
 import { createMockRepository, MockRepository } from '../../../test/helpers/mock-repository';
 
 describe('MenuService', () => {

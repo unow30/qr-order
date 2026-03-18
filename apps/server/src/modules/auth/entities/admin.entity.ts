@@ -8,7 +8,7 @@ import {
   JoinTable,
 } from 'typeorm';
 import { AdminRole } from '@qr-order/shared-types';
-import { StoreEntity } from '../../store/entities/store.entity';
+import { StoreEntity } from '@server/modules/store/entities/store.entity';
 
 @Entity('admins')
 export class AdminEntity {

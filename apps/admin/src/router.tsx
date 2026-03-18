@@ -1,17 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from './stores/authStore';
-import AdminLayout from './components/layout/AdminLayout';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import OrderManagePage from './pages/OrderManagePage';
-import MenuManagePage from './pages/MenuManagePage';
-import TableManagePage from './pages/TableManagePage';
-import QRGeneratePage from './pages/QRGeneratePage';
-import KDSPage from './pages/KDSPage';
-import StoreManagePage from './pages/StoreManagePage';
-import ReportPage from './pages/ReportPage';
-import CouponManagePage from './pages/CouponManagePage';
-import ReviewManagePage from './pages/ReviewManagePage';
+import { useAuthStore } from '@admin/stores/authStore';
+import AdminLayout from '@admin/components/layout/AdminLayout';
+import LoginPage from '@admin/pages/LoginPage';
+import DashboardPage from '@admin/pages/DashboardPage';
+import OrderManagePage from '@admin/pages/OrderManagePage';
+import MenuManagePage from '@admin/pages/MenuManagePage';
+import TableManagePage from '@admin/pages/TableManagePage';
+import QRGeneratePage from '@admin/pages/QRGeneratePage';
+import KDSPage from '@admin/pages/KDSPage';
+import StoreManagePage from '@admin/pages/StoreManagePage';
+import ReportPage from '@admin/pages/ReportPage';
+import CouponManagePage from '@admin/pages/CouponManagePage';
+import ReviewManagePage from '@admin/pages/ReviewManagePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);

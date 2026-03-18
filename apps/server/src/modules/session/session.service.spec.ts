@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SessionService } from './session.service';
-import { TableService } from '../table/table.service';
-import { REDIS_CLIENT } from '../../config/redis.config';
+import { SessionService } from '@server/modules/session/session.service';
+import { TableService } from '@server/modules/table/table.service';
+import { REDIS_CLIENT } from '@server/config/redis.config';
 
 jest.mock('uuid', () => ({ v4: () => 'mock-session-token' }));
 

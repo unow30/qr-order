@@ -1,4 +1,4 @@
-import { RequestLogContext, LogEventType } from '../../request-log.types';
+import { RequestLogContext, LogEventType } from '@server/common/logging/request-log.types';
 
 const STATUS_COLORS = {
   success: 0x57f287, // green

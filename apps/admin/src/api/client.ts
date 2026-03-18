@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@admin/stores/authStore';
 
 const client = axios.create({
   baseURL: '/api',

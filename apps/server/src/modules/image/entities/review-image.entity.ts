@@ -6,7 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
 } from 'typeorm';
-import { ReviewEntity } from '../../review/entities/review.entity';
+import { ReviewEntity } from '@server/modules/review/entities/review.entity';
 
 @Entity('review_images')
 export class ReviewImageEntity {

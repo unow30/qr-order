@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { addEvent } from '../request-log.store';
-import { LogEventType } from '../request-log.types';
+import { addEvent } from '@server/common/logging/request-log.store';
+import { LogEventType } from '@server/common/logging/request-log.types';
 
 /**
  * 서비스 코드에서 직접 호출

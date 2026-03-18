@@ -2,21 +2,34 @@ import { create } from 'zustand';
 import { Order, OrderStatus } from '@qr-order/shared-types';
 
 interface OrderState {
-  currentOrder: Order | null;
-  orderStatus: OrderStatus | null;
-  setOrder: (order: Order) => void;
-  updateStatus: (status: OrderStatus) => void;
-  clearOrder: () => void;
+  orders: Order[];
+  setOrders: (orders: Order[]) => void;
+  addOrder: (order: Order) => void;
+  updateOrder: (order: Order) => void;
+  removeOrder: (orderId: string) => void;
+  clearOrders: () => void;
 }
 
 export const useOrderStore = create<OrderState>()((set) => ({
-  currentOrder: null,
-  orderStatus: null,
-  setOrder: (order) => set({ currentOrder: order, orderStatus: order.status }),
-  updateStatus: (status) =>
+  orders: [],
+  setOrders: (orders) => set({ orders }),
+  addOrder: (order) =>
+    set((state) => {
+      const idx = state.orders.findIndex((o) => o.id === order.id);
+      if (idx >= 0) {
+        const newOrders = [...state.orders];
+        newOrders[idx] = order;
+        return { orders: newOrders };
+      }
+      return { orders: [...state.orders, order] };
+    }),
+  updateOrder: (order) =>
     set((state) => ({
-      orderStatus: status,
-      currentOrder: state.currentOrder ? { ...state.currentOrder, status } : null,
+      orders: state.orders.map((o) => (o.id === order.id ? order : o)),
     })),
-  clearOrder: () => set({ currentOrder: null, orderStatus: null }),
+  removeOrder: (orderId) =>
+    set((state) => ({
+      orders: state.orders.filter((o) => o.id !== orderId),
+    })),
+  clearOrders: () => set({ orders: [] }),
 }));

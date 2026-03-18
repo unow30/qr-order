@@ -7,15 +7,15 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import Redis from 'ioredis';
-import { REDIS_CLIENT } from '../../config/redis.config';
-import { StoreImageEntity } from './entities/store-image.entity';
-import { TableImageEntity } from './entities/table-image.entity';
-import { MenuCategoryImageEntity } from './entities/menu-category-image.entity';
-import { MenuItemImageEntity } from './entities/menu-item-image.entity';
-import { CouponImageEntity } from './entities/coupon-image.entity';
-import { ReviewImageEntity } from './entities/review-image.entity';
-import { CreateImageDto } from './dto/create-image.dto';
-import { UpdateImageDto } from './dto/update-image.dto';
+import { REDIS_CLIENT } from '@server/config/redis.config';
+import { StoreImageEntity } from '@server/modules/image/entities/store-image.entity';
+import { TableImageEntity } from '@server/modules/image/entities/table-image.entity';
+import { MenuCategoryImageEntity } from '@server/modules/image/entities/menu-category-image.entity';
+import { MenuItemImageEntity } from '@server/modules/image/entities/menu-item-image.entity';
+import { CouponImageEntity } from '@server/modules/image/entities/coupon-image.entity';
+import { ReviewImageEntity } from '@server/modules/image/entities/review-image.entity';
+import { CreateImageDto } from '@server/modules/image/dto/create-image.dto';
+import { UpdateImageDto } from '@server/modules/image/dto/update-image.dto';
 
 type ScheduledImageEntity =
   | StoreImageEntity

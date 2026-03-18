@@ -1,4 +1,4 @@
-import client from './client';
+import client from '@web/api/client';
 import { CreatePaymentDto, ConfirmPaymentDto, PaymentResponse } from '@qr-order/shared-types';
 
 export const createPayment = (dto: CreatePaymentDto): Promise<PaymentResponse> =>

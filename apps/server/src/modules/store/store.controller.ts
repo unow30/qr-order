@@ -10,13 +10,13 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { StoreService } from './store.service';
-import { CreateStoreDto } from './dto/create-store.dto';
-import { UpdateStoreDto } from './dto/update-store.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { Public } from '../../common/decorators/public.decorator';
+import { StoreService } from '@server/modules/store/store.service';
+import { CreateStoreDto } from '@server/modules/store/dto/create-store.dto';
+import { UpdateStoreDto } from '@server/modules/store/dto/update-store.dto';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@server/common/guards/roles.guard';
+import { Roles } from '@server/common/decorators/roles.decorator';
+import { Public } from '@server/common/decorators/public.decorator';
 
 @ApiTags('stores')
 @Controller('stores')

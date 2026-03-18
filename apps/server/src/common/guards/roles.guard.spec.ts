@@ -1,7 +1,7 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RolesGuard } from './roles.guard';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+import { RolesGuard } from '@server/common/guards/roles.guard';
+import { ROLES_KEY } from '@server/common/decorators/roles.decorator';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;

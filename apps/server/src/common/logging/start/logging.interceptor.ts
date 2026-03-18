@@ -9,9 +9,9 @@ import {
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
-import { requestLogStorage } from '../request-log.store';
-import { RequestLogContext } from '../request-log.types';
-import { LogTransportService } from '../flush/log-transport.service';
+import { requestLogStorage } from '@server/common/logging/request-log.store';
+import { RequestLogContext } from '@server/common/logging/request-log.types';
+import { LogTransportService } from '@server/common/logging/flush/log-transport.service';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {

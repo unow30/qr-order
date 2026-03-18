@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { RequestLogContext, LogEventType } from '../request-log.types';
-import { SlackTransport } from './transports/slack.transport';
-import { DiscordTransport } from './transports/discord.transport';
-import { LokiTransport } from './transports/loki.transport';
+import { RequestLogContext, LogEventType } from '@server/common/logging/request-log.types';
+import { SlackTransport } from '@server/common/logging/flush/transports/slack.transport';
+import { DiscordTransport } from '@server/common/logging/flush/transports/discord.transport';
+import { LokiTransport } from '@server/common/logging/flush/transports/loki.transport';
 
 const EVENT_ICON: Record<LogEventType, string> = {
   [LogEventType.CACHE_HIT]:      '💾 HIT  ',

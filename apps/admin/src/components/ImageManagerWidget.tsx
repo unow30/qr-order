@@ -7,7 +7,7 @@ import {
   deleteImage,
   getReviewImages,
   deleteReviewImage,
-} from '../api/image.api';
+} from '@admin/api/image.api';
 
 interface Props {
   entityType: ImageEntityType;

@@ -1,4 +1,4 @@
-import client from './client';
+import client from '@admin/api/client';
 
 export interface ReviewItem {
   id: string;

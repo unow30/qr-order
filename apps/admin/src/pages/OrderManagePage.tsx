@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getOrders, updateOrderStatus } from '../api/order.api';
+import { getOrders, updateOrderStatus } from '@admin/api/order.api';
 import { Order, OrderStatus } from '@qr-order/shared-types';
-import { useAuthStore } from '../stores/authStore';
-import { useStoreNames } from '../hooks/useStoreNames';
-import { useOrdersSSE } from '../hooks/useOrdersSSE';
+import { useAuthStore } from '@admin/stores/authStore';
+import { useStoreNames } from '@admin/hooks/useStoreNames';
+import { useOrdersSSE } from '@admin/hooks/useOrdersSSE';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.PENDING]: '접수 대기',

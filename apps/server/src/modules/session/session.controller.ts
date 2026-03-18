@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { SessionService } from './session.service';
+import { SessionService } from '@server/modules/session/session.service';
 import { CreateSessionDto } from '@qr-order/shared-types';
 
 @ApiTags('sessions')

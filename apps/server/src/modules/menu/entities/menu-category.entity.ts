@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { MenuItem } from './menu-item.entity';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
 
 @Entity('menu_categories')
 export class MenuCategory {

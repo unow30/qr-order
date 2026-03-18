@@ -1,9 +1,9 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { REDIS_CLIENT } from '../../config/redis.config';
-import { SessionService } from '../session/session.service';
-import { MenuItem } from '../menu/entities/menu-item.entity';
+import { REDIS_CLIENT } from '@server/config/redis.config';
+import { SessionService } from '@server/modules/session/session.service';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import { Cart, CartItem, AddCartItemDto, UpdateCartItemDto } from '@qr-order/shared-types';

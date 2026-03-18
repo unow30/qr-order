@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ReviewEntity } from './entities/review.entity';
+import { ReviewEntity } from '@server/modules/review/entities/review.entity';
 import { CreateReviewDto } from '@qr-order/shared-types';
 
 @Injectable()

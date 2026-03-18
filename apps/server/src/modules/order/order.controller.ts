@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Headers,
@@ -13,9 +14,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiHeader, ApiBearerAuth } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
-import { OrderService } from './order.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
+import { OrderService } from '@server/modules/order/order.service';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
+import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
 import { CreateOrderDto, UpdateOrderStatusDto } from '@qr-order/shared-types';
 
 @ApiTags('orders')
@@ -39,6 +40,13 @@ export class OrderController {
     return this.orderService.createOrder(this.getSessionToken(headers), dto);
   }
 
+  @Get('my')
+  @ApiOperation({ summary: '내 주문 목록 (세션 기반)' })
+  @ApiHeader({ name: 'X-Session-Token', required: true })
+  findMyOrders(@Headers() headers: Record<string, string>) {
+    return this.orderService.findBySession(this.getSessionToken(headers));
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -51,6 +59,21 @@ export class OrderController {
   @ApiOperation({ summary: '주문 상세 조회' })
   findOne(@Param('id') id: string) {
     return this.orderService.findOne(id);
+  }
+
+  @Delete(':orderId/items/:itemId')
+  @ApiOperation({ summary: '주문 항목 취소 (고객)' })
+  @ApiHeader({ name: 'X-Session-Token', required: true })
+  cancelOrderItem(
+    @Param('orderId') orderId: string,
+    @Param('itemId') itemId: string,
+    @Headers() headers: Record<string, string>,
+  ) {
+    return this.orderService.cancelOrderItem(
+      orderId,
+      itemId,
+      this.getSessionToken(headers),
+    );
   }
 
   @Patch(':id/status')

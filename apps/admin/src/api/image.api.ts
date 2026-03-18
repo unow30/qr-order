@@ -1,4 +1,4 @@
-import client from './client';
+import client from '@admin/api/client';
 import { EntityImage, ImageEntityType, ReviewImage, CreateImageDto, UpdateImageDto } from '@qr-order/shared-types';
 
 export const getImages = (entityType: ImageEntityType, entityId: string): Promise<EntityImage[]> =>

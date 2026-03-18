@@ -1,4 +1,4 @@
-import client from './client';
+import client from '@admin/api/client';
 import {
   MenuCategory,
   CreateMenuCategoryDto,

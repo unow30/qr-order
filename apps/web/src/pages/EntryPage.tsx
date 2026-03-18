@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createSession } from '../api/session.api';
-import { useSessionStore } from '../stores/sessionStore';
+import { createSession } from '@web/api/session.api';
+import { useSessionStore } from '@web/stores/sessionStore';
 
 export default function EntryPage() {
   const [searchParams] = useSearchParams();

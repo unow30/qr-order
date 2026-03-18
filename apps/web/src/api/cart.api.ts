@@ -1,4 +1,4 @@
-import client from './client';
+import client from '@web/api/client';
 import { Cart, AddCartItemDto, UpdateCartItemDto } from '@qr-order/shared-types';
 
 export const getCart = (): Promise<Cart> => client.get('/cart');

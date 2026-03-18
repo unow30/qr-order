@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useSessionStore } from './sessionStore';
+import { useSessionStore } from '@web/stores/sessionStore';
 
 describe('useSessionStore', () => {
   beforeEach(() => {

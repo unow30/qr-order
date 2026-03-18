@@ -9,11 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
-import { TableService } from './table.service';
-import { CreateTableDto } from './dto/create-table.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TableService } from '@server/modules/table/table.service';
+import { CreateTableDto } from '@server/modules/table/dto/create-table.dto';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
 import { ConfigService } from '@nestjs/config';
-import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
+import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
 
 @ApiTags('tables')
 @Controller('tables')

@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCart, removeCartItem } from '../api/cart.api';
-import { validateCoupon, CouponValidationResult } from '../api/coupon.api';
-import { useCartStore } from '../stores/cartStore';
-import { useCouponStore } from '../stores/couponStore';
+import { getCart, removeCartItem } from '@web/api/cart.api';
+import { validateCoupon, CouponValidationResult } from '@web/api/coupon.api';
+import { createOrder } from '@web/api/order.api';
+import { useCartStore } from '@web/stores/cartStore';
+import { useCouponStore } from '@web/stores/couponStore';
+import { useOrderStore } from '@web/stores/orderStore';
+import { OrderStatus } from '@qr-order/shared-types';
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { items, totalAmount, setCart } = useCartStore();
+  const { items, totalAmount, setCart, clearCart } = useCartStore();
   const { couponCode, setCoupon, clearCoupon, discountAmount, finalAmount } = useCouponStore();
+  const addOrder = useOrderStore((s) => s.addOrder);
+  const hasPendingOrder = useOrderStore((s) => s.orders.some((o) => o.status === OrderStatus.PENDING));
 
   const [couponInput, setCouponInput] = useState(couponCode ?? '');
   const [couponResult, setCouponResult] = useState<CouponValidationResult | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [note, setNote] = useState('');
+  const [orderLoading, setOrderLoading] = useState(false);
 
   useEffect(() => {
     getCart().then(setCart);
@@ -51,6 +58,26 @@ export default function CartPage() {
 
   const payAmount = discountAmount > 0 ? finalAmount : totalAmount;
 
+  const handleOrder = async () => {
+    if (items.length === 0) return;
+    setOrderLoading(true);
+    try {
+      const order = await createOrder({
+        note: note || undefined,
+        couponCode: couponCode ?? undefined,
+      });
+      addOrder(order);
+      clearCart();
+      clearCoupon();
+      navigate('/order-history', { replace: true });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || '알 수 없는 오류';
+      alert(`주문 처리 중 오류: ${msg}`);
+    } finally {
+      setOrderLoading(false);
+    }
+  };
+
   if (items.length === 0) {
     return (
       <div className="max-w-[480px] mx-auto p-8 font-sans text-center">
@@ -74,6 +101,11 @@ export default function CartPage() {
       </header>
 
       <div className="px-4">
+        {hasPendingOrder && (
+          <div className="mb-3 px-3 py-2.5 bg-orange-50 border border-orange-200 rounded-lg text-[13px] text-orange-700">
+            기존 주문에 추가됩니다
+          </div>
+        )}
         {items.map((item) => (
           <div key={item.cartItemId} className="py-4 border-b border-gray-100">
             <div className="flex justify-between items-start">
@@ -132,6 +164,18 @@ export default function CartPage() {
           )}
         </div>
 
+        {/* 요청사항 */}
+        <div className="py-4 border-b border-gray-100">
+          <p className="mb-2 font-semibold text-sm">요청사항</p>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="주문 요청사항을 입력해 주세요."
+            className="w-full p-3 rounded-lg border border-gray-200 text-sm resize-none box-border"
+            rows={3}
+          />
+        </div>
+
         {/* 금액 합계 */}
         <div className="py-4">
           <div className="flex justify-between text-sm text-gray-500 mb-2">
@@ -153,10 +197,11 @@ export default function CartPage() {
 
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px]">
         <button
-          onClick={() => navigate('/payment', { replace: true })}
-          className="w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer"
+          onClick={handleOrder}
+          disabled={orderLoading}
+          className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${orderLoading ? 'opacity-70' : ''}`}
         >
-          {payAmount.toLocaleString()}원 결제하기
+          {orderLoading ? '주문 중...' : `${payAmount.toLocaleString()}원 주문하기`}
         </button>
       </div>
     </div>

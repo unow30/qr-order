@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { StoreEntity } from '../../store/entities/store.entity';
+import { StoreEntity } from '@server/modules/store/entities/store.entity';
 
 @Entity('store_images')
 export class StoreImageEntity {

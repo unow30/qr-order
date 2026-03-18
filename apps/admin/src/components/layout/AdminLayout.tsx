@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/stores/authStore.ts';
-import { getStores, Store } from '@/api/store.api.ts';
+import { useAuthStore } from '@admin/stores/authStore';
+import { getStores, Store } from '@admin/api/store.api';
 
 const STORE_ADMIN_NAV = [
   { path: '/dashboard', label: '대시보드', icon: '📊' },

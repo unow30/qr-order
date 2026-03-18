@@ -1,9 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MenuCategory } from '../menu/entities/menu-category.entity';
-import { MenuItem } from '../menu/entities/menu-item.entity';
-import { ImageService } from './image.service';
+import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity';
+import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
+import { ImageService } from '@server/modules/image/image.service';
 
 @Injectable()
 export class ImageMigrationService implements OnModuleInit {

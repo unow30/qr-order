@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { TableEntity } from './table.entity';
+import { TableEntity } from '@server/modules/table/entities/table.entity';
 
 @Entity('qr_tokens')
 export class QrToken {

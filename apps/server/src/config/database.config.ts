@@ -1,6 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { TypeOrmQueryLogger } from '../common/logging/collect/typeorm-query-logger';
+import { TypeOrmQueryLogger } from '@server/common/logging/collect/typeorm-query-logger';
 
 export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
   type: 'postgres',

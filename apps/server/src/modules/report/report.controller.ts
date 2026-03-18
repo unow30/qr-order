@@ -1,11 +1,11 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { ReportService } from './report.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { CurrentStoreId } from '../../common/decorators/current-store-id.decorator';
+import { ReportService } from '@server/modules/report/report.service';
+import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@server/common/guards/roles.guard';
+import { Roles } from '@server/common/decorators/roles.decorator';
+import { CurrentUser } from '@server/common/decorators/current-user.decorator';
+import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
 import { ReportQueryDto } from '@qr-order/shared-types';
 
 @ApiTags('reports')

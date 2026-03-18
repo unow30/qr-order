@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { getCoupons, createCoupon, deactivateCoupon, Coupon, DiscountType } from '../api/coupon.api';
-import { useAuthStore } from '../stores/authStore';
-import { useStoreNames } from '../hooks/useStoreNames';
-import ImageManagerWidget from '../components/ImageManagerWidget';
+import { getCoupons, createCoupon, deactivateCoupon, Coupon, DiscountType } from '@admin/api/coupon.api';
+import { useAuthStore } from '@admin/stores/authStore';
+import { useStoreNames } from '@admin/hooks/useStoreNames';
+import ImageManagerWidget from '@admin/components/ImageManagerWidget';
 
 function statusBadgeCls(c: Coupon): string {
   if (!c.isActive) return 'bg-gray-100 text-gray-500';

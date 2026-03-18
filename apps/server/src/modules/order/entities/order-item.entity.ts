@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Order } from './order.entity';
+import { Order } from '@server/modules/order/entities/order.entity';
 import { SelectedOption } from '@qr-order/shared-types';
 
 @Entity('order_items')
@@ -33,6 +33,9 @@ export class OrderItem {
 
   @Column({ type: 'jsonb', default: [] })
   selectedOptions: SelectedOption[];
+
+  @Column({ type: 'timestamp', nullable: true, default: null })
+  cancelledAt: Date | null;
 
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'orderId' })

@@ -1,7 +1,7 @@
 import { Injectable, NestMiddleware, ForbiddenException, Inject } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { StoreService } from '../../modules/store/store.service';
-import { REDIS_CLIENT } from '../../config/redis.config';
+import { StoreService } from '@server/modules/store/store.service';
+import { REDIS_CLIENT } from '@server/config/redis.config';
 import Redis from 'ioredis';
 
 export interface RequestWithStore extends Request {

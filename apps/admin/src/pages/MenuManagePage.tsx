@@ -23,12 +23,12 @@ import {
   updateStock,
   reorderCategories as apiReorderCategories,
   reorderItems as apiReorderItems,
-} from '../api/menu.api';
+} from '@admin/api/menu.api';
 import { MenuCategory, MenuItem } from '@qr-order/shared-types';
-import ConfirmDialog from '../components/ConfirmDialog';
-import { useAuthStore } from '../stores/authStore';
-import { useStoreNames } from '../hooks/useStoreNames';
-import ImageManagerWidget from '../components/ImageManagerWidget';
+import ConfirmDialog from '@admin/components/ConfirmDialog';
+import { useAuthStore } from '@admin/stores/authStore';
+import { useStoreNames } from '@admin/hooks/useStoreNames';
+import ImageManagerWidget from '@admin/components/ImageManagerWidget';
 
 type DeleteTarget =
   | { type: 'category'; id: string; name: string }

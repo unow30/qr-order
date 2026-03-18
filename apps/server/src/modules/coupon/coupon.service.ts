@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { CouponEntity } from './entities/coupon.entity';
+import { CouponEntity } from '@server/modules/coupon/entities/coupon.entity';
 import {
   CreateCouponDto,
   CouponValidationResult,
@@ -112,5 +112,17 @@ export class CouponService {
   async markUsed(couponId: string, manager?: EntityManager): Promise<void> {
     const repo = manager ? manager.getRepository(CouponEntity) : this.couponRepository;
     await repo.increment({ id: couponId }, 'usedCount', 1);
+  }
+
+  async markUnused(couponId: string, manager?: EntityManager): Promise<void> {
+    const repo = manager ? manager.getRepository(CouponEntity) : this.couponRepository;
+    await repo.decrement({ id: couponId }, 'usedCount', 1);
+    // usedCount가 음수가 되지 않도록 보정
+    await repo
+      .createQueryBuilder()
+      .update()
+      .set({ usedCount: 0 })
+      .where('id = :id AND "usedCount" < 0', { id: couponId })
+      .execute();
   }
 }
