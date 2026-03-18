@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { REDIS_CLIENT } from '../../config/redis.config';
 import Redis from 'ioredis';
 import { MenuCategory } from './entities/menu-category.entity';
@@ -34,6 +34,7 @@ export class MenuService {
     private readonly optionRepository: Repository<MenuOption>,
     @Inject(REDIS_CLIENT)
     private readonly redis: Redis,
+    private readonly dataSource: DataSource,
   ) {}
 
   private getMenuCacheKey(storeId: string): string {
@@ -129,13 +130,17 @@ export class MenuService {
   /**
    * F10: 재고 수량 차감 (주문 생성 시 호출)
    * 재고 관리가 활성화된 아이템만 처리
+   * manager를 전달하면 해당 트랜잭션 컨텍스트 안에서 실행 (캐시 무효화는 커밋 후 호출자 책임)
    */
   async decrementStock(
     items: { menuItemId: string; quantity: number }[],
     storeId: string,
+    manager?: EntityManager,
   ): Promise<void> {
+    const itemRepo = manager ? manager.getRepository(MenuItem) : this.itemRepository;
+
     for (const { menuItemId, quantity } of items) {
-      const item = await this.itemRepository.findOne({ where: { id: menuItemId } });
+      const item = await itemRepo.findOne({ where: { id: menuItemId } });
       if (!item || !item.stockEnabled) continue;
 
       const newStock = Math.max(0, item.stock - quantity);
@@ -143,9 +148,13 @@ export class MenuService {
       if (newStock === 0) {
         item.isAvailable = false; // 재고 소진 시 자동 품절
       }
-      await this.itemRepository.save(item);
+      await itemRepo.save(item);
     }
-    await this.invalidateCache(storeId);
+
+    // manager가 있으면(createOrder 컨텍스트) 호출자가 커밋 후 캐시 무효화 처리
+    if (!manager) {
+      await this.invalidateCache(storeId);
+    }
   }
 
   /**
@@ -176,8 +185,11 @@ export class MenuService {
       const match = dto.orders.find((o) => o.id === cat.id);
       if (match) cat.sortOrder = match.sortOrder;
     });
-    await this.categoryRepository.save(categories);
-    await this.invalidateCache(storeId);
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.save(MenuCategory, categories);
+    });
+    await this.invalidateCache(storeId).catch(() => {});
   }
 
   async reorderItems(storeId: string, dto: ReorderMenuItemsDto): Promise<void> {
@@ -187,8 +199,11 @@ export class MenuService {
       const match = dto.orders.find((o) => o.id === item.id);
       if (match) item.sortOrder = match.sortOrder;
     });
-    await this.itemRepository.save(items);
-    await this.invalidateCache(storeId);
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.save(MenuItem, items);
+    });
+    await this.invalidateCache(storeId).catch(() => {});
   }
 
   /**
@@ -209,65 +224,68 @@ export class MenuService {
 
     for (const targetStoreId of targetStoreIds) {
       try {
-        // clearTarget이면 대상 매장 메뉴 삭제
-        if (clearTarget) {
-          await this.categoryRepository.delete({ storeId: targetStoreId });
-          await this.invalidateCache(targetStoreId);
-        }
+        const counts = await this.dataSource.transaction(async (manager) => {
+          // clearTarget이면 대상 매장 메뉴 삭제
+          if (clearTarget) {
+            await manager.delete(MenuCategory, { storeId: targetStoreId });
+          }
 
-        let categoriesCreated = 0;
-        let itemsCreated = 0;
+          let categoriesCreated = 0;
+          let itemsCreated = 0;
 
-        for (const srcCategory of sourceCategories) {
-          // 카테고리 복사
-          const newCategory = this.categoryRepository.create({
-            storeId: targetStoreId,
-            name: srcCategory.name,
-            description: srcCategory.description,
-            imageUrl: srcCategory.imageUrl,
-            sortOrder: srcCategory.sortOrder,
-            isActive: srcCategory.isActive,
-          });
-          const savedCategory = await this.categoryRepository.save(newCategory);
-          categoriesCreated++;
-
-          // 아이템 복사
-          for (const srcItem of srcCategory.items ?? []) {
-            const newItem = this.itemRepository.create({
-              categoryId: savedCategory.id,
+          for (const srcCategory of sourceCategories) {
+            // 카테고리 복사
+            const newCategory = manager.create(MenuCategory, {
               storeId: targetStoreId,
-              name: srcItem.name,
-              description: srcItem.description,
-              price: srcItem.price,
-              imageUrl: srcItem.imageUrl,
-              isAvailable: srcItem.isAvailable,
-              sortOrder: srcItem.sortOrder,
+              name: srcCategory.name,
+              description: srcCategory.description,
+              imageUrl: srcCategory.imageUrl,
+              sortOrder: srcCategory.sortOrder,
+              isActive: srcCategory.isActive,
             });
-            const savedItem = await this.itemRepository.save(newItem);
-            itemsCreated++;
+            const savedCategory = await manager.save(MenuCategory, newCategory);
+            categoriesCreated++;
 
-            // 옵션 그룹 + 옵션 복사
-            for (const srcGroup of srcItem.optionGroups ?? []) {
-              const newGroup = this.optionGroupRepository.create({
-                menuItemId: savedItem.id,
-                name: srcGroup.name,
-                isRequired: srcGroup.isRequired,
-                maxSelect: srcGroup.maxSelect,
-                options: srcGroup.options.map((opt) =>
-                  this.optionRepository.create({
-                    name: opt.name,
-                    additionalPrice: opt.additionalPrice,
-                    isAvailable: opt.isAvailable,
-                  }),
-                ),
+            // 아이템 복사
+            for (const srcItem of srcCategory.items ?? []) {
+              const newItem = manager.create(MenuItem, {
+                categoryId: savedCategory.id,
+                storeId: targetStoreId,
+                name: srcItem.name,
+                description: srcItem.description,
+                price: srcItem.price,
+                imageUrl: srcItem.imageUrl,
+                isAvailable: srcItem.isAvailable,
+                sortOrder: srcItem.sortOrder,
               });
-              await this.optionGroupRepository.save(newGroup);
+              const savedItem = await manager.save(MenuItem, newItem);
+              itemsCreated++;
+
+              // 옵션 그룹 + 옵션 복사
+              for (const srcGroup of srcItem.optionGroups ?? []) {
+                const newGroup = manager.create(MenuOptionGroup, {
+                  menuItemId: savedItem.id,
+                  name: srcGroup.name,
+                  isRequired: srcGroup.isRequired,
+                  maxSelect: srcGroup.maxSelect,
+                  options: srcGroup.options.map((opt) =>
+                    manager.create(MenuOption, {
+                      name: opt.name,
+                      additionalPrice: opt.additionalPrice,
+                      isAvailable: opt.isAvailable,
+                    }),
+                  ),
+                });
+                await manager.save(MenuOptionGroup, newGroup);
+              }
             }
           }
-        }
 
-        await this.invalidateCache(targetStoreId);
-        results.push({ targetStoreId, success: true, categoriesCreated, itemsCreated });
+          return { categoriesCreated, itemsCreated };
+        });
+
+        await this.invalidateCache(targetStoreId).catch(() => {});
+        results.push({ targetStoreId, success: true, ...counts });
       } catch (err) {
         results.push({
           targetStoreId,

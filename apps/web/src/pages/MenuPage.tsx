@@ -4,6 +4,7 @@ import { getMenu } from '../api/menu.api';
 import { getCart } from '../api/cart.api';
 import { useCartStore } from '../stores/cartStore';
 import { useSessionStore } from '../stores/sessionStore';
+import { useOrderStore } from '../stores/orderStore';
 import { MenuCategory, MenuItem } from '@qr-order/shared-types';
 
 export default function MenuPage() {
@@ -12,6 +13,7 @@ export default function MenuPage() {
   const cartItems = useCartStore((s) => s.items);
   const totalAmount = useCartStore((s) => s.totalAmount);
   const tableName = useSessionStore((s) => s.tableName);
+  const currentOrder = useOrderStore((s) => s.currentOrder);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,15 +58,25 @@ export default function MenuPage() {
         ))}
       </div>
 
-      {/* 장바구니 버튼 */}
-      {cartItems.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px]">
-          <button
-            onClick={() => navigate('/cart')}
-            className="w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer"
-          >
-            장바구니 {cartItems.length}개 · {totalAmount.toLocaleString()}원 보기
-          </button>
+      {/* 플로팅 버튼 영역 */}
+      {(currentOrder || cartItems.length > 0) && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px] flex flex-col gap-2">
+          {currentOrder && (
+            <button
+              onClick={() => navigate('/order-history')}
+              className="w-full p-4 bg-gray-800 text-white border-none rounded-xl text-base cursor-pointer"
+            >
+              주문내역 보기
+            </button>
+          )}
+          {cartItems.length > 0 && (
+            <button
+              onClick={() => navigate('/cart')}
+              className="w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer"
+            >
+              장바구니 {cartItems.length}개 · {totalAmount.toLocaleString()}원 보기
+            </button>
+          )}
         </div>
       )}
     </div>

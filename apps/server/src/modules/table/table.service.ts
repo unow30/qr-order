@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { TableEntity } from './entities/table.entity';
 import { QrToken } from './entities/qr-token.entity';
@@ -13,6 +13,7 @@ export class TableService {
     private readonly tableRepository: Repository<TableEntity>,
     @InjectRepository(QrToken)
     private readonly qrTokenRepository: Repository<QrToken>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findAll(storeId: string | null): Promise<TableEntity[]> {
@@ -59,19 +60,19 @@ export class TableService {
   async generateQrToken(tableId: string): Promise<QrToken> {
     const table = await this.findOne(tableId);
 
-    // 기존 토큰 무효화
-    await this.qrTokenRepository.delete({ tableId });
-
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 1년 유효
 
-    const qrToken = this.qrTokenRepository.create({
-      tableId: table.id,
-      token: uuidv4(),
-      expiresAt,
+    const savedToken = await this.dataSource.transaction(async (manager) => {
+      await manager.delete(QrToken, { tableId });
+      const qrToken = manager.create(QrToken, {
+        tableId: table.id,
+        token: uuidv4(),
+        expiresAt,
+      });
+      return manager.save(QrToken, qrToken);
     });
-
-    return this.qrTokenRepository.save(qrToken);
+    return savedToken;
   }
 
   async getQrToken(tableId: string): Promise<QrToken | null> {
