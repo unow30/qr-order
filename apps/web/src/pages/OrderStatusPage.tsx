@@ -58,7 +58,7 @@ export default function OrderStatusPage() {
           <div className="absolute top-3 left-[10%] right-[10%] h-0.5 bg-gray-100" />
           {STATUS_STEPS.map((step, idx) => (
             <div key={step.label} className="flex flex-col items-center flex-1">
-              <div className={`w-6 h-6 rounded-full z-10 border-2 ${idx <= currentStepIdx ? 'bg-[#ff6b35] border-[#ff6b35]' : 'bg-gray-100 border-gray-300'}`} />
+              <div className={`w-6 h-6 rounded-full z-10 border-2 ${idx <= currentStepIdx ? 'bg-brand border-brand' : 'bg-gray-100 border-gray-300'}`} />
               <span className={`text-[10px] mt-2 text-center ${idx <= currentStepIdx ? 'text-brand' : 'text-gray-400'}`}>
                 {step.label}
               </span>
@@ -100,7 +100,7 @@ export default function OrderStatusPage() {
       {/* 메뉴로 이동 */}
       <button
         onClick={() => navigate('/menu', { replace: true })}
-        className="block w-full mt-6 py-[14px] bg-[#ff6b35] text-white border-none rounded-xl text-base font-semibold cursor-pointer"
+        className="block w-full mt-6 py-3.5 bg-brand text-white border-none rounded-xl text-base font-semibold cursor-pointer"
       >
         🍽️ 메뉴 더 주문하기
       </button>

@@ -100,7 +100,7 @@ export default function PaymentPage() {
             <div
               key={opt.value}
               onClick={() => setMethod(opt.value)}
-              className={`p-4 rounded-lg border mb-2 cursor-pointer ${method === opt.value ? 'border-[#ff6b35] bg-orange-50' : 'border-gray-200 bg-white'}`}
+              className={`p-4 rounded-lg border mb-2 cursor-pointer ${method === opt.value ? 'border-brand bg-orange-50' : 'border-gray-200 bg-white'}`}
             >
               {opt.label}
             </div>
@@ -120,11 +120,11 @@ export default function PaymentPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px]">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-110">
         <button
           onClick={handlePayment}
           disabled={loading || items.length === 0}
-          className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${loading ? 'opacity-70' : ''}`}
+          className={`w-full p-4 bg-brand text-white border-none rounded-xl text-base cursor-pointer ${loading ? 'opacity-70' : ''}`}
         >
           {loading ? '처리 중...' : `${payAmount.toLocaleString()}원 결제하기`}
         </button>
