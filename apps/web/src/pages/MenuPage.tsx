@@ -80,7 +80,7 @@ function MenuItemCard({ item, onClick }: { item: MenuItem; onClick: () => void }
       <div className="flex-1">
         <p className="mb-1 font-semibold">{item.name}</p>
         {item.description && <p className="mb-1 text-[13px] text-gray-400">{item.description}</p>}
-        <p className="m-0 text-[#ff6b35] font-semibold">{item.price.toLocaleString()}원</p>
+        <p className="m-0 text-brand font-semibold">{item.price.toLocaleString()}원</p>
       </div>
       {item.imageUrl && (
         <img src={item.imageUrl} alt={item.name} className="w-20 h-20 object-cover rounded-lg ml-3" />

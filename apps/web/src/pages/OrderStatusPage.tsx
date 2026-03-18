@@ -14,12 +14,10 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.CANCELLED]: '주문 취소됨',
 };
 
-const STATUS_STEPS = [
-  OrderStatus.PENDING,
-  OrderStatus.CONFIRMED,
-  OrderStatus.PREPARING,
-  OrderStatus.READY,
-  OrderStatus.SERVED,
+const STATUS_STEPS: { label: string; statuses: OrderStatus[] }[] = [
+  { label: '주문', statuses: [OrderStatus.PENDING, OrderStatus.CONFIRMED] },
+  { label: '조리', statuses: [OrderStatus.PREPARING] },
+  { label: '서빙', statuses: [OrderStatus.READY, OrderStatus.SERVED] },
 ];
 
 export default function OrderStatusPage() {
@@ -33,10 +31,12 @@ export default function OrderStatusPage() {
     getOrder(id).then(setOrder).catch(() => {});
   }, [id]);
 
-  const currentStepIdx = orderStatus ? STATUS_STEPS.indexOf(orderStatus) : 0;
+  const currentStepIdx = orderStatus
+    ? STATUS_STEPS.findIndex((s) => s.statuses.includes(orderStatus))
+    : 0;
 
   return (
-    <div className="max-w-[480px] mx-auto p-6 font-sans">
+    <div className="max-w-120 mx-auto p-6 font-sans">
       <h1 className="text-center text-xl mb-8">주문 현황</h1>
 
       {/* 상태 표시 */}
@@ -47,7 +47,7 @@ export default function OrderStatusPage() {
            orderStatus === OrderStatus.SERVED ? '✅' :
            orderStatus === OrderStatus.CANCELLED ? '❌' : '⏳'}
         </div>
-        <h2 className="text-[#ff6b35] mb-2">
+        <h2 className="text-brand mb-2">
           {orderStatus ? STATUS_LABELS[orderStatus] : '처리 중...'}
         </h2>
       </div>
@@ -57,10 +57,10 @@ export default function OrderStatusPage() {
         <div className="flex justify-between mb-8 relative">
           <div className="absolute top-3 left-[10%] right-[10%] h-0.5 bg-gray-100" />
           {STATUS_STEPS.map((step, idx) => (
-            <div key={step} className="flex flex-col items-center flex-1">
+            <div key={step.label} className="flex flex-col items-center flex-1">
               <div className={`w-6 h-6 rounded-full z-10 border-2 ${idx <= currentStepIdx ? 'bg-[#ff6b35] border-[#ff6b35]' : 'bg-gray-100 border-gray-300'}`} />
-              <span className={`text-[10px] mt-2 text-center ${idx <= currentStepIdx ? 'text-[#ff6b35]' : 'text-gray-400'}`}>
-                {STATUS_LABELS[step].split(' ')[0]}
+              <span className={`text-[10px] mt-2 text-center ${idx <= currentStepIdx ? 'text-brand' : 'text-gray-400'}`}>
+                {step.label}
               </span>
             </div>
           ))}

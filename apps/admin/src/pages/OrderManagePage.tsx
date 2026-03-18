@@ -176,7 +176,7 @@ export default function OrderManagePage() {
                   <div key={item.id} className="py-2 border-b border-[#f5f5f5]">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-[15px]">{item.menuItemName}</span>
-                      <span className="text-lg font-bold text-[#ff6b35]">×{item.quantity}</span>
+                      <span className="text-lg font-bold text-brand">×{item.quantity}</span>
                     </div>
                     {item.selectedOptions?.length > 0 && (
                       <div className="mt-1">

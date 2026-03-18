@@ -95,7 +95,7 @@ function SortableMenuItemRow({
           )}
           <div>
             <span className="font-medium">{item.name}</span>
-            <span className="ml-3 text-[#ff6b35]">{item.price.toLocaleString()}원</span>
+            <span className="ml-3 text-brand">{item.price.toLocaleString()}원</span>
             {item.stockEnabled && (
               <span className={`ml-2 text-[11px] px-1.5 py-0.5 rounded-full ${
                 item.stock > 0 ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#fee2e2] text-[#dc2626]'
@@ -123,7 +123,7 @@ function SortableMenuItemRow({
             <button
               onClick={() => onImageToggle(`item-${item.id}`)}
               className={`px-2 py-0.5 border border-[#ff6b35] rounded-md cursor-pointer text-[11px] ${
-                imageOpenId === `item-${item.id}` ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-[#ff6b35]'
+                imageOpenId === `item-${item.id}` ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-brand'
               }`}
             >
               🖼️
@@ -263,7 +263,7 @@ function SortableCategoryCard({
           <button
             onClick={() => onImageToggle(`cat-${cat.id}`)}
             className={`px-2.5 py-1 border border-[#ff6b35] rounded-md cursor-pointer text-xs ${
-              imageOpenId === `cat-${cat.id}` ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-[#ff6b35]'
+              imageOpenId === `cat-${cat.id}` ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-brand'
             }`}
           >
             🖼️ 이미지

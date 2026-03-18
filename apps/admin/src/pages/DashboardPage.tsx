@@ -22,7 +22,7 @@ export default function DashboardPage() {
     '전체 주문': 'text-indigo-600',
     '대기 중': 'text-orange-500',
     '조리 중': 'text-green-600',
-    '총 매출': 'text-[#ff6b35]',
+    '총 매출': 'text-brand',
   };
 
   return (
@@ -51,7 +51,7 @@ export default function DashboardPage() {
               <span className="ml-3 text-gray-400 text-[13px]">{order.items?.length}개 메뉴</span>
             </div>
             <div className="text-right">
-              <span className="text-[#ff6b35] font-semibold">{order.totalAmount.toLocaleString()}원</span>
+              <span className="text-brand font-semibold">{order.totalAmount.toLocaleString()}원</span>
               <span className="ml-3 text-gray-400 text-xs">{order.status}</span>
             </div>
           </div>

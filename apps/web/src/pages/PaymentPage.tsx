@@ -55,7 +55,7 @@ export default function PaymentPage() {
   };
 
   return (
-    <div className="max-w-[480px] mx-auto font-sans pb-24">
+    <div className="max-w-120 mx-auto font-sans pb-24">
       <header className="p-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
         <h2 className="m-0">결제</h2>
@@ -86,7 +86,7 @@ export default function PaymentPage() {
           )}
           <div className="flex justify-between font-bold">
             <span>최종 결제 금액</span>
-            <span className="text-[#ff6b35]">{payAmount.toLocaleString()}원</span>
+            <span className="text-brand">{payAmount.toLocaleString()}원</span>
           </div>
         </div>
 

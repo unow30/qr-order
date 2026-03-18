@@ -184,7 +184,7 @@ export default function CouponManagePage() {
                       <button
                         onClick={() => setImageOpenId(imageOpenId === c.id ? null : c.id)}
                         className={`px-2.5 py-1 text-xs rounded-md border border-[#ff6b35] cursor-pointer ${
-                          imageOpenId === c.id ? 'bg-[#ff6b35] text-white' : 'bg-white text-[#ff6b35]'
+                          imageOpenId === c.id ? 'bg-[#ff6b35] text-white' : 'bg-white text-brand'
                         }`}
                       >
                         🖼️

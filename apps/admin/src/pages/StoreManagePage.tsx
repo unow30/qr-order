@@ -210,7 +210,7 @@ export default function StoreManagePage() {
                         <button
                           onClick={(e) => { e.stopPropagation(); setImageOpenId(imageOpenId === store.id ? null : store.id); }}
                           className={`px-2.5 py-1 text-xs rounded-md border border-[#ff6b35] cursor-pointer ${
-                            imageOpenId === store.id ? 'bg-[#ff6b35] text-white' : 'bg-white text-[#ff6b35]'
+                            imageOpenId === store.id ? 'bg-[#ff6b35] text-white' : 'bg-white text-brand'
                           }`}
                         >
                           🖼️

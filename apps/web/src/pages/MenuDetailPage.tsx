@@ -131,7 +131,7 @@ export default function MenuDetailPage() {
       <div className="p-4">
         <h2 className="mb-2">{item.name}</h2>
         {item.description && <p className="text-gray-500 mb-2">{item.description}</p>}
-        <p className="text-xl font-bold text-[#ff6b35]">{item.price.toLocaleString()}원</p>
+        <p className="text-xl font-bold text-brand">{item.price.toLocaleString()}원</p>
 
         {/* 옵션 그룹 */}
         {item.optionGroups?.map((group) => {
@@ -184,9 +184,9 @@ export default function MenuDetailPage() {
                       >
                         {isSelected && <span className="text-white text-xs leading-none">✓</span>}
                       </span>
-                      <span className={isSelected ? 'text-[#ff6b35]' : 'text-gray-800'}>{option.name}</span>
+                      <span className={isSelected ? 'text-brand' : 'text-gray-800'}>{option.name}</span>
                     </div>
-                    <span className={`text-sm ${isSelected ? 'text-[#ff6b35]' : 'text-gray-400'}`}>
+                    <span className={`text-sm ${isSelected ? 'text-brand' : 'text-gray-400'}`}>
                       {option.additionalPrice > 0 && `+${option.additionalPrice.toLocaleString()}원`}
                     </span>
                   </div>

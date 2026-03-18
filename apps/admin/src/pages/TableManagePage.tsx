@@ -106,7 +106,7 @@ export default function TableManagePage() {
             <button
               onClick={() => setImageOpenId(imageOpenId === table.id ? null : table.id)}
               className={`mt-2.5 w-full px-2.5 py-1 border border-[#ff6b35] rounded-md cursor-pointer text-xs ${
-                imageOpenId === table.id ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-[#ff6b35]'
+                imageOpenId === table.id ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-brand'
               }`}
             >
               🖼️ 이미지 관리
