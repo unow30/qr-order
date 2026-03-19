@@ -31,7 +31,7 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
 
 export default function AdminRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/admin">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

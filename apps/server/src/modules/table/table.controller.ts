@@ -37,9 +37,6 @@ export class TableController {
     @CurrentStoreId(false) storeId: string | null,
     @Query('storeId') queryStoreId?: string,
   ) {
-    if (this.configService.get('NODE_ENV') === 'production') {
-      return { message: '프로덕션 환경에서는 사용할 수 없습니다.' };
-    }
     return this.tableService.findAllWithTokens(queryStoreId || storeId);
   }
 

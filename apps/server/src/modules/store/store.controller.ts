@@ -9,7 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
 import { StoreService } from '@server/modules/store/store.service';
 import { CreateStoreDto } from '@server/modules/store/dto/create-store.dto';
 import { UpdateStoreDto } from '@server/modules/store/dto/update-store.dto';
@@ -24,18 +23,12 @@ import { Public } from '@server/common/decorators/public.decorator';
 @Roles('SUPER_ADMIN')
 @ApiBearerAuth()
 export class StoreController {
-  constructor(
-    private readonly storeService: StoreService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly storeService: StoreService) {}
 
   @Get('dev/list')
   @Public()
   @ApiExcludeEndpoint()
-  async devList() {
-    if (this.configService.get('NODE_ENV') === 'production') {
-      return { message: '프로덕션 환경에서는 사용할 수 없습니다.' };
-    }
+  devList() {
     return this.storeService.findAll();
   }
 
