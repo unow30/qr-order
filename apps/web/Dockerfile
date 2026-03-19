@@ -29,10 +29,6 @@ COPY packages/shared-types ./packages/shared-types
 COPY apps/web ./apps/web
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 
-# 빌드 타임 환경변수 (필요 시 docker build --build-arg 로 주입)
-ARG VITE_API_URL=http://localhost:3000
-ENV VITE_API_URL=$VITE_API_URL
-
 RUN pnpm --filter @qr-order/shared-types build
 RUN pnpm --filter @qr-order/web build
 

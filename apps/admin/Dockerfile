@@ -29,9 +29,6 @@ COPY packages/shared-types ./packages/shared-types
 COPY apps/admin ./apps/admin
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 
-ARG VITE_API_URL=http://localhost:3000
-ENV VITE_API_URL=$VITE_API_URL
-
 RUN pnpm --filter @qr-order/shared-types build
 RUN pnpm --filter @qr-order/admin build
 

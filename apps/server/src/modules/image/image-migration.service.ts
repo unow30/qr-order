@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity';
 import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
 import { ImageService } from '@server/modules/image/image.service';
@@ -15,9 +16,18 @@ export class ImageMigrationService implements OnModuleInit {
     @InjectRepository(MenuItem)
     private readonly itemRepo: Repository<MenuItem>,
     private readonly imageService: ImageService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async onModuleInit() {
+    const tableExists = await this.dataSource.query(
+      `SELECT to_regclass('public.menu_categories') IS NOT NULL AS exists`,
+    );
+    if (!tableExists[0]?.exists) {
+      this.logger.warn('이미지 마이그레이션 스킵: 테이블이 아직 생성되지 않았습니다.');
+      return;
+    }
     await this.migrateMenuCategoryImages();
     await this.migrateMenuItemImages();
   }

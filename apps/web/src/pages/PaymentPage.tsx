@@ -10,7 +10,7 @@ import { PaymentMethod } from '@qr-order/shared-types';
 export default function PaymentPage() {
   const navigate = useNavigate();
   const { items, totalAmount, clearCart } = useCartStore();
-  const setOrder = useOrderStore((s) => s.setOrder);
+  const addOrder = useOrderStore((s) => s.addOrder);
   const { couponCode, discountAmount, finalAmount, clearCoupon } = useCouponStore();
   const [method, setMethod] = useState<PaymentMethod>(PaymentMethod.CARD);
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ export default function PaymentPage() {
         note: note || undefined,
         couponCode: couponCode ?? undefined,
       });
-      setOrder(order);
+      addOrder(order);
 
       // 2. 결제 요청 (finalAmount 사용)
       const paymentResult = await createPayment({
