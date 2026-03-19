@@ -14,10 +14,18 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean",
-    "db:up": "docker-compose up -d",
-    "db:down": "docker-compose down",
-    "db:reset": "docker-compose down && docker-compose up -d",
-    "db:seed": "pnpm --filter @qr-order/server seed"
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:db:seed": "pnpm --filter @qr-order/server seed",
+    "docker:rebuild": "docker-compose down && docker-compose build server web admin && docker-compose up -d",
+    "docker:restart": "docker-compose restart",
+    "docker:restart:app": "docker-compose restart server web admin",
+    "docker:restart:server": "docker-compose restart server",
+    "docker:restart:web": "docker-compose restart web",
+    "docker:restart:admin": "docker-compose restart admin",
+    "docker:restart:nginx": "docker-compose restart nginx",
+    "docker:restart:redis": "docker-compose restart redis",
+    "docker:restart:postgres": "docker-compose restart postgres"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
