@@ -58,7 +58,7 @@ dist/
 
 # ide
 .vscode
-.idea
+.idea/
 
 # claude code
 .claude/
