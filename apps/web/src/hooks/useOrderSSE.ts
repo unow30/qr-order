@@ -14,7 +14,8 @@ export function useOrderSSE(
     let reconnectDelay = 1000;
 
     const connect = () => {
-      const es = new EventSource(`/api/orders/${orderId}/stream`);
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const es = new EventSource(`${baseUrl}/orders/${orderId}/stream`);
       esRef.current = es;
 
       es.onmessage = (event) => {

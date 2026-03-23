@@ -10,7 +10,9 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   password: configService.get<string>('DATABASE_PASSWORD', 'qrorder_password'),
   database: configService.get<string>('DATABASE_NAME', 'qrorder_db'),
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: configService.get<string>('NODE_ENV') !== 'production',
+  synchronize:
+    configService.get<string>('NODE_ENV') !== 'production' ||
+    configService.get<string>('TYPEORM_SYNC') === 'true',
   logger: new TypeOrmQueryLogger(),
   maxQueryExecutionTime: parseInt(configService.get<string>('LOG_SLOW_QUERY_MS', '2000'), 10),
   autoLoadEntities: true,

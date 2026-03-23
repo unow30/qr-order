@@ -25,7 +25,8 @@ export function useOrdersSSE(onUpdate: () => void) {
       const params = new URLSearchParams({ token: accessToken });
       if (currentStoreId) params.set('X-Store-Id', currentStoreId);
 
-      const es = new EventSource(`/api/orders/stream/all?${params.toString()}`);
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const es = new EventSource(`${baseUrl}/orders/stream/all?${params.toString()}`);
       esRef.current = es;
 
       es.onmessage = () => {

@@ -14,10 +14,18 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean",
-    "db:up": "docker-compose up -d",
-    "db:down": "docker-compose down",
-    "db:reset": "docker-compose down -v && docker-compose up -d",
-    "db:seed": "pnpm --filter @qr-order/server seed"
+    "docker:up": "docker-compose -f docker-compose.local.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.local.yml down",
+    "docker:db:seed": "pnpm --filter @qr-order/server seed",
+    "docker:rebuild": "docker-compose -f docker-compose.local.yml down && docker-compose -f docker-compose.local.yml build server web admin && docker-compose -f docker-compose.local.yml up -d",
+    "docker:restart": "docker-compose -f docker-compose.local.yml restart",
+    "docker:restart:app": "docker-compose -f docker-compose.local.yml restart server web admin",
+    "docker:restart:server": "docker-compose -f docker-compose.local.yml restart server",
+    "docker:restart:web": "docker-compose -f docker-compose.local.yml restart web",
+    "docker:restart:admin": "docker-compose -f docker-compose.local.yml restart admin",
+    "docker:restart:nginx": "docker-compose -f docker-compose.local.yml restart nginx",
+    "docker:restart:redis": "docker-compose -f docker-compose.local.yml restart redis",
+    "docker:restart:postgres": "docker-compose -f docker-compose.local.yml restart postgres"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

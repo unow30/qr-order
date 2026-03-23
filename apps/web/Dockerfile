@@ -1,0 +1,56 @@
+# ─── Stage 1: 의존성 설치 ───────────────────────────────────────────
+FROM node:20-alpine AS deps
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+WORKDIR /app
+
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY packages/tsconfig/package.json ./packages/tsconfig/
+COPY apps/web/package.json ./apps/web/
+
+RUN pnpm install --frozen-lockfile
+
+# ─── Stage 2: 빌드 ──────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/shared-types/node_modules ./packages/shared-types/node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+
+COPY packages/tsconfig ./packages/tsconfig
+COPY packages/shared-types ./packages/shared-types
+COPY apps/web ./apps/web
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
+
+RUN pnpm --filter @qr-order/shared-types build
+RUN pnpm --filter @qr-order/web build
+
+# ─── Stage 3: Nginx로 정적 파일 서빙 ────────────────────────────────
+FROM nginx:alpine AS production
+
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
+
+# SPA 라우팅을 위한 nginx 설정
+RUN printf 'server {\n\
+    listen 80;\n\
+    root /usr/share/nginx/html;\n\
+    index index.html;\n\
+\n\
+    location / {\n\
+        try_files $uri $uri/ /index.html;\n\
+    }\n\
+\n\
+    gzip on;\n\
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;\n\
+}\n' > /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
