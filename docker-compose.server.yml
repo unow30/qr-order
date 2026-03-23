@@ -1,0 +1,28 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: qr-order-server
+    env_file:
+      - ./apps/server/.env
+    restart: unless-stopped
+    networks:
+      - server-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: qr-order-nginx
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/nginx.server.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - server-network
+
+networks:
+  server-network:
+    driver: bridge
