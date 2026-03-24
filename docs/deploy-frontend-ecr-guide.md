@@ -89,7 +89,7 @@ sudo yum install -y awscli
 mkdir -p ~/qr-order/nginx
 
 # nginx 설정 파일 복사 (첫 배포 시 직접 업로드)
-scp nginx/nginx.frontend.conf ec2-user@<EC2-IP>:~/qr-order/nginx/
+scp -i path/to/pemkey \ path/to/nginx/nginx.frontend.conf \ ec2-user@<EC2-IP>:/var/www/qr-order/nginx/
 ```
 
 ### EC2 IAM 역할 설정 (권장)
