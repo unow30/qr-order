@@ -126,3 +126,4 @@ jobs:
 
             # 오래된 이미지 정리
             docker image prune -f
+
