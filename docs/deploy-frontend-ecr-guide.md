@@ -74,10 +74,15 @@ sudo systemctl enable docker
 sudo systemctl start docker
 sudo usermod -aG docker ec2-user
 
-# Docker Compose 플러그인 설치
+# Docker Compose v1 설치 (EC2에서 docker-compose 명령어 사용)
+# 주의: Amazon Linux 2023 기본 Docker는 'docker compose' (v2 플러그인)가 없을 수 있음
+# 워크플로우에서 docker-compose (v1) 명령어를 사용하므로 아래 설치 필요
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
   -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
+
+# 버전 확인
+docker-compose version
 
 # AWS CLI 설치
 sudo yum install -y awscli
@@ -92,13 +97,29 @@ mkdir -p ~/qr-order/nginx
 scp -i path/to/pemkey \ path/to/nginx/nginx.frontend.conf \ ec2-user@<EC2-IP>:/var/www/qr-order/nginx/
 ```
 
-### EC2 IAM 역할 설정 (권장)
+### EC2 IAM 역할 설정 (필수)
 
-EC2 인스턴스에 **ECRReadOnly** 정책이 포함된 IAM 역할 연결:
-- 역할 이름 예: `ec2-ecr-readonly-role`
-- 연결 정책: `AmazonEC2ContainerRegistryReadOnly`
+> **주의:** IAM 사용자/그룹에 ECR 권한을 줘도 EC2 내부에서는 동작하지 않습니다.
+> IAM 사용자 권한은 "GitHub Actions가 AWS API를 호출하는 권한"이고,
+> EC2 IAM Role은 "EC2 서버 자체가 AWS API를 호출하는 권한"으로 별개입니다.
 
-이렇게 하면 EC2에서 별도 AWS 자격증명 없이 ECR pull 가능.
+**1단계: IAM Role 생성**
+```
+AWS 콘솔 → IAM → 역할 → 역할 생성
+→ 신뢰할 엔터티: AWS 서비스 → EC2
+→ 권한 추가: AmazonEC2ContainerRegistryReadOnly
+→ 역할 이름: ec2-ecr-readonly-role
+→ 생성
+```
+
+**2단계: EC2 인스턴스에 역할 연결**
+```
+AWS 콘솔 → EC2 → 인스턴스 선택
+→ 작업(Actions) → 보안(Security) → IAM 역할 수정
+→ ec2-ecr-readonly-role 선택 → 저장
+```
+
+재시작 없이 즉시 적용됩니다. 이후 EC2에서 `aws ecr get-login-password`가 자동으로 인증됩니다.
 
 ---
 
@@ -174,6 +195,35 @@ docker pull $ECR_REGISTRY/qr-order-admin:$COMMIT_SHA
 # docker-compose.frontend.yml의 :latest를 :$COMMIT_SHA로 변경 후
 docker compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
 ```
+
+---
+
+## 트러블슈팅
+
+### `Unable to locate credentials` 에러
+
+```
+Unable to locate credentials. You can configure credentials by running "aws login".
+Error response from daemon: no basic auth credentials
+```
+
+**원인:** EC2 인스턴스에 IAM Role이 연결되지 않은 상태.
+IAM 사용자에 ECR 권한이 있어도 EC2 내부 aws cli는 별도 크레덴셜을 사용합니다.
+
+**해결:** EC2 인스턴스에 IAM Role 연결 (3단계 참고)
+
+---
+
+### `docker-compose exit code: 18` 에러
+
+ECR 인증 실패로 이미지를 pull하지 못한 경우 발생합니다. 위 IAM Role 문제와 동일한 원인입니다.
+
+---
+
+### `docker ps`에 컨테이너가 없는 경우
+
+`docker-compose up`이 실패하면 컨테이너가 생성되지 않습니다.
+워크플로우 로그에서 `=== docker-compose exit code ===` 이후를 확인하세요.
 
 ---
 
