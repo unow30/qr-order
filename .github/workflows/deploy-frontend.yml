@@ -97,12 +97,15 @@ jobs:
             docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/qr-order-web:latest
             docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/qr-order-admin:latest
 
+            # 폴더 생성
+            mkdir -p /var/www/qr-order
+
             # 프로젝트 디렉토리로 이동
             cd /var/www/qr-order
 
             # compose 재시작 (이미지는 이미 pull됨, --no-build로 빌드 스킵)
             ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com \
-            docker compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
+            docker-compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
 
             # 오래된 이미지 정리
             docker image prune -f
