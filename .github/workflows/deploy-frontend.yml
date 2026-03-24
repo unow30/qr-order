@@ -88,7 +88,7 @@ jobs:
             docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/qr-order-admin:latest
 
             # 프로젝트 디렉토리로 이동
-            cd ~/qr-order
+            cd /var/www/qr-order
 
             # compose 재시작 (이미지는 이미 pull됨, --no-build로 빌드 스킵)
             docker compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
