@@ -104,8 +104,25 @@ jobs:
             cd /var/www/qr-order
 
             # compose 재시작 (이미지는 이미 pull됨, --no-build로 빌드 스킵)
+            echo "=== ls /var/www/qr-order ==="
+            ls -la /var/www/qr-order
+
             ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com \
             docker-compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
+            COMPOSE_EXIT=$?
+            echo "=== docker-compose exit code: $COMPOSE_EXIT ==="
+
+            # 컨테이너 상태 확인
+            echo "=== docker ps -a ==="
+            docker ps -a
+
+            # 실패 시 로그 출력
+            if [ $COMPOSE_EXIT -ne 0 ]; then
+              echo "=== docker-compose logs ==="
+              ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com \
+              docker-compose -f docker-compose.frontend.yml logs --tail=50
+              exit $COMPOSE_EXIT
+            fi
 
             # 오래된 이미지 정리
             docker image prune -f
