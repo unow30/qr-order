@@ -1,17 +1,13 @@
 services:
   web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
+    image: ${ECR_REGISTRY}/qr-order-web:latest
     container_name: qr-order-web
     restart: unless-stopped
     networks:
       - frontend-network
 
   admin:
-    build:
-      context: .
-      dockerfile: apps/admin/Dockerfile
+    image: ${ECR_REGISTRY}/qr-order-admin:latest
     container_name: qr-order-admin
     restart: unless-stopped
     networks:

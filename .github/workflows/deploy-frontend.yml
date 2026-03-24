@@ -1,0 +1,94 @@
+name: Deploy Frontend to EC2 via ECR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/web/**'
+      - 'apps/admin/**'
+      - 'packages/shared-types/**'
+      - 'nginx/nginx.frontend.conf'
+      - 'docker-compose.frontend.yml'
+      - '.github/workflows/deploy-frontend.yml'
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
+  WEB_IMAGE_NAME: qr-order-web
+  ADMIN_IMAGE_NAME: qr-order-admin
+
+jobs:
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # web, admin 이미지를 병렬로 빌드 후 ECR push
+      - name: Build & push web image
+        run: |
+          docker build \
+            -f apps/web/Dockerfile \
+            -t $ECR_REGISTRY/$WEB_IMAGE_NAME:latest \
+            -t $ECR_REGISTRY/$WEB_IMAGE_NAME:${{ github.sha }} \
+            .
+          docker push $ECR_REGISTRY/$WEB_IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$WEB_IMAGE_NAME:${{ github.sha }}
+
+      - name: Build & push admin image
+        run: |
+          docker build \
+            -f apps/admin/Dockerfile \
+            -t $ECR_REGISTRY/$ADMIN_IMAGE_NAME:latest \
+            -t $ECR_REGISTRY/$ADMIN_IMAGE_NAME:${{ github.sha }} \
+            .
+          docker push $ECR_REGISTRY/$ADMIN_IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$ADMIN_IMAGE_NAME:${{ github.sha }}
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.FRONTEND_EC2_HOST }}
+          username: ${{ secrets.FRONTEND_EC2_USER }}
+          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
+          script: |
+            # ECR 로그인
+            aws ecr get-login-password --region ap-northeast-2 \
+              | docker login --username AWS \
+                --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
+
+            # 최신 이미지 pull
+            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/qr-order-web:latest
+            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/qr-order-admin:latest
+
+            # 프로젝트 디렉토리로 이동
+            cd ~/qr-order
+
+            # compose 재시작 (이미지는 이미 pull됨, --no-build로 빌드 스킵)
+            docker compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
+
+            # 오래된 이미지 정리
+            docker image prune -f
