@@ -184,3 +184,4 @@ docker compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
 | t3.micro | 약 $0.0104/h (~$7.5/월) |
 | ECR 스토리지 | 0.5 GiB 무료, 초과 시 $0.10/GB |
 | ECR 데이터 전송 (EC2 동일 리전) | **무료** |
+
