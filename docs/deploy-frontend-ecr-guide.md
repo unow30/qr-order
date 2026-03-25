@@ -20,7 +20,7 @@ aws ecr create-repository --repository-name qr-order-web --region ap-northeast-2
 aws ecr create-repository --repository-name qr-order-admin --region ap-northeast-2
 ```
 
-### IAM 사용자 생성 (GitHub Actions용)
+### 2단계: IAM 사용자 생성 (GitHub Actions용)
 
 **필요 권한 (최소 권한 원칙):**
 ```json
@@ -47,7 +47,7 @@ aws ecr create-repository --repository-name qr-order-admin --region ap-northeast
 
 ---
 
-## 2단계: GitHub Secrets 설정
+## 3단계: GitHub Secrets 설정
 
 GitHub 레포 → Settings → Secrets and variables → Actions에서 추가:
 
@@ -62,7 +62,7 @@ GitHub 레포 → Settings → Secrets and variables → Actions에서 추가:
 
 ---
 
-## 3단계: EC2 초기 설정
+## 4단계: EC2 초기 설정
 
 EC2에 처음 접속 후 한 번만 실행:
 
@@ -97,7 +97,7 @@ mkdir -p ~/qr-order/nginx
 scp -i path/to/pemkey \ path/to/nginx/nginx.frontend.conf \ ec2-user@<EC2-IP>:/var/www/qr-order/nginx/
 ```
 
-### EC2 IAM 역할 설정 (필수)
+### 5단계: EC2 IAM 역할 설정 (필수)
 
 > **주의:** IAM 사용자/그룹에 ECR 권한을 줘도 EC2 내부에서는 동작하지 않습니다.
 > IAM 사용자 권한은 "GitHub Actions가 AWS API를 호출하는 권한"이고,
@@ -123,7 +123,7 @@ AWS 콘솔 → EC2 → 인스턴스 선택
 
 ---
 
-## 4단계: EC2에 .env 파일 설정
+## 6단계: EC2에 .env 파일 설정
 
 ```bash
 # EC2에서 환경 변수 파일 생성
@@ -134,7 +134,7 @@ EOF
 
 ---
 
-## 5단계: 첫 배포 확인
+## 7단계: 첫 배포 확인
 
 GitHub main 브랜치에 push하면 자동 실행됩니다.
 
@@ -149,7 +149,7 @@ docker-compose.frontend.yml
 
 ---
 
-## 6단계: EC2에서 상태 확인
+## 8단계: EC2에서 상태 확인
 
 ```bash
 # 컨테이너 상태
