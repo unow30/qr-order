@@ -13,12 +13,6 @@ on:
       - 'docker-compose.frontend.yml'
       - '.github/workflows/deploy-frontend.yml'
 
-env:
-  AWS_REGION: ap-northeast-2
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
-  WEB_IMAGE_NAME: qr-order-web
-  ADMIN_IMAGE_NAME: qr-order-admin
-
 jobs:
   build-and-push:
     name: Build & Push to ECR
@@ -34,7 +28,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -45,21 +39,21 @@ jobs:
         run: |
           docker build \
             -f apps/web/Dockerfile \
-            -t $ECR_REGISTRY/$WEB_IMAGE_NAME:latest \
-            -t $ECR_REGISTRY/$WEB_IMAGE_NAME:${{ github.sha }} \
+            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest \
+            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:${{ github.sha }} \
             .
-          docker push $ECR_REGISTRY/$WEB_IMAGE_NAME:latest
-          docker push $ECR_REGISTRY/$WEB_IMAGE_NAME:${{ github.sha }}
+          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:${{ github.sha }}
 
       - name: Build & push admin image
         run: |
           docker build \
             -f apps/admin/Dockerfile \
-            -t $ECR_REGISTRY/$ADMIN_IMAGE_NAME:latest \
-            -t $ECR_REGISTRY/$ADMIN_IMAGE_NAME:${{ github.sha }} \
+            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest \
+            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:${{ github.sha }} \
             .
-          docker push $ECR_REGISTRY/$ADMIN_IMAGE_NAME:latest
-          docker push $ECR_REGISTRY/$ADMIN_IMAGE_NAME:${{ github.sha }}
+          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:${{ github.sha }}
 
   deploy:
     name: Deploy to EC2
@@ -89,13 +83,13 @@ jobs:
           key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
           script: |
             # ECR 로그인
-            aws ecr get-login-password --region ap-northeast-2 \
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
               | docker login --username AWS \
-                --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
+                --password-stdin ${{ secrets.ECR_REGISTRY }}
 
             # 최신 이미지 pull
-            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/qr-order-web:latest
-            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/qr-order-admin:latest
+            docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest
+            docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest
 
             # 폴더 생성
             mkdir -p /var/www/qr-order
@@ -107,7 +101,7 @@ jobs:
             echo "=== ls /var/www/qr-order ==="
             ls -la /var/www/qr-order
 
-            ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com \
+            ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
             docker-compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
             COMPOSE_EXIT=$?
             echo "=== docker-compose exit code: $COMPOSE_EXIT ==="
@@ -119,7 +113,7 @@ jobs:
             # 실패 시 로그 출력
             if [ $COMPOSE_EXIT -ne 0 ]; then
               echo "=== docker-compose logs ==="
-              ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com \
+              ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
               docker-compose -f docker-compose.frontend.yml logs --tail=50
               exit $COMPOSE_EXIT
             fi
