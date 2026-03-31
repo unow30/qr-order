@@ -1,11 +1,11 @@
 services:
   server:
-    build:
-      context: .
-      dockerfile: apps/server/Dockerfile
+    image: ${ECR_REGISTRY}/qr-order-server:latest
     container_name: qr-order-server
     env_file:
       - ./apps/server/.env
+    environment:
+      CORS_ORIGINS: http://www.qr-order-demo.it.kr,http://admin.qr-order-demo.it.kr
     restart: unless-stopped
     networks:
       - server-network
