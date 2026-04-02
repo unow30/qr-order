@@ -9,8 +9,6 @@ services:
   admin:
     image: ${ECR_REGISTRY}/qr-order-admin:latest
     container_name: qr-order-admin
-    env_file:
-      - ./apps/admin/.env.production
     restart: unless-stopped
     networks:
       - frontend-network
