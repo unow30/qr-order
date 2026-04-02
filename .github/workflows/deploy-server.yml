@@ -76,11 +76,18 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
+        env:
+          SERVER_ENV: ${{ secrets.SERVER_ENV }}
         with:
           host: ${{ secrets.BACKEND_EC2_HOST }}
           username: ${{ secrets.BACKEND_EC2_USER }}
           key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
+          envs: SERVER_ENV
           script: |
+            # .env 파일 생성
+            mkdir -p /var/www/qr-order/apps/server
+            echo "$SERVER_ENV" > /var/www/qr-order/apps/server/.env
+
             # ECR 로그인
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
               | docker login --username AWS \

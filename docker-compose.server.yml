@@ -3,7 +3,7 @@ services:
     image: ${ECR_REGISTRY}/qr-order-server:latest
     container_name: qr-order-server
     env_file:
-      - ./apps/server/.env
+      - ./apps/server/.env.production
     environment:
       CORS_ORIGINS: https://www.qr-order-demo.it.kr,https://admin.qr-order-demo.it.kr,www.qr-order-demo.it.kr,admin.qr-order-demo.it.kr
     restart: unless-stopped

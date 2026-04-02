@@ -3,12 +3,16 @@ services:
     image: ${ECR_REGISTRY}/qr-order-web:latest
     container_name: qr-order-web
     restart: unless-stopped
+    env_file:
+      - ./apps/web/.env.production
     networks:
       - frontend-network
 
   admin:
     image: ${ECR_REGISTRY}/qr-order-admin:latest
     container_name: qr-order-admin
+    env_file:
+      - ./apps/admin/.env.production
     restart: unless-stopped
     networks:
       - frontend-network
