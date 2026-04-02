@@ -38,16 +38,18 @@ async function bootstrap() {
   // Global interceptors
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  // Swagger
-  const config = new DocumentBuilder()
-    .setTitle('QR 테이블 오더 API')
-    .setDescription('QR 코드 기반 테이블 오더 서비스 API 문서')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Session-Token' }, 'session-token')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Swagger (프로덕션 환경에서는 비활성화)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('QR 테이블 오더 API')
+      .setDescription('QR 코드 기반 테이블 오더 서비스 API 문서')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Session-Token' }, 'session-token')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
