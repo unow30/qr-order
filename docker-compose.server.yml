@@ -3,6 +3,7 @@ services:
     image: ${ECR_REGISTRY}/qr-order-server:latest
     container_name: qr-order-server
     environment:
+      DATABASE_SSL: 'true'
       CORS_ORIGINS: https://www.qr-order-demo.it.kr,https://admin.qr-order-demo.it.kr,www.qr-order-demo.it.kr,admin.qr-order-demo.it.kr
     restart: unless-stopped
     networks:
