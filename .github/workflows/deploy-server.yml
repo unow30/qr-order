@@ -47,6 +47,8 @@ jobs:
           ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
           CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
           TYPEORM_SYNC=${{ secrets.TYPEORM_SYNC }}
+          REDIS_HOST=${{secrets.REDIS_HOST}}
+          REDIS_PORT=${{secrets.REDIS_PORT}}
           EOF
 
       - name: Login to Amazon ECR
