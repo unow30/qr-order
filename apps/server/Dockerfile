@@ -59,6 +59,9 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist
 COPY --from=builder /app/apps/server/dist ./apps/server/dist
 
+# 환경변수 파일 복사 (존재하는 경우)
+COPY apps/server/.env.production* ./
+
 EXPOSE 3000
 
 CMD ["node", "apps/server/dist/main"]
