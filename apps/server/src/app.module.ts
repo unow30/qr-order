@@ -25,7 +25,7 @@ import { StoreContextMiddleware } from '@server/common/middleware/store-context.
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env', '.env.example'],
+      envFilePath: ['.env.production', '.env', '.env.example'],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
