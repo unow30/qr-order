@@ -3,8 +3,6 @@ services:
     image: ${ECR_REGISTRY}/qr-order-web:latest
     container_name: qr-order-web
     restart: unless-stopped
-    env_file:
-      - ./apps/web/.env.production
     networks:
       - frontend-network
 
