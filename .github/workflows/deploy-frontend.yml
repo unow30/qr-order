@@ -3,8 +3,8 @@ name: Deploy Frontend to EC2 via ECR
 on:
   push:
     branches:
-#      - main
-#      - test
+      - main
+      - test
       - nothing
     paths:
       - 'apps/web/**'
