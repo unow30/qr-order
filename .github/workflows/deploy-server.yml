@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - test
+      - test2
     paths:
       - 'apps/server/**'
       - 'packages/shared-types/**'
