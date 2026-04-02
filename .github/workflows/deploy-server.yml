@@ -49,6 +49,7 @@ jobs:
           TYPEORM_SYNC=${{ secrets.TYPEORM_SYNC }}
           REDIS_HOST=${{secrets.REDIS_HOST}}
           REDIS_PORT=${{secrets.REDIS_PORT}}
+          DATABASE_SSL=true
           EOF
 
       - name: Login to Amazon ECR
