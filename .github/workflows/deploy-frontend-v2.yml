@@ -1,0 +1,142 @@
+name: deploy-frontend-v2.yml to EC2 via ECR
+
+on:
+  push:
+    branches:
+      - main
+      - test
+    paths:
+      - 'apps/web/**'
+      - 'apps/admin/**'
+      - 'packages/shared-types/**'
+      - 'nginx/nginx.frontend.conf'
+      - 'docker-compose.frontend.yml'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    environment: qr-order-frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push web image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          WEB_IMAGE_NAME: ${{ secrets.WEB_IMAGE_NAME }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          docker build \
+            -f apps/web/Dockerfile \
+            -t $ECR_REGISTRY/$WEB_IMAGE_NAME:latest \
+            -t $ECR_REGISTRY/$WEB_IMAGE_NAME:$GIT_SHA \
+            .
+
+          docker push $ECR_REGISTRY/$WEB_IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$WEB_IMAGE_NAME:$GIT_SHA
+
+      - name: Build & push admin image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ADMIN_IMAGE_NAME: ${{ secrets.ADMIN_IMAGE_NAME }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          docker build \
+            -f apps/admin/Dockerfile \
+            -t $ECR_REGISTRY/$ADMIN_IMAGE_NAME:latest \
+            -t $ECR_REGISTRY/$ADMIN_IMAGE_NAME:$GIT_SHA \
+            .
+
+          docker push $ECR_REGISTRY/$ADMIN_IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$ADMIN_IMAGE_NAME:$GIT_SHA
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: qr-order-frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy compose and nginx files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.FRONTEND_EC2_HOST }}
+          username: ${{ secrets.FRONTEND_EC2_USER }}
+          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
+          source: "docker-compose.frontend.yml,nginx/nginx.frontend.conf"
+          target: /var/www/qr-order
+          strip_components: 0
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          WEB_IMAGE_NAME: ${{ secrets.WEB_IMAGE_NAME }}
+          ADMIN_IMAGE_NAME: ${{ secrets.ADMIN_IMAGE_NAME }}
+          GIT_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.FRONTEND_EC2_HOST }}
+          username: ${{ secrets.FRONTEND_EC2_USER }}
+          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
+          envs: AWS_REGION,ECR_REGISTRY,WEB_IMAGE_NAME,ADMIN_IMAGE_NAME,GIT_SHA
+          script: |
+            set -eu
+
+            APP_DIR=/var/www/qr-order
+            COMPOSE_FILE=docker-compose.frontend.yml
+
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+
+            echo "=== docker version ==="
+            docker version
+
+            echo "=== docker compose version ==="
+            docker compose version
+
+            echo "=== aws ecr login ==="
+            aws ecr get-login-password --region "$AWS_REGION" \
+              | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+            echo "=== current files ==="
+            ls -la
+            ls -la nginx || true
+
+            echo "=== render compose config ==="
+            docker compose -f "$COMPOSE_FILE" config >/dev/null
+
+            echo "=== pull latest images defined by compose ==="
+            ECR_REGISTRY="$ECR_REGISTRY" \
+            docker compose -f "$COMPOSE_FILE" pull
+
+            echo "=== recreate containers ==="
+            ECR_REGISTRY="$ECR_REGISTRY" \
+            docker compose -f "$COMPOSE_FILE" up -d --force-recreate
+
+            echo "=== docker compose ps ==="
+            ECR_REGISTRY="$ECR_REGISTRY" \
+            docker compose -f "$COMPOSE_FILE" ps
+
+            echo "=== docker ps -a ==="
+            docker ps -a
+
+            echo "=== prune old images ==="
+            docker image prune -f

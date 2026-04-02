@@ -5,7 +5,7 @@ services:
     env_file:
       - ./apps/server/.env
     environment:
-      CORS_ORIGINS: https://www.qr-order-demo.it.kr,https://admin.qr-order-demo.it.kr
+      CORS_ORIGINS: https://www.qr-order-demo.it.kr,https://admin.qr-order-demo.it.kr,www.qr-order-demo.it.kr,admin.qr-order-demo.it.kr
     restart: unless-stopped
     networks:
       - server-network
