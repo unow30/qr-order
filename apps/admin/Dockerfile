@@ -29,6 +29,8 @@ COPY packages/shared-types ./packages/shared-types
 COPY apps/admin ./apps/admin
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 
+ARG VITE_API_BASE_URL
+
 RUN pnpm --filter @qr-order/shared-types build
 RUN pnpm --filter @qr-order/admin build
 

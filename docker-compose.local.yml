@@ -55,7 +55,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin1234}
-      CORS_ORIGINS: http://localhost
+      CORS_ORIGINS: http://www.localhost,http://admin.localhost
       TYPEORM_SYNC: ${TYPEORM_SYNC:-true}
       DATABASE_SSL: 'false'
       PM2_INSTANCES: '1'
@@ -73,6 +73,8 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
     container_name: qr-order-web
     depends_on:
       - server
@@ -84,6 +86,8 @@ services:
     build:
       context: .
       dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
     container_name: qr-order-admin
     depends_on:
       - server
