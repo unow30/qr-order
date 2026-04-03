@@ -12,9 +12,6 @@ module.exports = {
       max_restarts: 10,
       merge_logs: true,
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      env: {
-        NODE_ENV: 'production',
-      },
     },
   ],
 };
