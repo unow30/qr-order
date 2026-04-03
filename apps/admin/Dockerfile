@@ -37,15 +37,23 @@ RUN pnpm --filter @qr-order/admin build
 # ─── Stage 3: Nginx로 정적 파일 서빙 ────────────────────────────────
 FROM nginx:alpine AS production
 
-COPY --from=builder /app/apps/admin/dist /usr/share/nginx/html
+COPY --from=builder /app/apps/admin/dist /usr/share/nginx/html/admin
 
 RUN printf 'server {\n\
     listen 80;\n\
     root /usr/share/nginx/html;\n\
     index index.html;\n\
 \n\
+    location /admin/ {\n\
+        try_files $uri $uri/ /admin/index.html;\n\
+    }\n\
+\n\
+    location = /admin {\n\
+        return 301 /admin/;\n\
+    }\n\
+\n\
     location / {\n\
-        try_files $uri $uri/ /index.html;\n\
+        return 301 /admin/;\n\
     }\n\
 \n\
     gzip on;\n\
