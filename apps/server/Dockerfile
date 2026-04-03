@@ -47,9 +47,9 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+ARG NODE_ENV=production
+ENV NODE_ENV=$NODE_ENV
 
-# 프로덕션 의존성만 설치
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
@@ -57,7 +57,11 @@ COPY packages/shared-types/package.json ./packages/shared-types/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY apps/server/package.json ./apps/server/
 
-RUN pnpm install --frozen-lockfile --prod
+RUN if [ "$NODE_ENV" = "production" ]; then \
+      pnpm install --frozen-lockfile --prod; \
+    else \
+      pnpm install --frozen-lockfile; \
+    fi
 
 # 빌드 결과물 복사
 COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist

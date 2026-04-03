@@ -40,6 +40,8 @@ services:
     build:
       context: .
       dockerfile: apps/server/Dockerfile
+      args:
+        NODE_ENV: development
     container_name: qr-order-server
     environment:
       NODE_ENV: development
