@@ -30,7 +30,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex justify-center items-center h-screen bg-[#f5f7fa]">
-      <div className="bg-white p-10 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] w-[360px]">
+      <div className="bg-white p-10 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] w-90">
         <h1 className="mb-2 text-2xl">QR 오더 어드민</h1>
         <p className="mb-8 text-gray-400">관리자 로그인</p>
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3.5 bg-[#ff6b35] text-white border-none rounded-lg text-base cursor-pointer ${loading ? 'opacity-70' : ''}`}
+            className={`w-full py-3.5 bg-brand text-white border-none rounded-lg text-base cursor-pointer ${loading ? 'opacity-70' : ''}`}
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { Observable, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 import { OrderSseEvent } from '@qr-order/shared-types';
@@ -9,8 +9,12 @@ interface SseMessage {
 }
 
 @Injectable()
-export class OrderSseService {
+export class OrderSseService implements OnModuleDestroy {
   private readonly subject = new Subject<SseMessage>();
+
+  onModuleDestroy() {
+    this.subject.complete();
+  }
 
   emit(orderId: string, event: OrderSseEvent): void {
     this.subject.next({ orderId, event });

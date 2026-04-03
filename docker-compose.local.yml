@@ -42,7 +42,7 @@ services:
       dockerfile: apps/server/Dockerfile
     container_name: qr-order-server
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3000
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
@@ -57,6 +57,9 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin1234}
       CORS_ORIGINS: http://localhost
       TYPEORM_SYNC: ${TYPEORM_SYNC:-true}
+      DATABASE_SSL: 'false'
+      PM2_INSTANCES: '1'
+    stop_grace_period: 10s
     depends_on:
       postgres:
         condition: service_healthy

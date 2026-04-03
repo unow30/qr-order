@@ -18,6 +18,7 @@ import { CouponModule } from '@server/modules/coupon/coupon.module';
 import { ReviewModule } from '@server/modules/review/review.module';
 import { ImageModule } from '@server/modules/image/image.module';
 import { RlsModule } from '@server/common/rls/rls.module';
+import { HealthModule } from '@server/modules/health/health.module';
 import { StoreContextMiddleware } from '@server/common/middleware/store-context.middleware';
 
 @Global()
@@ -46,6 +47,7 @@ import { StoreContextMiddleware } from '@server/common/middleware/store-context.
     ReviewModule,
     ImageModule,
     RlsModule,
+    HealthModule,
   ],
   providers: [
     {

@@ -9,6 +9,9 @@ import { TransformInterceptor } from '@server/common/interceptors/transform.inte
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Graceful shutdown (PM2 SIGINT/SIGTERM 처리)
+  app.enableShutdownHooks();
+
   // Global prefix
   app.setGlobalPrefix('api');
 

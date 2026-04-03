@@ -39,6 +39,10 @@ RUN pnpm --filter @qr-order/server build
 
 # ─── Stage 3: 프로덕션 이미지 ────────────────────────────────────────
 FROM node:20-alpine AS production
+
+# PM2 글로벌 설치
+RUN npm install -g pm2
+
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 WORKDIR /app
@@ -59,9 +63,17 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist
 COPY --from=builder /app/apps/server/dist ./apps/server/dist
 
+# PM2 ecosystem 설정 복사
+COPY apps/server/ecosystem.config.js ./ecosystem.config.js
+
 # 환경변수 파일 복사 (존재하는 경우)
 COPY apps/server/.env.production* ./
 
 EXPOSE 3000
 
-CMD ["node", "apps/server/dist/main"]
+# Docker 헬스체크 (alpine은 wget 기본 제공)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+# PM2를 PID 1로 실행 (Docker 시그널 처리)
+CMD ["pm2-runtime", "start", "ecosystem.config.js"]
