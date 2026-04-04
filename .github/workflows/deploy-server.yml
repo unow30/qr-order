@@ -47,10 +47,12 @@ jobs:
           ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
           CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
           TYPEORM_SYNC=${{ secrets.TYPEORM_SYNC }}
-          REDIS_HOST=${{secrets.REDIS_HOST}}
-          REDIS_PORT=${{secrets.REDIS_PORT}}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
           DATABASE_SSL=true
           EOF
+          # 들여쓰기 공백 제거
+          sed -i 's/^[[:space:]]*//' apps/server/.env.production
 
       - name: Login to Amazon ECR
         id: login-ecr
