@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { MenuService } from '@server/modules/menu/menu.service';
 import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity';
 import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
@@ -16,6 +17,8 @@ describe('MenuService', () => {
   let optionGroupRepo: MockRepository<MenuOptionGroup>;
   let optionRepo: MockRepository<MenuOption>;
   let redis: Record<string, jest.Mock>;
+  let mockManager: Record<string, jest.Mock>;
+  let mockDataSource: { transaction: jest.Mock };
 
   beforeEach(async () => {
     categoryRepo = createMockRepository<MenuCategory>();
@@ -28,6 +31,23 @@ describe('MenuService', () => {
       del: jest.fn().mockResolvedValue(1),
     };
 
+    let idCounter = 0;
+    mockManager = {
+      create: jest.fn().mockImplementation((_, dto) => dto),
+      save: jest.fn().mockImplementation((_, entities) => {
+        if (Array.isArray(entities)) {
+          return Promise.resolve(
+            entities.map((e) => ({ ...e, id: `generated-id-${++idCounter}` })),
+          );
+        }
+        return Promise.resolve({ ...entities, id: `generated-id-${++idCounter}` });
+      }),
+      delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
+    mockDataSource = {
+      transaction: jest.fn().mockImplementation((cb) => cb(mockManager)),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MenuService,
@@ -35,6 +55,7 @@ describe('MenuService', () => {
         { provide: getRepositoryToken(MenuItem), useValue: itemRepo },
         { provide: getRepositoryToken(MenuOptionGroup), useValue: optionGroupRepo },
         { provide: getRepositoryToken(MenuOption), useValue: optionRepo },
+        { provide: DataSource, useValue: mockDataSource },
         { provide: REDIS_CLIENT, useValue: redis },
       ],
     }).compile();
@@ -149,49 +170,40 @@ describe('MenuService', () => {
 
   describe('decrementStock', () => {
     it('재고가 활성화된 아이템의 재고를 차감해야 한다', async () => {
-      itemRepo.findOne!.mockResolvedValue({
-        id: 'item-1',
-        stock: 10,
-        stockEnabled: true,
-        isAvailable: true,
-      });
+      itemRepo.find!.mockResolvedValue([
+        { id: 'item-1', stock: 10, stockEnabled: true, isAvailable: true },
+      ]);
 
       await service.decrementStock(
         [{ menuItemId: 'item-1', quantity: 3 }],
         'store-1',
       );
 
-      expect(itemRepo.save).toHaveBeenCalledWith(
+      expect(itemRepo.save).toHaveBeenCalledWith([
         expect.objectContaining({ stock: 7, isAvailable: true }),
-      );
+      ]);
       expect(redis.del).toHaveBeenCalledWith('menu:store-1:all');
     });
 
     it('재고가 0이 되면 품절 처리해야 한다', async () => {
-      itemRepo.findOne!.mockResolvedValue({
-        id: 'item-1',
-        stock: 2,
-        stockEnabled: true,
-        isAvailable: true,
-      });
+      itemRepo.find!.mockResolvedValue([
+        { id: 'item-1', stock: 2, stockEnabled: true, isAvailable: true },
+      ]);
 
       await service.decrementStock(
         [{ menuItemId: 'item-1', quantity: 5 }],
         'store-1',
       );
 
-      expect(itemRepo.save).toHaveBeenCalledWith(
+      expect(itemRepo.save).toHaveBeenCalledWith([
         expect.objectContaining({ stock: 0, isAvailable: false }),
-      );
+      ]);
     });
 
     it('재고 관리가 비활성화된 아이템은 건너뛰어야 한다', async () => {
-      itemRepo.findOne!.mockResolvedValue({
-        id: 'item-1',
-        stock: 0,
-        stockEnabled: false,
-        isAvailable: true,
-      });
+      itemRepo.find!.mockResolvedValue([
+        { id: 'item-1', stock: 0, stockEnabled: false, isAvailable: true },
+      ]);
 
       await service.decrementStock(
         [{ menuItemId: 'item-1', quantity: 1 }],
@@ -263,8 +275,6 @@ describe('MenuService', () => {
         },
       ];
       categoryRepo.find!.mockResolvedValue(sourceCategories);
-      categoryRepo.save!.mockResolvedValue({ id: 'new-cat-1' });
-      itemRepo.save!.mockResolvedValue({ id: 'new-item-1' });
 
       const results = await service.deployMenu({
         sourceStoreId: 'store-1',
@@ -280,6 +290,19 @@ describe('MenuService', () => {
           itemsCreated: 1,
         }),
       );
+      // manager.save가 카테고리, 아이템 각각 배열로 호출됨
+      expect(mockManager.save).toHaveBeenCalledWith(
+        MenuCategory,
+        expect.arrayContaining([
+          expect.objectContaining({ name: '커피', storeId: 'store-2' }),
+        ]),
+      );
+      expect(mockManager.save).toHaveBeenCalledWith(
+        MenuItem,
+        expect.arrayContaining([
+          expect.objectContaining({ name: '아메리카노', storeId: 'store-2' }),
+        ]),
+      );
       expect(redis.del).toHaveBeenCalledWith('menu:store-2:all');
     });
 
@@ -292,7 +315,7 @@ describe('MenuService', () => {
         clearTarget: true,
       });
 
-      expect(categoryRepo.delete).toHaveBeenCalledWith({
+      expect(mockManager.delete).toHaveBeenCalledWith(MenuCategory, {
         storeId: 'store-2',
       });
     });
@@ -309,7 +332,7 @@ describe('MenuService', () => {
           isActive: true,
         },
       ]);
-      categoryRepo.save!.mockRejectedValue(new Error('DB error'));
+      mockManager.save.mockRejectedValueOnce(new Error('DB error'));
 
       const results = await service.deployMenu({
         sourceStoreId: 'store-1',

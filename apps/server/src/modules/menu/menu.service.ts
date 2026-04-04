@@ -137,24 +137,12 @@ export class MenuService {
     storeId: string,
     manager?: EntityManager,
   ): Promise<void> {
-    const itemRepo = manager ? manager.getRepository(MenuItem) : this.itemRepository;
-
-    for (const { menuItemId, quantity } of items) {
-      const item = await itemRepo.findOne({ where: { id: menuItemId } });
-      if (!item || !item.stockEnabled) continue;
-
-      const newStock = Math.max(0, item.stock - quantity);
-      item.stock = newStock;
-      if (newStock === 0) {
+    await this.adjustStock(items, storeId, (item, quantity) => {
+      item.stock = Math.max(0, item.stock - quantity);
+      if (item.stock === 0) {
         item.isAvailable = false; // 재고 소진 시 자동 품절
       }
-      await itemRepo.save(item);
-    }
-
-    // manager가 있으면(createOrder 컨텍스트) 호출자가 커밋 후 캐시 무효화 처리
-    if (!manager) {
-      await this.invalidateCache(storeId);
-    }
+    }, manager);
   }
 
   async incrementStock(
@@ -162,17 +150,35 @@ export class MenuService {
     storeId: string,
     manager?: EntityManager,
   ): Promise<void> {
-    const itemRepo = manager ? manager.getRepository(MenuItem) : this.itemRepository;
-
-    for (const { menuItemId, quantity } of items) {
-      const item = await itemRepo.findOne({ where: { id: menuItemId } });
-      if (!item || !item.stockEnabled) continue;
-
+    await this.adjustStock(items, storeId, (item, quantity) => {
       item.stock += quantity;
       if (item.stock > 0) {
         item.isAvailable = true;
       }
-      await itemRepo.save(item);
+    }, manager);
+  }
+
+  private async adjustStock(
+    items: { menuItemId: string; quantity: number }[],
+    storeId: string,
+    apply: (item: MenuItem, quantity: number) => void,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const itemRepo = manager ? manager.getRepository(MenuItem) : this.itemRepository;
+    const menuItemIds = items.map((i) => i.menuItemId);
+
+    const menuItems = await itemRepo.find({ where: { id: In(menuItemIds) } });
+    const quantityMap = new Map(items.map((i) => [i.menuItemId, i.quantity]));
+
+    const toSave: MenuItem[] = [];
+    for (const item of menuItems) {
+      if (!item.stockEnabled) continue;
+      apply(item, quantityMap.get(item.id) ?? 0);
+      toSave.push(item);
+    }
+
+    if (toSave.length > 0) {
+      await itemRepo.save(toSave);
     }
 
     if (!manager) {
@@ -253,41 +259,51 @@ export class MenuService {
             await manager.delete(MenuCategory, { storeId: targetStoreId });
           }
 
-          let categoriesCreated = 0;
-          let itemsCreated = 0;
-
-          for (const srcCategory of sourceCategories) {
-            // 카테고리 복사
-            const newCategory = manager.create(MenuCategory, {
+          // Level 1: 카테고리 bulk save
+          const newCategories = sourceCategories.map((src) =>
+            manager.create(MenuCategory, {
               storeId: targetStoreId,
-              name: srcCategory.name,
-              description: srcCategory.description,
-              imageUrl: srcCategory.imageUrl,
-              sortOrder: srcCategory.sortOrder,
-              isActive: srcCategory.isActive,
-            });
-            const savedCategory = await manager.save(MenuCategory, newCategory);
-            categoriesCreated++;
+              name: src.name,
+              description: src.description,
+              imageUrl: src.imageUrl,
+              sortOrder: src.sortOrder,
+              isActive: src.isActive,
+            }),
+          );
+          const savedCategories = await manager.save(MenuCategory, newCategories);
 
-            // 아이템 복사
-            for (const srcItem of srcCategory.items ?? []) {
-              const newItem = manager.create(MenuItem, {
-                categoryId: savedCategory.id,
-                storeId: targetStoreId,
-                name: srcItem.name,
-                description: srcItem.description,
-                price: srcItem.price,
-                imageUrl: srcItem.imageUrl,
-                isAvailable: srcItem.isAvailable,
-                sortOrder: srcItem.sortOrder,
-              });
-              const savedItem = await manager.save(MenuItem, newItem);
-              itemsCreated++;
+          // 소스 아이템을 flat하게 펼치면서 부모 카테고리 인덱스 기록
+          const srcItemsFlat: { srcItem: (typeof sourceCategories)[0]['items'] extends (infer U)[] | undefined ? U : never; categoryIndex: number }[] = [];
+          for (let i = 0; i < sourceCategories.length; i++) {
+            for (const srcItem of sourceCategories[i].items ?? []) {
+              srcItemsFlat.push({ srcItem, categoryIndex: i });
+            }
+          }
 
-              // 옵션 그룹 + 옵션 복사
-              for (const srcGroup of srcItem.optionGroups ?? []) {
-                const newGroup = manager.create(MenuOptionGroup, {
-                  menuItemId: savedItem.id,
+          // Level 2: 아이템 bulk save
+          const newItems = srcItemsFlat.map(({ srcItem, categoryIndex }) =>
+            manager.create(MenuItem, {
+              categoryId: savedCategories[categoryIndex].id,
+              storeId: targetStoreId,
+              name: srcItem.name,
+              description: srcItem.description,
+              price: srcItem.price,
+              imageUrl: srcItem.imageUrl,
+              isAvailable: srcItem.isAvailable,
+              sortOrder: srcItem.sortOrder,
+            }),
+          );
+          const savedItems = newItems.length > 0
+            ? await manager.save(MenuItem, newItems)
+            : [];
+
+          // 소스 옵션그룹을 flat하게 펼치면서 부모 아이템 인덱스 기록
+          const newGroups: MenuOptionGroup[] = [];
+          for (let i = 0; i < srcItemsFlat.length; i++) {
+            for (const srcGroup of srcItemsFlat[i].srcItem.optionGroups ?? []) {
+              newGroups.push(
+                manager.create(MenuOptionGroup, {
+                  menuItemId: savedItems[i].id,
                   name: srcGroup.name,
                   isRequired: srcGroup.isRequired,
                   maxSelect: srcGroup.maxSelect,
@@ -298,13 +314,17 @@ export class MenuService {
                       isAvailable: opt.isAvailable,
                     }),
                   ),
-                });
-                await manager.save(MenuOptionGroup, newGroup);
-              }
+                }),
+              );
             }
           }
 
-          return { categoriesCreated, itemsCreated };
+          // Level 3: 옵션그룹 + 옵션 bulk save (cascade)
+          if (newGroups.length > 0) {
+            await manager.save(MenuOptionGroup, newGroups);
+          }
+
+          return { categoriesCreated: savedCategories.length, itemsCreated: savedItems.length };
         });
 
         await this.invalidateCache(targetStoreId).catch(() => {});
