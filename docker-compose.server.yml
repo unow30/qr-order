@@ -2,6 +2,8 @@ services:
   server:
     image: ${ECR_REGISTRY}/qr-order-server:latest
     container_name: qr-order-server
+    ports:
+      - "3000:3000"
     environment:
       DATABASE_SSL: 'true'
       CORS_ORIGINS: https://www.qr-order-demo.it.kr,https://admin.qr-order-demo.it.kr
