@@ -48,6 +48,7 @@ jobs:
           TYPEORM_SYNC=${{ secrets.TYPEORM_SYNC }}
           REDIS_HOST=${{ secrets.REDIS_HOST }}
           REDIS_PORT=${{ secrets.REDIS_PORT }}
+          REDIS_TLS=true
           DATABASE_SSL=true
           EOF
           # 들여쓰기 공백 제거
