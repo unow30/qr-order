@@ -138,9 +138,6 @@ importers:
       class-validator:
         specifier: ^0.14.0
         version: 0.14.4
-      dotenv:
-        specifier: ^16.0.0
-        version: 16.6.1
       ioredis:
         specifier: ^5.3.0
         version: 5.10.0
@@ -208,6 +205,9 @@ importers:
       '@types/uuid':
         specifier: ^9.0.0
         version: 9.0.8
+      dotenv:
+        specifier: ^16.0.0
+        version: 16.6.1
       ioredis-mock:
         specifier: ^8.13.1
         version: 8.13.1(@types/ioredis-mock@8.2.7(ioredis@5.10.0))(ioredis@5.10.0)
