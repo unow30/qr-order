@@ -289,7 +289,7 @@ export default function TableManagePage() {
           <div className="relative bg-white rounded-xl p-6 w-[360px] shadow-xl z-10">
             <h3 className="mt-0 mb-4">세션 이동</h3>
             <p className="text-sm text-gray-600 mb-4">
-              <strong>{tables.find((t) => t.id === moveSourceId)?.name}</strong>의 세션을 이동할 테이블을 선택하���요.
+              <strong>{tables.find((t) => t.id === moveSourceId)?.name}</strong>의 세션을 이동할 테이블을 선택하세요.
             </p>
             {availableTargets.length === 0 ? (
               <p className="text-sm text-red-500">이동 가능한 빈 테이블이 없습니다.</p>
