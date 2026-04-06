@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { REDIS_CLIENT } from '@server/config/redis.config';
+import { REDIS_KEYS } from '@server/common/redis/redis-keys';
 import Redis from 'ioredis';
 import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity';
 import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
@@ -18,8 +19,6 @@ import {
   ReorderMenuCategoriesDto,
   ReorderMenuItemsDto,
 } from '@qr-order/shared-types';
-
-const MENU_CACHE_TTL = 300; // 5분
 
 @Injectable()
 export class MenuService {
@@ -38,7 +37,7 @@ export class MenuService {
   ) {}
 
   private getMenuCacheKey(storeId: string): string {
-    return `menu:${storeId}:all`;
+    return REDIS_KEYS.menu.key(storeId);
   }
 
   async getMenu(storeId: string | null): Promise<MenuCategory[]> {
@@ -63,7 +62,7 @@ export class MenuService {
       order: { sortOrder: 'ASC', items: { sortOrder: 'ASC' } },
     });
 
-    await this.redis.setex(cacheKey, MENU_CACHE_TTL, JSON.stringify(categories));
+    await this.redis.setex(cacheKey, REDIS_KEYS.menu.ttl, JSON.stringify(categories));
     return categories;
   }
 

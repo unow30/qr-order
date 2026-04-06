@@ -2,13 +2,12 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { REDIS_CLIENT } from '@server/config/redis.config';
+import { REDIS_KEYS } from '@server/common/redis/redis-keys';
 import { SessionService } from '@server/modules/session/session.service';
 import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import { Cart, CartItem, AddCartItemDto, UpdateCartItemDto } from '@qr-order/shared-types';
-
-const CART_PREFIX = 'cart:';
 
 @Injectable()
 export class CartService {
@@ -21,7 +20,7 @@ export class CartService {
   ) {}
 
   private getCartKey(storeId: string, sessionToken: string): string {
-    return `${CART_PREFIX}${storeId}:${sessionToken}`;
+    return REDIS_KEYS.cart.key(storeId, sessionToken);
   }
 
   async getCart(sessionToken: string): Promise<Cart> {

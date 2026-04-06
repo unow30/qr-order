@@ -1,23 +1,13 @@
 import { Injectable, Inject, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { REDIS_CLIENT } from '@server/config/redis.config';
+import { REDIS_KEYS, SessionData } from '@server/common/redis/redis-keys';
 import { TableService } from '@server/modules/table/table.service';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import { CreateSessionDto, SessionResponse } from '@qr-order/shared-types';
 
-const SESSION_PREFIX = 'session:';
-const SESSION_LOOKUP_PREFIX = 'session-lookup:';
-
-export interface SessionData {
-  sessionToken: string;
-  storeId: string;
-  tableId: string;
-  tableNumber: number;
-  tableName: string;
-  createdAt: string;
-  expiresAt: string;
-}
+export { SessionData };
 
 @Injectable()
 export class SessionService {
@@ -33,7 +23,7 @@ export class SessionService {
   }
 
   getSessionKey(storeId: string, sessionToken: string): string {
-    return `${SESSION_PREFIX}${storeId}:${sessionToken}`;
+    return REDIS_KEYS.session.key(storeId, sessionToken);
   }
 
   async createSession(dto: CreateSessionDto): Promise<SessionResponse> {
@@ -57,11 +47,10 @@ export class SessionService {
     };
 
     const sessionKey = this.getSessionKey(storeId, sessionToken);
-    const lookupKey = `${SESSION_LOOKUP_PREFIX}${sessionToken}`;
+    const lookupKey = REDIS_KEYS.sessionLookup.key(sessionToken);
 
     await Promise.all([
       this.redis.setex(sessionKey, this.ttl, JSON.stringify(sessionData)),
-      // storeId 역조회용 보조 키 (세션과 동일한 TTL)
       this.redis.setex(lookupKey, this.ttl, storeId),
     ]);
 
@@ -75,7 +64,7 @@ export class SessionService {
   }
 
   async validateSession(sessionToken: string): Promise<SessionData> {
-    const storeId = await this.redis.get(`${SESSION_LOOKUP_PREFIX}${sessionToken}`);
+    const storeId = await this.redis.get(REDIS_KEYS.sessionLookup.key(sessionToken));
     if (!storeId) {
       throw new UnauthorizedException('세션이 만료되었거나 유효하지 않습니다.');
     }
@@ -88,11 +77,11 @@ export class SessionService {
   }
 
   async renewSession(sessionToken: string): Promise<void> {
-    const storeId = await this.redis.get(`${SESSION_LOOKUP_PREFIX}${sessionToken}`);
+    const storeId = await this.redis.get(REDIS_KEYS.sessionLookup.key(sessionToken));
     if (!storeId) return;
 
     const sessionKey = this.getSessionKey(storeId, sessionToken);
-    const lookupKey = `${SESSION_LOOKUP_PREFIX}${sessionToken}`;
+    const lookupKey = REDIS_KEYS.sessionLookup.key(sessionToken);
     await Promise.all([
       this.redis.expire(sessionKey, this.ttl),
       this.redis.expire(lookupKey, this.ttl),
@@ -100,12 +89,12 @@ export class SessionService {
   }
 
   async deleteSession(sessionToken: string): Promise<void> {
-    const storeId = await this.redis.get(`${SESSION_LOOKUP_PREFIX}${sessionToken}`);
+    const storeId = await this.redis.get(REDIS_KEYS.sessionLookup.key(sessionToken));
     if (!storeId) return;
 
     await Promise.all([
       this.redis.del(this.getSessionKey(storeId, sessionToken)),
-      this.redis.del(`${SESSION_LOOKUP_PREFIX}${sessionToken}`),
+      this.redis.del(REDIS_KEYS.sessionLookup.key(sessionToken)),
     ]);
   }
 }

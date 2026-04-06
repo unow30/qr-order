@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from '@server/config/redis.config';
+import { REDIS_KEYS } from '@server/common/redis/redis-keys';
 import { StoreImageEntity } from '@server/modules/image/entities/store-image.entity';
 import { TableImageEntity } from '@server/modules/image/entities/table-image.entity';
 import { MenuCategoryImageEntity } from '@server/modules/image/entities/menu-category-image.entity';
@@ -92,7 +93,7 @@ export class ImageService {
   // ─── Redis 캐시 ───────────────────────────────────────────────────────────
 
   private getCacheKey(entityType: string, entityId: string): string {
-    return `image:${entityType}:${entityId}:active`;
+    return REDIS_KEYS.image.key(entityType, entityId);
   }
 
   /**

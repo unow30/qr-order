@@ -2,6 +2,7 @@ import { Injectable, NestMiddleware, ForbiddenException, Inject } from '@nestjs/
 import { Request, Response, NextFunction } from 'express';
 import { StoreService } from '@server/modules/store/store.service';
 import { REDIS_CLIENT } from '@server/config/redis.config';
+import { REDIS_KEYS } from '@server/common/redis/redis-keys';
 import Redis from 'ioredis';
 
 export interface RequestWithStore extends Request {
@@ -34,7 +35,7 @@ export class StoreContextMiddleware implements NestMiddleware {
     // X-Store-Id 없으면 세션 토큰으로 storeId 역조회
     const sessionToken = req.headers['x-session-token'] as string | undefined;
     if (sessionToken) {
-      const storeId = await this.redis.get(`session-lookup:${sessionToken}`);
+      const storeId = await this.redis.get(REDIS_KEYS.sessionLookup.key(sessionToken));
       req.storeId = storeId ?? null;
     } else {
       req.storeId = null;
