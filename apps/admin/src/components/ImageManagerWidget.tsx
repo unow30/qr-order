@@ -7,6 +7,8 @@ import {
   deleteImage,
   getReviewImages,
   deleteReviewImage,
+  getPresignedUrl,
+  uploadToS3,
 } from '@admin/api/image.api';
 
 interface Props {
@@ -53,6 +55,9 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
   const [adding, setAdding] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<AddForm>(DEFAULT_FORM);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const isReview = entityType === 'reviews';
 
@@ -75,6 +80,39 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
     fetchImages();
   }, [entityType, entityId]);
 
+  const handleFileSelect = async (file: File) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) {
+      setUploadError('지원하지 않는 파일 형식입니다. (jpeg, png, webp, gif)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('파일 크기가 5MB를 초과합니다.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    setPreviewUrl(URL.createObjectURL(file));
+
+    try {
+      const { presignedUrl, imageUrl } = await getPresignedUrl({
+        fileName: file.name,
+        contentType: file.type,
+        contentLength: file.size,
+        entityType,
+      });
+      await uploadToS3(presignedUrl, file);
+      setForm((prev) => ({ ...prev, imageUrl }));
+      setUploadError(null);
+    } catch {
+      setUploadError('업로드에 실패했습니다. 다시 시도해주세요.');
+      setPreviewUrl(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleAdd = async () => {
     if (!form.imageUrl.trim()) return;
     setAdding(true);
@@ -88,6 +126,8 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
         endAt: form.endAt || null,
       });
       setForm(DEFAULT_FORM);
+      setPreviewUrl(null);
+      setUploadError(null);
       fetchImages();
     } finally {
       setAdding(false);
@@ -246,6 +286,39 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
       {!readonly && !isReview && (
         <div className="border-t border-gray-100 pt-2.5">
           <div className="font-semibold text-xs text-gray-500 mb-2">이미지 추가</div>
+
+          {/* 파일 업로드 영역 */}
+          <div className="mb-2">
+            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#ff6b35] transition-colors bg-gray-50">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileSelect(file);
+                  e.target.value = '';
+                }}
+              />
+              {uploading ? (
+                <span className="text-xs text-gray-500">업로드 중...</span>
+              ) : previewUrl && form.imageUrl ? (
+                <div className="flex items-center gap-2">
+                  <img src={previewUrl} alt="미리보기" className="h-16 w-16 object-cover rounded" />
+                  <span className="text-[11px] text-green-600">업로드 완료 (다시 선택 가능)</span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-xs text-gray-500">클릭하여 이미지 선택</span>
+                  <span className="text-[10px] text-gray-400 mt-0.5">jpeg, png, webp, gif / 최대 5MB</span>
+                </>
+              )}
+            </label>
+            {uploadError && <p className="text-[11px] text-red-500 mt-1">{uploadError}</p>}
+          </div>
+
+          <div className="text-[10px] text-gray-400 mb-1">또는 URL 직접 입력</div>
           <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="이미지 URL *" className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs mb-1.5 box-border" />
           <input value={form.altText} onChange={(e) => setForm({ ...form, altText: e.target.value })} placeholder="alt 텍스트 (선택)" className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs mb-1.5 box-border" />
           <div className="flex gap-1.5 mb-1.5">

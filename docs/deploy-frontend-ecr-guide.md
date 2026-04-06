@@ -52,16 +52,17 @@ aws ecr create-repository --repository-name qr-order-admin --region ap-northeast
 GitHub 레포 → Settings → Secrets and variables → Actions에서 추가:
 
 ### environment qr-order-frontend
-| Secret 이름               | 값                                  |
-|-------------------------|------------------------------------|
-| `AWS_ACCESS_KEY_ID`     | IAM 사용자 액세스 키                      |
-| `AWS_SECRET_ACCESS_KEY` | IAM 사용자 시크릿 키                      |
-| `AWS_ACCOUNT_ID`        | AWS 계정 ID (12자리 숫자)                |
-| `FRONTEND_EC2_HOST`     | EC2 퍼블릭 IP 또는 도메인                  |
-| `FRONTEND_EC2_USER`     | EC2 접속 유저 (`ec2-user` 또는 `ubuntu`) |
-| `FRONTEND_EC2_SSH_KEY`  | EC2 .pem 파일 내용 (전체)                |
-| `WEB_IMAGE_NAME`        | ECR 레포지토리 이름(web)                  |
-| `WEB_IMAGE_NAME`        | ECR 레포지토리 이름(admin)                |
+| Secret 이름                   | 값                                  |
+|-----------------------------|------------------------------------|
+| `AWS_ACCESS_KEY_ID`         | IAM 사용자 액세스 키                      |
+| `EC2_AWS_SECRET_ACCESS_KEY` | IAM 사용자 시크릿 키                      |
+| `EC2_AWS_ACCESS_KEY`        | IAM 사용자 엑세스 키                      |
+| `AWS_ACCOUNT_ID`            | AWS 계정 ID (12자리 숫자)                |
+| `FRONTEND_EC2_HOST`         | EC2 퍼블릭 IP 또는 도메인                  |
+| `FRONTEND_EC2_USER`         | EC2 접속 유저 (`ec2-user` 또는 `ubuntu`) |
+| `FRONTEND_EC2_SSH_KEY`      | EC2 .pem 파일 내용 (전체)                |
+| `WEB_IMAGE_NAME`            | ECR 레포지토리 이름(web)                  |
+| `ADMIN_IMAGE_NAME`          | ECR 레포지토리 이름(admin)                |
 
 
 ---

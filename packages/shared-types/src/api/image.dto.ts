@@ -20,3 +20,16 @@ export interface UpdateImageDto {
 export interface CreateReviewImageDto {
   imageUrl: string;
 }
+
+export interface PresignedUrlRequest {
+  fileName: string;
+  contentType: string;
+  contentLength: number;
+  entityType: string;
+}
+
+export interface PresignedUrlResponse {
+  presignedUrl: string;
+  imageUrl: string;
+  key: string;
+}

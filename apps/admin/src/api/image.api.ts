@@ -1,5 +1,13 @@
 import client from '@admin/api/client';
-import { EntityImage, ImageEntityType, ReviewImage, CreateImageDto, UpdateImageDto } from '@qr-order/shared-types';
+import {
+  EntityImage,
+  ImageEntityType,
+  ReviewImage,
+  CreateImageDto,
+  UpdateImageDto,
+  PresignedUrlRequest,
+  PresignedUrlResponse,
+} from '@qr-order/shared-types';
 
 export const getImages = (entityType: ImageEntityType, entityId: string): Promise<EntityImage[]> =>
   client.get(`/images/${entityType}/${entityId}`);
@@ -34,3 +42,17 @@ export const getReviewImages = (reviewId: string): Promise<ReviewImage[]> =>
 
 export const deleteReviewImage = (reviewId: string, imageId: string): Promise<void> =>
   client.delete(`/reviews/${reviewId}/images/${imageId}`);
+
+export const getPresignedUrl = (dto: PresignedUrlRequest): Promise<PresignedUrlResponse> =>
+  client.post('/images/presigned-url', dto);
+
+export const uploadToS3 = async (presignedUrl: string, file: File): Promise<void> => {
+  const res = await fetch(presignedUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+  if (!res.ok) {
+    throw new Error(`S3 업로드 실패: ${res.status}`);
+  }
+};

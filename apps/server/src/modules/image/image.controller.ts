@@ -10,17 +10,41 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { ImageService, ScheduledEntityType } from '@server/modules/image/image.service';
+import { ImageService } from '@server/modules/image/image.service';
+import { S3Service } from '@server/modules/image/s3.service';
 import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@server/common/guards/roles.guard';
 import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
 import { CreateImageDto } from '@server/modules/image/dto/create-image.dto';
 import { UpdateImageDto } from '@server/modules/image/dto/update-image.dto';
+import { PresignedUrlRequestDto } from '@server/modules/image/dto/presigned-url.dto';
 
 @ApiTags('images')
 @Controller('images')
 export class ImageController {
-  constructor(private readonly imageService: ImageService) {}
+  constructor(
+    private readonly imageService: ImageService,
+    private readonly s3Service: S3Service,
+  ) {}
+
+  // ─── Presigned URL ────────────────────────────────────────────────────────
+
+  @Post('presigned-url')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'S3 업로드용 presigned URL 생성' })
+  getPresignedUrl(
+    @CurrentStoreId() storeId: string,
+    @Body() dto: PresignedUrlRequestDto,
+  ) {
+    return this.s3Service.generatePresignedUrl({
+      storeId,
+      entityType: dto.entityType,
+      fileName: dto.fileName,
+      contentType: dto.contentType,
+      contentLength: dto.contentLength,
+    });
+  }
 
   // ─── 공개 API ─────────────────────────────────────────────────────────────
 

@@ -1,0 +1,100 @@
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { v4 as uuidv4 } from 'uuid';
+
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const PRESIGN_EXPIRES_IN = 300; // 5분
+
+@Injectable()
+export class S3Service {
+  private readonly s3: S3Client;
+  private readonly bucket: string;
+  private readonly keyPrefix: string;
+  private readonly cloudfrontDomain: string;
+
+  constructor(private readonly config: ConfigService) {
+    this.s3 = new S3Client({
+      region: config.get<string>('AWS_REGION', 'ap-northeast-2'),
+      credentials: {
+        accessKeyId: config.getOrThrow<string>('S3_AWS_ACCESS_KEY_ID'),
+        secretAccessKey: config.getOrThrow<string>('S3_AWS_SECRET_ACCESS_KEY'),
+      },
+    });
+
+    // S3_BUCKET_NAME이 "bucket/prefix" 형태일 수 있음
+    const bucketValue = config.getOrThrow<string>('S3_BUCKET_NAME');
+    const slashIdx = bucketValue.indexOf('/');
+    if (slashIdx >= 0) {
+      this.bucket = bucketValue.slice(0, slashIdx);
+      this.keyPrefix = bucketValue.slice(slashIdx + 1).replace(/\/+$/, '');
+    } else {
+      this.bucket = bucketValue;
+      this.keyPrefix = '';
+    }
+
+    this.cloudfrontDomain = config.getOrThrow<string>('CLOUDFRONT_DOMAIN');
+  }
+
+  async generatePresignedUrl(params: {
+    storeId: string;
+    entityType: string;
+    fileName: string;
+    contentType: string;
+    contentLength: number;
+  }): Promise<{ presignedUrl: string; imageUrl: string; key: string }> {
+    if (!ALLOWED_MIME_TYPES.includes(params.contentType)) {
+      throw new BadRequestException(
+        `지원하지 않는 파일 형식입니다. 허용: ${ALLOWED_MIME_TYPES.join(', ')}`,
+      );
+    }
+
+    if (params.contentLength > MAX_FILE_SIZE) {
+      throw new BadRequestException(
+        `파일 크기가 ${MAX_FILE_SIZE / 1024 / 1024}MB를 초과합니다.`,
+      );
+    }
+
+    const ext = this.extractExtension(params.fileName, params.contentType);
+    const segments = [this.keyPrefix, params.storeId, params.entityType, `${uuidv4()}.${ext}`]
+      .filter(Boolean);
+    const key = segments.join('/');
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ContentType: params.contentType,
+      ContentLength: params.contentLength,
+    });
+
+    const presignedUrl = await getSignedUrl(this.s3, command, {
+      expiresIn: PRESIGN_EXPIRES_IN,
+    });
+
+    const domain = this.cloudfrontDomain.replace(/\/+$/, '');
+    const imageUrl = `${domain}/${key}`;
+
+    return { presignedUrl, imageUrl, key };
+  }
+
+  private extractExtension(fileName: string, contentType: string): string {
+    const fromName = fileName.split('.').pop()?.toLowerCase();
+    if (fromName && ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(fromName)) {
+      return fromName;
+    }
+    const map: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+    };
+    return map[contentType] ?? 'jpg';
+  }
+}

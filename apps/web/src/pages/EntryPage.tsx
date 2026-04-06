@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createSession, joinSession } from '@web/api/session.api';
+import { createSession, joinSession, moveSession } from '@web/api/session.api';
 import { useSessionStore } from '@web/stores/sessionStore';
 import type { SessionConflictResponse } from '@qr-order/shared-types';
 
@@ -41,6 +41,38 @@ export default function EntryPage() {
       return;
     }
 
+    // 유효한 세션이 있고 다른 테이블 → 자리이동
+    if (isSessionValid() && useSessionStore.getState().tableId !== tableId) {
+      moveSession({ qrToken })
+        .then((res) => {
+          setSession({ ...res, pin: undefined });
+          navigate('/menu', { replace: true });
+        })
+        .catch((err) => {
+          const status = err.response?.status;
+          const data = err.response?.data;
+
+          if (status === 409 && data?.message?.requirePin) {
+            // 이동 대상 테이블에 이미 세션 존재 → PIN 입력 필요
+            // 기존 세션 클리어 후 PIN 입력 모드
+            useSessionStore.getState().clearSession();
+            setPinRequired(true);
+            setTableInfo(data.message as SessionConflictResponse);
+            setLoading(false);
+          } else {
+            // 기타 오류 → 새 세션 생성 시도로 폴백
+            useSessionStore.getState().clearSession();
+            attemptCreateSession(tableId, qrToken);
+          }
+        });
+      return;
+    }
+
+    // 세션 없음 → 새 세션 생성
+    attemptCreateSession(tableId, qrToken);
+  }, []);
+
+  const attemptCreateSession = (tableId: string, qrToken: string) => {
     createSession({ tableId, qrToken })
       .then((session) => {
         setSession(session);
@@ -51,7 +83,6 @@ export default function EntryPage() {
         const data = err.response?.data;
 
         if (status === 409 && data?.message?.requirePin) {
-          // 테이블에 활성 세션 존재 → PIN 입력 필요
           setPinRequired(true);
           setTableInfo(data.message as SessionConflictResponse);
           setLoading(false);
@@ -60,7 +91,7 @@ export default function EntryPage() {
           setLoading(false);
         }
       });
-  }, []);
+  };
 
   const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

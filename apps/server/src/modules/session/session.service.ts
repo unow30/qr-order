@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   ConflictException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { REDIS_CLIENT } from '@server/config/redis.config';
@@ -16,6 +17,9 @@ import {
   JoinSessionDto,
   SessionResponse,
   SessionConflictResponse,
+  MoveSessionResponse,
+  TableSessionInfo,
+  ForceDeleteSessionResponse,
 } from '@qr-order/shared-types';
 
 export { SessionData };
@@ -230,5 +234,205 @@ export class SessionService {
     }
 
     await Promise.all(delPromises);
+  }
+
+  // ─── 고객 자리이동 ──────────────────────────────────────────────────
+
+  async moveSession(
+    sessionToken: string,
+    qrToken: string,
+  ): Promise<MoveSessionResponse> {
+    // 1. 현재 세션 검증
+    const sessionData = await this.validateSession(sessionToken);
+    const storeId = sessionData.storeId;
+    const oldTableId = sessionData.tableId;
+
+    // 2. 새 테이블 QR 토큰 검증 (물리적 위치 증명)
+    const newTable = await this.tableService.validateQrToken(qrToken);
+    if (!newTable) {
+      throw new BadRequestException('유효하지 않거나 만료된 QR 코드입니다.');
+    }
+
+    // 같은 테이블이면 이동 불필요
+    if (newTable.id === oldTableId) {
+      return {
+        sessionToken,
+        tableId: newTable.id,
+        tableNumber: newTable.tableNumber,
+        tableName: newTable.name,
+        expiresAt: sessionData.expiresAt,
+      };
+    }
+
+    // 3. 새 테이블에 이미 활성 세션이 있는지 체크
+    const newTableSessionKey = REDIS_KEYS.tableSession.key(storeId, newTable.id);
+    const existingSession = await this.redis.get(newTableSessionKey);
+    if (existingSession) {
+      throw new ConflictException({
+        requirePin: true,
+        tableId: newTable.id,
+        tableName: newTable.name,
+        tableNumber: newTable.tableNumber,
+      } as SessionConflictResponse);
+    }
+
+    // 4. 수용인원 검증
+    if (newTable.capacity < sessionData.joinedCount) {
+      throw new BadRequestException(
+        `이동할 테이블의 수용인원(${newTable.capacity}명)이 현재 인원(${sessionData.joinedCount}명)보다 적습니다.`,
+      );
+    }
+
+    // 5. Redis 키 이동
+    const oldTableSessionKey = REDIS_KEYS.tableSession.key(storeId, oldTableId);
+    const remainingTtl = await this.redis.ttl(
+      this.getSessionKey(storeId, sessionToken),
+    );
+    const ttlToUse = remainingTtl > 0 ? remainingTtl : this.ttl;
+
+    // SessionData 업데이트
+    sessionData.tableId = newTable.id;
+    sessionData.tableNumber = newTable.tableNumber;
+    sessionData.tableName = newTable.name;
+    sessionData.capacity = newTable.capacity;
+
+    await Promise.all([
+      this.redis.del(oldTableSessionKey),
+      this.redis.setex(newTableSessionKey, ttlToUse, sessionToken),
+      this.redis.setex(
+        this.getSessionKey(storeId, sessionToken),
+        ttlToUse,
+        JSON.stringify(sessionData),
+      ),
+    ]);
+
+    return {
+      sessionToken,
+      tableId: newTable.id,
+      tableNumber: newTable.tableNumber,
+      tableName: newTable.name,
+      expiresAt: sessionData.expiresAt,
+    };
+  }
+
+  // ─── 관리자 세션 관리 ──────────────────────────────────────────────
+
+  async getTableSession(
+    storeId: string,
+    tableId: string,
+  ): Promise<TableSessionInfo | null> {
+    const tableSessionKey = REDIS_KEYS.tableSession.key(storeId, tableId);
+    const activeSessionToken = await this.redis.get(tableSessionKey);
+    if (!activeSessionToken) return null;
+
+    const sessionKey = this.getSessionKey(storeId, activeSessionToken);
+    const data = await this.redis.get(sessionKey);
+    if (!data) {
+      // 키 불일치 정리
+      await this.redis.del(tableSessionKey);
+      return null;
+    }
+
+    const sd: SessionData = JSON.parse(data);
+    return {
+      sessionToken: sd.sessionToken,
+      pin: sd.pin,
+      joinedCount: sd.joinedCount,
+      capacity: sd.capacity,
+      tableId: sd.tableId,
+      tableName: sd.tableName,
+      tableNumber: sd.tableNumber,
+      createdAt: sd.createdAt,
+      expiresAt: sd.expiresAt,
+    };
+  }
+
+  async adminMoveSession(
+    storeId: string,
+    fromTableId: string,
+    targetTableId: string,
+  ): Promise<TableSessionInfo> {
+    // 1. from 테이블의 활성 세션 확인
+    const fromKey = REDIS_KEYS.tableSession.key(storeId, fromTableId);
+    const activeSessionToken = await this.redis.get(fromKey);
+    if (!activeSessionToken) {
+      throw new NotFoundException('이 테이블에 활성 세션이 없습니다.');
+    }
+
+    const sessionKey = this.getSessionKey(storeId, activeSessionToken);
+    const data = await this.redis.get(sessionKey);
+    if (!data) {
+      await this.redis.del(fromKey);
+      throw new NotFoundException('세션 데이터가 존재하지 않습니다.');
+    }
+    const sessionData: SessionData = JSON.parse(data);
+
+    // 2. target 테이블 정보 조회
+    const targetTable = await this.tableService.findOne(targetTableId);
+    if (!targetTable) {
+      throw new NotFoundException('이동 대상 테이블을 찾을 수 없습니다.');
+    }
+
+    // 3. target에 이미 세션 있으면 차단
+    const toKey = REDIS_KEYS.tableSession.key(storeId, targetTableId);
+    const existingTarget = await this.redis.get(toKey);
+    if (existingTarget) {
+      throw new ConflictException('이동 대상 테이블에 이미 활성 세션이 있습니다.');
+    }
+
+    // 4. 수용인원 검증
+    if (targetTable.capacity < sessionData.joinedCount) {
+      throw new BadRequestException(
+        `대상 테이블 수용인원(${targetTable.capacity}명)이 현재 인원(${sessionData.joinedCount}명)보다 적습니다.`,
+      );
+    }
+
+    // 5. Redis 키 이동
+    const remainingTtl = await this.redis.ttl(sessionKey);
+    const ttlToUse = remainingTtl > 0 ? remainingTtl : this.ttl;
+
+    sessionData.tableId = targetTable.id;
+    sessionData.tableNumber = targetTable.tableNumber;
+    sessionData.tableName = targetTable.name;
+    sessionData.capacity = targetTable.capacity;
+
+    await Promise.all([
+      this.redis.del(fromKey),
+      this.redis.setex(toKey, ttlToUse, activeSessionToken),
+      this.redis.setex(sessionKey, ttlToUse, JSON.stringify(sessionData)),
+    ]);
+
+    return {
+      sessionToken: sessionData.sessionToken,
+      pin: sessionData.pin,
+      joinedCount: sessionData.joinedCount,
+      capacity: sessionData.capacity,
+      tableId: sessionData.tableId,
+      tableName: sessionData.tableName,
+      tableNumber: sessionData.tableNumber,
+      createdAt: sessionData.createdAt,
+      expiresAt: sessionData.expiresAt,
+    };
+  }
+
+  async forceDeleteTableSession(
+    storeId: string,
+    tableId: string,
+  ): Promise<ForceDeleteSessionResponse> {
+    const tableSessionKey = REDIS_KEYS.tableSession.key(storeId, tableId);
+    const activeSessionToken = await this.redis.get(tableSessionKey);
+    if (!activeSessionToken) {
+      throw new NotFoundException('이 테이블에 활성 세션이 없습니다.');
+    }
+
+    // 세션 관련 Redis 키 전체 삭제
+    await Promise.all([
+      this.redis.del(this.getSessionKey(storeId, activeSessionToken)),
+      this.redis.del(REDIS_KEYS.sessionLookup.key(activeSessionToken)),
+      this.redis.del(REDIS_KEYS.cart.key(storeId, activeSessionToken)),
+      this.redis.del(tableSessionKey),
+    ]);
+
+    return { deleted: true, sessionToken: activeSessionToken };
   }
 }

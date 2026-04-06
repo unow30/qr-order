@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ImageController } from '@server/modules/image/image.controller';
 import { ImageService } from '@server/modules/image/image.service';
 import { ImageMigrationService } from '@server/modules/image/image-migration.service';
+import { S3Service } from '@server/modules/image/s3.service';
 import { StoreImageEntity } from '@server/modules/image/entities/store-image.entity';
 import { TableImageEntity } from '@server/modules/image/entities/table-image.entity';
 import { MenuCategoryImageEntity } from '@server/modules/image/entities/menu-category-image.entity';
@@ -26,7 +27,7 @@ import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
     ]),
   ],
   controllers: [ImageController],
-  providers: [ImageService, ImageMigrationService],
-  exports: [ImageService],
+  providers: [ImageService, ImageMigrationService, S3Service],
+  exports: [ImageService, S3Service],
 })
 export class ImageModule {}
