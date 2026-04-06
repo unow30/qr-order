@@ -31,7 +31,7 @@ export class TableController {
     return this.tableService.findAll(storeId);
   }
 
-  @Get('dev/with-tokens')
+  @Get('with-tokens')
   @ApiExcludeEndpoint()
   async findAllWithTokens(
     @CurrentStoreId(false) storeId: string | null,

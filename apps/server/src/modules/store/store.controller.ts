@@ -25,7 +25,7 @@ import { Public } from '@server/common/decorators/public.decorator';
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
-  @Get('dev/list')
+  @Get('list')
   @Public()
   @ApiExcludeEndpoint()
   devList() {

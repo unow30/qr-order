@@ -6,7 +6,7 @@ import MenuDetailPage from '@web/pages/MenuDetailPage';
 import CartPage from '@web/pages/CartPage';
 import OrderHistoryPage from '@web/pages/OrderHistoryPage';
 import OrderStatusPage from '@web/pages/OrderStatusPage';
-import DevPage from '@web/pages/DevPage';
+import StorePage from '@web/pages/StorePage.tsx';
 
 function RequireSession({ children }: { children: React.ReactNode }) {
   const isSessionValid = useSessionStore((s) => s.isSessionValid);
@@ -20,9 +20,9 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/dev" element={<DevPage />} />
+        <Route path="/store" element={<StorePage />} />
         <Route path="/entry" element={<EntryPage />} />
-        <Route path="/" element={<Navigate to="/dev" replace />} />
+        <Route path="/" element={<Navigate to="/store" replace />} />
         <Route
           path="/menu"
           element={<RequireSession><MenuPage /></RequireSession>}

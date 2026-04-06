@@ -52,7 +52,7 @@ src/
 │   ├── CartPage.tsx            # 장바구니
 │   ├── PaymentPage.tsx         # 결제
 │   ├── OrderStatusPage.tsx     # 주문 현황 (SSE 실시간)
-│   └── DevPage.tsx             # 개발용 유틸리티 페이지
+│   └── StorePage.tsx           # 개발용 매장/테이블 QR 링크 확인 페이지
 │
 ├── stores/                     # Zustand 상태
 │   ├── sessionStore.ts         # 세션 토큰, 테이블 정보
@@ -79,15 +79,15 @@ src/
 
 ## 페이지 및 라우트
 
-| 경로 | 페이지 | 설명 | 세션 필요 |
-|------|--------|------|-----------|
-| `/entry` | EntryPage | QR 토큰 파싱 및 세션 생성 | 아니오 |
-| `/menu` | MenuPage | 메뉴 카테고리 및 목록 | 예 |
-| `/menu/:id` | MenuDetailPage | 메뉴 상세 및 옵션 선택 | 예 |
-| `/cart` | CartPage | 장바구니 확인 및 수정 | 예 |
-| `/payment` | PaymentPage | 결제 진행 | 예 |
+| 경로                  | 페이지 | 설명 | 세션 필요 |
+|---------------------|--------|------|-----------|
+| `/entry`            | EntryPage | QR 토큰 파싱 및 세션 생성 | 아니오 |
+| `/menu`             | MenuPage | 메뉴 카테고리 및 목록 | 예 |
+| `/menu/:id`         | MenuDetailPage | 메뉴 상세 및 옵션 선택 | 예 |
+| `/cart`             | CartPage | 장바구니 확인 및 수정 | 예 |
+| `/payment`          | PaymentPage | 결제 진행 | 예 |
 | `/order-status/:id` | OrderStatusPage | 실시간 주문 현황 | 예 |
-| `/dev` | DevPage | 개발용 유틸리티 | 아니오 |
+| `/store`            | StorePage | 개발용 매장 목록 및 테이블 QR 입장 링크 확인 | 아니오 |
 
 세션이 없는 상태에서 보호된 경로에 접근하면 `/entry`로 리다이렉트됩니다.
 
@@ -135,7 +135,7 @@ X-Session-Token: <sessionToken>
 
 ## SSE 실시간 주문 추적
 
-`useOrderSSE` 훅은 `GET /api/orders/sse`를 구독하여 주문 상태 변경을 실시간으로 수신합니다.
+`useOrderSSE` 훅은 `GET /api/orders/:id/stream`을 구독하여 주문 상태 변경을 실시간으로 수신합니다.
 
 ```
 서버 → SSE 이벤트 → useOrderSSE 훅 → orderStore 업데이트 → UI 반영
@@ -144,11 +144,3 @@ X-Session-Token: <sessionToken>
 주문 상태: `PENDING` → `ACCEPTED` → `PREPARING` → `READY` → `COMPLETED`
 
 ---
-
-## 개발용 페이지 (`/dev`)
-
-서버 연동 없이 UI를 테스트할 때 사용합니다.
-
-- 세션 토큰 수동 설정
-- 임의 storeId 지정
-- 장바구니/주문 상태 초기화

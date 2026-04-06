@@ -20,7 +20,7 @@ interface TableWithToken {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
-export default function DevPage() {
+export default function StorePage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [tables, setTables] = useState<TableWithToken[]>([]);
@@ -29,7 +29,7 @@ export default function DevPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/stores/dev/list`)
+    fetch(`${API_BASE}/stores/list`)
       .then((res) => res.json())
       .then((data) => {
         setStores(data?.data ?? data);
@@ -45,7 +45,7 @@ export default function DevPage() {
     setSelectedStore(store);
     setTablesLoading(true);
     setTables([]);
-    fetch(`${API_BASE}/tables/dev/with-tokens?storeId=${store.id}`)
+    fetch(`${API_BASE}/tables/with-tokens?storeId=${store.id}`)
       .then((res) => res.json())
       .then((data) => {
         setTables(data?.data ?? data);
