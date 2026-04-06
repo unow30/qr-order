@@ -10,6 +10,9 @@ export interface SessionData {
   tableName: string;
   createdAt: string;
   expiresAt: string;
+  pin: string;          // 6자리 PIN (테이블 공유용)
+  joinedCount: number;  // 현재 참여 인원
+  capacity: number;     // 테이블 최대 수용인원
 }
 
 // ─── 키 레지스트리 ──────────────────────────────────────────────────────────
@@ -37,6 +40,14 @@ export const REDIS_KEYS = {
       `session-lookup:${sessionToken}` as const,
     ttl: 7200, // session과 동일
     _type: null as unknown as string, // storeId
+  },
+
+  /** 테이블→세션 매핑 — 테이블당 활성 세션 1개 제한 */
+  tableSession: {
+    key: (storeId: string, tableId: string) =>
+      `table-session:${storeId}:${tableId}` as const,
+    ttl: 7200, // session과 동일
+    _type: null as unknown as string, // sessionToken
   },
 
   /** 장바구니 — 고객이 담은 메뉴 아이템 목록 */

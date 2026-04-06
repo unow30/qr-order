@@ -13,10 +13,12 @@ export default function MenuPage() {
   const cartItems = useCartStore((s) => s.items);
   const totalAmount = useCartStore((s) => s.totalAmount);
   const tableName = useSessionStore((s) => s.tableName);
+  const pin = useSessionStore((s) => s.pin);
   const hasOrders = useOrderStore((s) => s.orders.length > 0);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pinDismissed, setPinDismissed] = useState(false);
 
   useEffect(() => {
     Promise.all([getMenu(), getCart()])
@@ -37,6 +39,22 @@ export default function MenuPage() {
       <header className="p-4 bg-white border-b border-gray-200 sticky top-0">
         <h1 className="m-0 text-lg">{tableName ?? '테이블'}</h1>
       </header>
+
+      {/* PIN 배너 — 세션 생성자에게만 표시 */}
+      {pin && !pinDismissed && (
+        <div className="flex items-center justify-between px-4 py-2 bg-[#fff3ee] border-b border-[#ff6b35]/20">
+          <span className="text-sm text-gray-700">
+            테이블 PIN: <strong className="text-[#ff6b35] tracking-widest">{pin}</strong>
+            <span className="text-gray-500 ml-1">(동행자에게 공유하세요)</span>
+          </span>
+          <button
+            onClick={() => setPinDismissed(true)}
+            className="text-gray-400 hover:text-gray-600 ml-2 text-lg leading-none"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {/* 카테고리 탭 */}
       <nav className="flex overflow-x-auto px-4 py-2 gap-2 bg-white border-b border-gray-200">

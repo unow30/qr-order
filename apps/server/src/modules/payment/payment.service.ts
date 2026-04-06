@@ -4,6 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { PaymentEntity } from '@server/modules/payment/entities/payment.entity';
 import { Order } from '@server/modules/order/entities/order.entity';
 import { OrderService } from '@server/modules/order/order.service';
+import { SessionService } from '@server/modules/session/session.service';
 import {
   CreatePaymentDto,
   ConfirmPaymentDto,
@@ -25,6 +26,7 @@ export class PaymentService {
     @InjectRepository(PaymentEntity)
     private readonly paymentRepository: Repository<PaymentEntity>,
     private readonly orderService: OrderService,
+    private readonly sessionService: SessionService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -104,6 +106,10 @@ export class PaymentService {
 
     // 커밋 성공 후 SSE 이벤트 발행 (베스트-에포트: 실패해도 결제는 유지됨)
     this.orderService.emitStatusChange(payment.orderId, OrderStatus.CONFIRMED, payment.storeId);
+
+    // 결제 완료 → 테이블 세션 삭제 (테이블 사용 완료)
+    const order = await this.orderService.findOne(payment.orderId);
+    await this.sessionService.deleteSession(order.sessionToken).catch(() => {});
 
     return saved;
   }

@@ -1,7 +1,7 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SessionService } from '@server/modules/session/session.service';
-import { CreateSessionDto } from '@qr-order/shared-types';
+import { CreateSessionDto, JoinSessionDto } from '@qr-order/shared-types';
 
 @ApiTags('sessions')
 @Controller('sessions')
@@ -13,5 +13,12 @@ export class SessionController {
   @ApiOperation({ summary: 'QR → 주문 세션 생성' })
   createSession(@Body() dto: CreateSessionDto) {
     return this.sessionService.createSession(dto);
+  }
+
+  @Post('join')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'PIN 입력으로 기존 세션 참여' })
+  joinSession(@Body() dto: JoinSessionDto) {
+    return this.sessionService.joinSession(dto);
   }
 }
