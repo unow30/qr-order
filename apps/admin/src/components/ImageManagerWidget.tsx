@@ -35,6 +35,19 @@ const DEFAULT_FORM: AddForm = {
   endAt: '',
 };
 
+/** entityType에 따른 기본 alt 텍스트 */
+function getDefaultAltText(entityType: ImageEntityType): string {
+  switch (entityType) {
+    case 'stores': return '매장 이미지';
+    case 'tables': return '테이블 이미지';
+    case 'menu-categories': return '카테고리 이미지';
+    case 'menu-items': return '메뉴 이미지';
+    case 'coupons': return '쿠폰 이미지';
+    case 'reviews': return '리뷰 이미지';
+    default: return '이미지';
+  }
+}
+
 function isActive(img: EntityImage): boolean {
   const now = new Date();
   const start = img.startAt ? new Date(img.startAt) : null;
@@ -53,6 +66,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<AddForm>(DEFAULT_FORM);
   const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<AddForm>(DEFAULT_FORM);
   const [uploading, setUploading] = useState(false);
@@ -105,8 +119,9 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
       await uploadToS3(presignedUrl, file);
       setForm((prev) => ({ ...prev, imageUrl }));
       setUploadError(null);
-    } catch {
-      setUploadError('업로드에 실패했습니다. 다시 시도해주세요.');
+    } catch (err: any) {
+      const serverMsg = err.response?.data?.message;
+      setUploadError(serverMsg || '업로드에 실패했습니다. 다시 시도해주세요.');
       setPreviewUrl(null);
     } finally {
       setUploading(false);
@@ -116,10 +131,12 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
   const handleAdd = async () => {
     if (!form.imageUrl.trim()) return;
     setAdding(true);
+    setAddError(null);
     try {
+      const altText = form.altText.trim() || getDefaultAltText(entityType);
       await createImage(entityType as Exclude<ImageEntityType, 'reviews'>, entityId, {
         imageUrl: form.imageUrl.trim(),
-        altText: form.altText.trim() || undefined,
+        altText,
         priority: parseInt(form.priority) || 0,
         sortOrder: parseInt(form.sortOrder) || 0,
         startAt: form.startAt || null,
@@ -128,7 +145,11 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
       setForm(DEFAULT_FORM);
       setPreviewUrl(null);
       setUploadError(null);
+      setAddError(null);
       fetchImages();
+    } catch (err: any) {
+      const serverMsg = err.response?.data?.message;
+      setAddError(serverMsg || '이미지 등록에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setAdding(false);
     }
@@ -155,9 +176,10 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
 
   const handleEditSave = async () => {
     if (!editId) return;
+    const altText = editForm.altText.trim() || getDefaultAltText(entityType);
     await updateImage(entityType as Exclude<ImageEntityType, 'reviews'>, entityId, editId, {
       imageUrl: editForm.imageUrl.trim(),
-      altText: editForm.altText.trim() || undefined,
+      altText,
       priority: parseInt(editForm.priority) || 0,
       sortOrder: parseInt(editForm.sortOrder) || 0,
       startAt: editForm.startAt || null,
@@ -242,8 +264,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
                 {/* 수정 폼 (인라인 확장) */}
                 {isEditing && !isReview && (
                   <div className="mt-2 border-t border-gray-100 pt-2">
-                    <input value={editForm.imageUrl} onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })} placeholder="이미지 URL" className={inputCls} />
-                    <input value={editForm.altText} onChange={(e) => setEditForm({ ...editForm, altText: e.target.value })} placeholder="alt 텍스트" className={inputCls} />
+                    <input value={editForm.altText} onChange={(e) => setEditForm({ ...editForm, altText: e.target.value })} placeholder={`alt 텍스트 (기본: ${getDefaultAltText(entityType)})`} className={inputCls} />
                     <div className="flex gap-1 mb-1">
                       <input type="number" value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })} placeholder="우선순위" min={0} className="flex-1 px-1.5 py-1 border border-gray-200 rounded text-[11px]" />
                       <input type="number" value={editForm.sortOrder} onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })} placeholder="순서" min={0} className="flex-1 px-1.5 py-1 border border-gray-200 rounded text-[11px]" />
@@ -318,9 +339,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
             {uploadError && <p className="text-[11px] text-red-500 mt-1">{uploadError}</p>}
           </div>
 
-          <div className="text-[10px] text-gray-400 mb-1">또는 URL 직접 입력</div>
-          <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="이미지 URL *" className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs mb-1.5 box-border" />
-          <input value={form.altText} onChange={(e) => setForm({ ...form, altText: e.target.value })} placeholder="alt 텍스트 (선택)" className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs mb-1.5 box-border" />
+          <input value={form.altText} onChange={(e) => setForm({ ...form, altText: e.target.value })} placeholder={`alt 텍스트 (기본: ${getDefaultAltText(entityType)})`} className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs mb-1.5 box-border" />
           <div className="flex gap-1.5 mb-1.5">
             <div className="flex-1">
               <div className="text-[10px] text-gray-400 mb-0.5">우선순위 (기본: 0)</div>
@@ -342,6 +361,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
               <input type="datetime-local" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} className="w-full px-2 py-1.5 border border-gray-200 rounded-md text-[11px] box-border" />
             </div>
           </div>
+          {addError && <p className="text-[11px] text-red-500 mb-1.5">{addError}</p>}
           <button
             onClick={handleAdd}
             disabled={adding || !form.imageUrl.trim()}

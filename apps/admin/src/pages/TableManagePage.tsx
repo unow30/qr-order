@@ -59,6 +59,16 @@ export default function TableManagePage() {
       setTables(list);
       fetchSessions(list);
     });
+
+    // 30초마다 세션 상태 자동 새로고침
+    const interval = setInterval(() => {
+      getTables().then((list) => {
+        setTables(list);
+        fetchSessions(list);
+      });
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [currentStoreId]);
 
   const handleCreate = async () => {

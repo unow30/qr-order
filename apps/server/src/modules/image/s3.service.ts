@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -15,6 +15,7 @@ const PRESIGN_EXPIRES_IN = 300; // 5분
 
 @Injectable()
 export class S3Service {
+  private readonly logger = new Logger(S3Service.name);
   private readonly s3: S3Client;
   private readonly bucket: string;
   private readonly keyPrefix: string;
@@ -74,14 +75,21 @@ export class S3Service {
       ContentLength: params.contentLength,
     });
 
-    const presignedUrl = await getSignedUrl(this.s3, command, {
-      expiresIn: PRESIGN_EXPIRES_IN,
-    });
+    try {
+      const presignedUrl = await getSignedUrl(this.s3, command, {
+        expiresIn: PRESIGN_EXPIRES_IN,
+      });
 
-    const domain = this.cloudfrontDomain.replace(/\/+$/, '');
-    const imageUrl = `${domain}/${key}`;
+      const domain = this.cloudfrontDomain.replace(/\/+$/, '');
+      const imageUrl = `${domain}/${key}`;
 
-    return { presignedUrl, imageUrl, key };
+      return { presignedUrl, imageUrl, key };
+    } catch (err) {
+      this.logger.error('Presigned URL 생성 실패', err);
+      throw new InternalServerErrorException(
+        'S3 업로드 URL 생성에 실패했습니다. 서버 설정을 확인하세요.',
+      );
+    }
   }
 
   private extractExtension(fileName: string, contentType: string): string {

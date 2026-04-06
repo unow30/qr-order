@@ -181,9 +181,19 @@ export class ImageService {
       endAt: dto.endAt ? new Date(dto.endAt) : null,
     } as any);
 
-    const saved = await (repo as Repository<ScheduledImageEntity>).save(image) as unknown as ScheduledImageEntity;
-    await this.invalidateCache(entityType, entityId);
-    return saved;
+    try {
+      const saved = await (repo as Repository<ScheduledImageEntity>).save(image) as unknown as ScheduledImageEntity;
+      await this.invalidateCache(entityType, entityId);
+      return saved;
+    } catch (err: any) {
+      if (err.code === '23503') {
+        // FK constraint violation
+        throw new BadRequestException(
+          `해당 ${entityType} (ID: ${entityId})가 존재하지 않거나, 매장 정보가 올바르지 않습니다.`,
+        );
+      }
+      throw err;
+    }
   }
 
   async update(

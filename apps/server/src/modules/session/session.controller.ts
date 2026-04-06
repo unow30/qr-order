@@ -52,6 +52,13 @@ export class SessionController {
     return this.sessionService.moveSession(sessionToken, dto.qrToken);
   }
 
+  @Delete()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '고객 세션 종료 (Redis 정리)' })
+  deleteSession(@Headers('x-session-token') sessionToken: string) {
+    return this.sessionService.deleteSession(sessionToken);
+  }
+
   // ─── 관리자용 ──────────────────────────────────────────────────────
 
   @Get('admin/tables/:tableId')

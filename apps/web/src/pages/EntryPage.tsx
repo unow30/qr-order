@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createSession, joinSession, moveSession } from '@web/api/session.api';
+import { createSession, joinSession, moveSession, deleteSessionApi } from '@web/api/session.api';
 import { useSessionStore } from '@web/stores/sessionStore';
 import type { SessionConflictResponse } from '@qr-order/shared-types';
 
@@ -18,6 +18,11 @@ export default function EntryPage() {
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
+
+  // 자리이동 확인 상태
+  const [moveConfirm, setMoveConfirm] = useState(false);
+  const [moveTarget, setMoveTarget] = useState<{ tableId: string; qrToken: string } | null>(null);
+  const [moving, setMoving] = useState(false);
 
   const tableIdRef = useRef<string>('');
   const qrTokenRef = useRef<string>('');
@@ -41,36 +46,70 @@ export default function EntryPage() {
       return;
     }
 
-    // 유효한 세션이 있고 다른 테이블 → 자리이동
+    // 유효한 세션이 있고 다른 테이블 → 자리이동 확인 요청
     if (isSessionValid() && useSessionStore.getState().tableId !== tableId) {
-      moveSession({ qrToken })
-        .then((res) => {
-          setSession({ ...res, pin: undefined });
-          navigate('/menu', { replace: true });
-        })
-        .catch((err) => {
-          const status = err.response?.status;
-          const data = err.response?.data;
-
-          if (status === 409 && data?.message?.requirePin) {
-            // 이동 대상 테이블에 이미 세션 존재 → PIN 입력 필요
-            // 기존 세션 클리어 후 PIN 입력 모드
-            useSessionStore.getState().clearSession();
-            setPinRequired(true);
-            setTableInfo(data.message as SessionConflictResponse);
-            setLoading(false);
-          } else {
-            // 기타 오류 → 새 세션 생성 시도로 폴백
-            useSessionStore.getState().clearSession();
-            attemptCreateSession(tableId, qrToken);
-          }
-        });
+      setMoveTarget({ tableId, qrToken });
+      setMoveConfirm(true);
+      setLoading(false);
       return;
     }
 
     // 세션 없음 → 새 세션 생성
     attemptCreateSession(tableId, qrToken);
   }, []);
+
+  /** 서버 세션 삭제 후 로컬 세션 정리 */
+  const cleanupSession = async () => {
+    try {
+      await deleteSessionApi();
+    } catch {
+      // 이미 만료된 세션이면 무시
+    }
+    useSessionStore.getState().clearSession();
+  };
+
+  /** 자리이동 실행 */
+  const handleMoveConfirm = async () => {
+    if (!moveTarget) return;
+    setMoving(true);
+
+    try {
+      const res = await moveSession({ qrToken: moveTarget.qrToken });
+      setSession({
+        sessionToken: res.sessionToken,
+        tableId: res.tableId,
+        tableNumber: res.tableNumber,
+        tableName: res.tableName,
+        expiresAt: res.expiresAt,
+        pin: res.pin,
+      });
+      navigate('/menu', { replace: true });
+    } catch (err: any) {
+      const status = err.response?.status;
+      const data = err.response?.data;
+
+      if (status === 409 && data?.message?.requirePin) {
+        // 이동 대상 테이블에 이미 세션 존재 → 기존 세션 정리 후 PIN 입력
+        await cleanupSession();
+        setPinRequired(true);
+        setTableInfo(data.message as SessionConflictResponse);
+        setMoveConfirm(false);
+      } else {
+        // 기타 오류 → 기존 세션 정리 후 새 세션 생성
+        await cleanupSession();
+        setMoveConfirm(false);
+        attemptCreateSession(moveTarget.tableId, moveTarget.qrToken);
+      }
+    } finally {
+      setMoving(false);
+    }
+  };
+
+  /** 자리이동 취소 → 기존 테이블로 복귀 */
+  const handleMoveCancel = () => {
+    setMoveConfirm(false);
+    navigate('/menu', { replace: true });
+  };
 
   const attemptCreateSession = (tableId: string, qrToken: string) => {
     createSession({ tableId, qrToken })
@@ -123,6 +162,39 @@ export default function EntryPage() {
       setJoining(false);
     }
   };
+
+  // 자리이동 확인 다이얼로그
+  if (moveConfirm && moveTarget) {
+    const currentTable = useSessionStore.getState();
+    return (
+      <div className="flex flex-col justify-center items-center h-screen gap-6 px-6">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">자리를 이동하시겠습니까?</h2>
+          <p className="text-gray-600 mb-1">
+            현재 <strong>{currentTable.tableName || `${currentTable.tableNumber}번 테이블`}</strong>에 착석 중입니다.
+          </p>
+          <p className="text-gray-600">
+            새 테이블로 이동하면 기존 장바구니가 함께 이동됩니다.
+          </p>
+        </div>
+        <div className="flex gap-3 w-full max-w-xs">
+          <button
+            onClick={handleMoveCancel}
+            className="flex-1 py-3 border-2 border-gray-300 rounded-lg font-medium text-gray-600 bg-white"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleMoveConfirm}
+            disabled={moving}
+            className="flex-1 py-3 bg-[#ff6b35] text-white rounded-lg font-medium disabled:opacity-50"
+          >
+            {moving ? '이동 중...' : '이동하기'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !error && !pinRequired) {
     return (

@@ -5,6 +5,8 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
 import { MenuOption } from '@server/modules/menu/entities/menu-option.entity';
@@ -32,4 +34,10 @@ export class MenuOptionGroup {
 
   @OneToMany(() => MenuOption, (option) => option.group, { cascade: true })
   options: MenuOption[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

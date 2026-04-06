@@ -261,6 +261,7 @@ export class SessionService {
         tableNumber: newTable.tableNumber,
         tableName: newTable.name,
         expiresAt: sessionData.expiresAt,
+        pin: sessionData.pin,
       };
     }
 
@@ -312,6 +313,7 @@ export class SessionService {
       tableNumber: newTable.tableNumber,
       tableName: newTable.name,
       expiresAt: sessionData.expiresAt,
+      pin: sessionData.pin,
     };
   }
 

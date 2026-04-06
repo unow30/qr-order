@@ -15,3 +15,6 @@ export const joinSession = (dto: JoinSessionDto): Promise<SessionResponse> =>
 
 export const moveSession = (dto: MoveSessionDto): Promise<MoveSessionResponse> =>
   client.post('/sessions/move', dto);
+
+export const deleteSessionApi = (): Promise<void> =>
+  client.delete('/sessions');

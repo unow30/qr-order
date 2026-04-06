@@ -37,6 +37,7 @@ export interface MoveSessionResponse {
   tableNumber: number;
   tableName: string;
   expiresAt: string;
+  pin: string;
 }
 
 // ─── 관리자 세션 관리 ────────────────────────────────────────────────

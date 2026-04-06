@@ -4,6 +4,8 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { MenuOptionGroup } from '@server/modules/menu/entities/menu-option-group.entity';
 
@@ -27,4 +29,10 @@ export class MenuOption {
   @ManyToOne(() => MenuOptionGroup, (group) => group.options, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'groupId' })
   group: MenuOptionGroup;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
