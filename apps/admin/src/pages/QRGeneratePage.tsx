@@ -30,7 +30,10 @@ export default function QRGeneratePage() {
 
   const getQrUrl = () => {
     if (!selectedTable || !qrData) return '';
-    return `${window.location.origin.replace(':3002', ':3001')}/entry?tableId=${selectedTable.id}&token=${qrData.token}`;
+    const webBaseUrl =
+      import.meta.env.VITE_WEB_URL ||
+      window.location.origin.replace('admin.', 'www.').replace(':3002', ':3001');
+    return `${webBaseUrl}/entry?tableId=${selectedTable.id}&token=${qrData.token}`;
   };
 
   const handleDownload = () => {
