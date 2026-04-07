@@ -13,7 +13,13 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "clean": "rm -rf dist",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/data-source.ts",
+    "migration:generate": "pnpm typeorm migration:generate src/database/migrations/Migration",
+    "migration:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:create src/database/migrations/Migration",
+    "migration:run": "pnpm typeorm migration:run",
+    "migration:revert": "pnpm typeorm migration:revert",
+    "migration:show": "pnpm typeorm migration:show"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1024.0",

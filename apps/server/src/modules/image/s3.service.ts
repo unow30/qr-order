@@ -30,16 +30,11 @@ export class S3Service {
       },
     });
 
-    // S3_BUCKET_NAME이 "bucket/prefix" 형태일 수 있음
-    const bucketValue = config.getOrThrow<string>('S3_BUCKET_NAME');
-    const slashIdx = bucketValue.indexOf('/');
-    if (slashIdx >= 0) {
-      this.bucket = bucketValue.slice(0, slashIdx);
-      this.keyPrefix = bucketValue.slice(slashIdx + 1).replace(/\/+$/, '');
-    } else {
-      this.bucket = bucketValue;
-      this.keyPrefix = '';
-    }
+    this.bucket = config.getOrThrow<string>('S3_BUCKET_NAME').trim();
+
+    // NODE_ENV에 따라 업로드 경로 prefix 결정 (production | development)
+    const nodeEnv = config.get<string>('NODE_ENV', 'development');
+    this.keyPrefix = nodeEnv === 'production' ? 'production' : 'development';
 
     this.cloudfrontDomain = config.getOrThrow<string>('CLOUDFRONT_DOMAIN');
   }
