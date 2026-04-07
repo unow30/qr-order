@@ -80,6 +80,8 @@ export default function EntryPage() {
         tableId: res.tableId,
         tableNumber: res.tableNumber,
         tableName: res.tableName,
+        storeId: res.storeId,
+        storeName: res.storeName,
         expiresAt: res.expiresAt,
         pin: res.pin,
       });

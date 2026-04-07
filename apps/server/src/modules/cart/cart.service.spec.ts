@@ -19,11 +19,15 @@ describe('CartService', () => {
   const mockSession: SessionData = {
     sessionToken: 'token-1',
     storeId: 'store-1',
+    storeName: '테스트 매장',
     tableId: 'table-1',
     tableNumber: 5,
     tableName: '5번 테이블',
     createdAt: '2024-01-01T00:00:00.000Z',
     expiresAt: '2024-01-01T02:00:00.000Z',
+    pin: '123456',
+    joinedCount: 1,
+    capacity: 4,
   };
 
   beforeEach(async () => {

@@ -13,6 +13,7 @@ export default function MenuPage() {
   const cartItems = useCartStore((s) => s.items);
   const totalAmount = useCartStore((s) => s.totalAmount);
   const tableName = useSessionStore((s) => s.tableName);
+  const storeName = useSessionStore((s) => s.storeName);
   const pin = useSessionStore((s) => s.pin);
   const hasOrders = useOrderStore((s) => s.orders.length > 0);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -37,6 +38,9 @@ export default function MenuPage() {
   return (
     <div className="max-w-[480px] mx-auto font-sans">
       <header className="p-4 bg-white border-b border-gray-200 sticky top-0">
+        {storeName && (
+          <p className="m-0 mb-0.5 text-xs text-gray-500 font-medium">{storeName}</p>
+        )}
         <h1 className="m-0 text-lg">{tableName ?? '테이블'}</h1>
       </header>
 

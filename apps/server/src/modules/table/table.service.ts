@@ -25,7 +25,14 @@ export class TableService {
 
   async findAllWithTokens(
     storeId: string | null,
-  ): Promise<{ table: TableEntity; token: string | null; isActive: boolean }[]> {
+  ): Promise<
+    {
+      table: TableEntity;
+      token: string | null;
+      expiresAt: Date | null;
+      isActive: boolean;
+    }[]
+  > {
     const tables = await this.tableRepository.find({
       where: storeId ? { storeId } : undefined,
       order: { tableNumber: 'ASC' },
@@ -35,7 +42,12 @@ export class TableService {
       const latestToken = table.qrTokens
         .slice()
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-      return { table, token: latestToken?.token ?? null, isActive: table.isActive };
+      return {
+        table,
+        token: latestToken?.token ?? null,
+        expiresAt: latestToken?.expiresAt ?? null,
+        isActive: table.isActive,
+      };
     });
   }
 

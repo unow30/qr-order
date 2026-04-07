@@ -14,6 +14,8 @@ export interface SessionResponse {
   tableId: string;
   tableNumber: number;
   tableName: string;
+  storeId: string;
+  storeName: string;
   expiresAt: string;
   pin?: string; // 세션 최초 생성자에게만 반환
 }
@@ -36,6 +38,8 @@ export interface MoveSessionResponse {
   tableId: string;
   tableNumber: number;
   tableName: string;
+  storeId: string;
+  storeName: string;
   expiresAt: string;
   pin: string;
 }

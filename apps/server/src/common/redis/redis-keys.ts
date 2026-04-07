@@ -5,6 +5,7 @@ import { CartItem } from '@qr-order/shared-types';
 export interface SessionData {
   sessionToken: string;
   storeId: string;
+  storeName: string;
   tableId: string;
   tableNumber: number;
   tableName: string;

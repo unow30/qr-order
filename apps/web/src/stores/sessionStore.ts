@@ -6,6 +6,8 @@ interface SessionState {
   tableId: string | null;
   tableNumber: number | null;
   tableName: string | null;
+  storeId: string | null;
+  storeName: string | null;
   expiresAt: string | null;
   pin: string | null;
   setSession: (data: {
@@ -13,6 +15,8 @@ interface SessionState {
     tableId: string;
     tableNumber: number;
     tableName: string;
+    storeId?: string;
+    storeName?: string;
     expiresAt: string;
     pin?: string;
   }) => void;
@@ -27,15 +31,25 @@ export const useSessionStore = create<SessionState>()(
       tableId: null,
       tableNumber: null,
       tableName: null,
+      storeId: null,
+      storeName: null,
       expiresAt: null,
       pin: null,
-      setSession: (data) => set({ ...data, pin: data.pin ?? null }),
+      setSession: (data) =>
+        set({
+          ...data,
+          storeId: data.storeId ?? null,
+          storeName: data.storeName ?? null,
+          pin: data.pin ?? null,
+        }),
       clearSession: () =>
         set({
           sessionToken: null,
           tableId: null,
           tableNumber: null,
           tableName: null,
+          storeId: null,
+          storeName: null,
           expiresAt: null,
           pin: null,
         }),

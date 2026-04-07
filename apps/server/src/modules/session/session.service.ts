@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { REDIS_CLIENT } from '@server/config/redis.config';
 import { REDIS_KEYS, SessionData } from '@server/common/redis/redis-keys';
 import { TableService } from '@server/modules/table/table.service';
+import { StoreService } from '@server/modules/store/store.service';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import {
@@ -32,6 +33,7 @@ export class SessionService {
     @Inject(REDIS_CLIENT)
     private readonly redis: Redis,
     private readonly tableService: TableService,
+    private readonly storeService: StoreService,
     private readonly configService: ConfigService,
   ) {
     this.ttl = configService.get<number>('SESSION_TTL_SECONDS', 7200);
@@ -52,6 +54,7 @@ export class SessionService {
     }
 
     const storeId = table.storeId;
+    const store = await this.storeService.findOne(storeId);
     const sessionToken = uuidv4();
     const tableSessionKey = REDIS_KEYS.tableSession.key(storeId, table.id);
 
@@ -81,6 +84,7 @@ export class SessionService {
     const sessionData: SessionData = {
       sessionToken,
       storeId,
+      storeName: store.name,
       tableId: table.id,
       tableNumber: table.tableNumber,
       tableName: table.name,
@@ -104,6 +108,8 @@ export class SessionService {
       tableId: table.id,
       tableNumber: table.tableNumber,
       tableName: table.name,
+      storeId,
+      storeName: store.name,
       expiresAt,
       pin,
     };
@@ -166,6 +172,8 @@ export class SessionService {
       tableId: table.id,
       tableNumber: table.tableNumber,
       tableName: table.name,
+      storeId: sessionData.storeId,
+      storeName: sessionData.storeName,
       expiresAt: sessionData.expiresAt,
     };
   }
@@ -260,6 +268,8 @@ export class SessionService {
         tableId: newTable.id,
         tableNumber: newTable.tableNumber,
         tableName: newTable.name,
+        storeId: sessionData.storeId,
+        storeName: sessionData.storeName,
         expiresAt: sessionData.expiresAt,
         pin: sessionData.pin,
       };
@@ -312,6 +322,8 @@ export class SessionService {
       tableId: newTable.id,
       tableNumber: newTable.tableNumber,
       tableName: newTable.name,
+      storeId: sessionData.storeId,
+      storeName: sessionData.storeName,
       expiresAt: sessionData.expiresAt,
       pin: sessionData.pin,
     };
