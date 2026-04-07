@@ -31,7 +31,7 @@
 | ECR | Docker 이미지 레지스트리 |
 | ElastiCache | Redis (세션/캐시) |
 
-> 상세 아키텍처 다이어그램: [`aws-infra.pdf`](../../aws-infra.pdf)
+> 상세 아키텍처 다이어그램: [`aws-infra.pdf`](../server/aws-infra.pdf)
 
 ---
 

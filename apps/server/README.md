@@ -34,7 +34,7 @@ QR 테이블 오더 서비스의 REST API 백엔드입니다. NestJS 기반으�
 | ECR | Docker 이미지 레지스트리 |
 | ElastiCache | Redis (세션/캐시) |
 
-> 상세 아키텍처 다이어그램: [`aws-infra.pdf`](../../aws-infra.pdf)
+> 상세 아키텍처 다이어그램: [`aws-infra.pdf`](./aws-infra.pdf)
 
 ---
 
