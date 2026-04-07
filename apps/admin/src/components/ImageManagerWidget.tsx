@@ -10,6 +10,7 @@ import {
   getPresignedUrl,
   uploadToS3,
 } from '@admin/api/image.api';
+import { useAuthStore } from '@admin/stores/authStore';
 
 interface Props {
   entityType: ImageEntityType;
@@ -102,6 +103,15 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
     }
     if (file.size > 5 * 1024 * 1024) {
       setUploadError('파일 크기가 5MB를 초과합니다.');
+      return;
+    }
+
+    // 매장 미선택 가드 (X-Store-Id 헤더 없이 호출 시 백엔드 400)
+    const { currentStoreId, storeIds } = useAuthStore.getState();
+    if (!currentStoreId && storeIds.length !== 1) {
+      const msg = '매장을 먼저 선택해주세요.';
+      setUploadError(msg);
+      if (typeof window !== 'undefined') window.alert(msg);
       return;
     }
 

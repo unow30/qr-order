@@ -261,6 +261,15 @@ export class SessionService {
       throw new BadRequestException('유효하지 않거나 만료된 QR 코드입니다.');
     }
 
+    // 2-1. 다른 매장으로의 이동은 차단 (같은 매장 내 자리이동만 허용)
+    if (newTable.storeId !== storeId) {
+      throw new BadRequestException({
+        code: 'CROSS_STORE_BLOCKED',
+        message:
+          '다른 매장의 테이블로는 이동할 수 없습니다. 결제 완료 후 새 매장의 QR을 다시 스캔해주세요.',
+      });
+    }
+
     // 같은 테이블이면 이동 불필요
     if (newTable.id === oldTableId) {
       return {

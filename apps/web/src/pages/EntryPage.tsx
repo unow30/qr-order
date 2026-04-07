@@ -89,13 +89,23 @@ export default function EntryPage() {
     } catch (err: any) {
       const status = err.response?.status;
       const data = err.response?.data;
+      const messagePayload = data?.message;
+      const errorCode =
+        typeof messagePayload === 'object' ? messagePayload?.code : undefined;
 
-      if (status === 409 && data?.message?.requirePin) {
+      if (status === 409 && messagePayload?.requirePin) {
         // 이동 대상 테이블에 이미 세션 존재 → 기존 세션 정리 후 PIN 입력
         await cleanupSession();
         setPinRequired(true);
-        setTableInfo(data.message as SessionConflictResponse);
+        setTableInfo(messagePayload as SessionConflictResponse);
         setMoveConfirm(false);
+      } else if (errorCode === 'CROSS_STORE_BLOCKED') {
+        const text =
+          (typeof messagePayload === 'object' && messagePayload?.message) ||
+          '다른 매장의 테이블로는 이동할 수 없습니다. 결제 완료 후 새 매장의 QR을 다시 스캔해주세요.';
+        if (typeof window !== 'undefined') window.alert(text);
+        setMoveConfirm(false);
+        navigate('/menu', { replace: true });
       } else {
         // 기타 오류 → 기존 세션 정리 후 새 세션 생성
         await cleanupSession();
