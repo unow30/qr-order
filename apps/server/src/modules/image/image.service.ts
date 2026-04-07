@@ -115,6 +115,19 @@ export class ImageService {
     await this.redis.del(this.getCacheKey(entityType, entityId));
   }
 
+  /**
+   * 메뉴 응답에 이미지가 포함되므로, 메뉴 아이템/카테고리 이미지가 변경되면
+   * 매장 메뉴 캐시(`menu:{storeId}:all`)도 함께 무효화한다.
+   */
+  private async invalidateMenuCacheIfNeeded(
+    entityType: ScheduledEntityType,
+    storeId: string | null | undefined,
+  ): Promise<void> {
+    if (!storeId) return;
+    if (entityType !== 'menu-items' && entityType !== 'menu-categories') return;
+    await this.redis.del(REDIS_KEYS.menu.key(storeId));
+  }
+
   // ─── 현재 활성 이미지 쿼리 ────────────────────────────────────────────────
 
   private async queryActiveImages(
@@ -184,6 +197,7 @@ export class ImageService {
     try {
       const saved = await (repo as Repository<ScheduledImageEntity>).save(image) as unknown as ScheduledImageEntity;
       await this.invalidateCache(entityType, entityId);
+      await this.invalidateMenuCacheIfNeeded(entityType, storeId);
       return saved;
     } catch (err: any) {
       if (err.code === '23503') {
@@ -218,6 +232,7 @@ export class ImageService {
 
     const saved = await repo.save(image);
     await this.invalidateCache(entityType, entityId);
+    await this.invalidateMenuCacheIfNeeded(entityType, (saved as { storeId?: string }).storeId);
     return saved;
   }
 
@@ -230,8 +245,10 @@ export class ImageService {
     const image = await repo.findOne({ where: { id: imageId } as any });
     if (!image) throw new NotFoundException('이미지를 찾을 수 없습니다.');
 
+    const removedStoreId = (image as { storeId?: string }).storeId;
     await repo.remove(image);
     await this.invalidateCache(entityType, entityId);
+    await this.invalidateMenuCacheIfNeeded(entityType, removedStoreId);
   }
 
   // ─── 리뷰 이미지 ─────────────────────────────────────────────────────────

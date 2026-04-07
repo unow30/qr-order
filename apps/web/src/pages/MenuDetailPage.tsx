@@ -124,9 +124,7 @@ export default function MenuDetailPage() {
         <h2 className="m-0 text-lg">{item.name}</h2>
       </header>
 
-      {item.imageUrl && (
-        <img src={item.imageUrl} alt={item.name} className="w-full h-60 object-cover" />
-      )}
+      <ItemImageCarousel item={item} />
 
       <div className="p-4">
         <h2 className="mb-2">{item.name}</h2>
@@ -213,6 +211,64 @@ export default function MenuDetailPage() {
           {totalPrice.toLocaleString()}원 · 장바구니 담기
         </button>
       </div>
+    </div>
+  );
+}
+
+/** 메뉴 상세 이미지 캐러셀: 가로 스크롤 + snap + dot 인디케이터 */
+function ItemImageCarousel({ item }: { item: MenuItem }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const slides = item.images?.length
+    ? item.images.map((img) => ({ id: img.id, url: img.imageUrl, alt: img.altText ?? item.name }))
+    : item.imageUrl
+      ? [{ id: 'legacy', url: item.imageUrl, alt: item.name }]
+      : [];
+
+  if (slides.length === 0) return null;
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx !== activeIndex) setActiveIndex(idx);
+  };
+
+  const goTo = (idx: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="relative">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {slides.map((s) => (
+          <img
+            key={s.id}
+            src={s.url}
+            alt={s.alt ?? ''}
+            className="snap-center w-full h-60 object-cover shrink-0"
+          />
+        ))}
+      </div>
+      {slides.length > 1 && (
+        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+          {slides.map((s, i) => (
+            <button
+              key={s.id}
+              onClick={() => goTo(i)}
+              aria-label={`${i + 1}번 이미지로 이동`}
+              className={`w-2 h-2 rounded-full border-none cursor-pointer transition-colors ${i === activeIndex ? 'bg-white' : 'bg-white/50'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

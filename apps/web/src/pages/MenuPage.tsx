@@ -106,6 +106,8 @@ export default function MenuPage() {
 }
 
 function MenuItemCard({ item, onClick }: { item: MenuItem; onClick: () => void }) {
+  const thumb = item.images?.[0]?.imageUrl ?? item.imageUrl;
+  const thumbAlt = item.images?.[0]?.altText ?? item.name;
   return (
     <div
       onClick={onClick}
@@ -116,8 +118,8 @@ function MenuItemCard({ item, onClick }: { item: MenuItem; onClick: () => void }
         {item.description && <p className="mb-1 text-[13px] text-gray-400">{item.description}</p>}
         <p className="m-0 text-brand font-semibold">{item.price.toLocaleString()}원</p>
       </div>
-      {item.imageUrl && (
-        <img src={item.imageUrl} alt={item.name} className="w-20 h-20 object-cover rounded-lg ml-3" />
+      {thumb && (
+        <img src={thumb} alt={thumbAlt} className="w-20 h-20 object-cover rounded-lg ml-3" />
       )}
     </div>
   );

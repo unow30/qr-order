@@ -8,6 +8,7 @@ import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity
 import { MenuItem } from '@server/modules/menu/entities/menu-item.entity';
 import { MenuOptionGroup } from '@server/modules/menu/entities/menu-option-group.entity';
 import { MenuOption } from '@server/modules/menu/entities/menu-option.entity';
+import { MenuItemImageEntity } from '@server/modules/image/entities/menu-item-image.entity';
 import {
   CreateMenuCategoryDto,
   UpdateMenuCategoryDto,
@@ -43,11 +44,13 @@ export class MenuService {
   async getMenu(storeId: string | null): Promise<MenuCategory[]> {
     // storeId가 null이면 (SUPER_ADMIN 전체 보기) 캐시 없이 전체 조회
     if (!storeId) {
-      return this.categoryRepository.find({
+      const categories = await this.categoryRepository.find({
         where: { isActive: true },
-        relations: ['items', 'items.optionGroups', 'items.optionGroups.options'],
+        relations: ['items', 'items.optionGroups', 'items.optionGroups.options', 'items.images'],
         order: { sortOrder: 'ASC', items: { sortOrder: 'ASC' } },
       });
+      this.applyActiveImages(categories);
+      return categories;
     }
 
     const cacheKey = this.getMenuCacheKey(storeId);
@@ -58,12 +61,42 @@ export class MenuService {
 
     const categories = await this.categoryRepository.find({
       where: { storeId, isActive: true },
-      relations: ['items', 'items.optionGroups', 'items.optionGroups.options'],
+      relations: ['items', 'items.optionGroups', 'items.optionGroups.options', 'items.images'],
       order: { sortOrder: 'ASC', items: { sortOrder: 'ASC' } },
     });
+    this.applyActiveImages(categories);
 
     await this.redis.setex(cacheKey, REDIS_KEYS.menu.ttl, JSON.stringify(categories));
     return categories;
+  }
+
+  /**
+   * 각 메뉴 아이템의 images 관계에서 현재 활성 이미지만 추려
+   * priority DESC, sortOrder ASC 순으로 정렬한다.
+   * - isActive === true
+   * - startAt이 null이거나 now 이전
+   * - endAt이 null이거나 now 이후
+   */
+  private applyActiveImages(categories: MenuCategory[]): void {
+    const now = Date.now();
+    for (const category of categories) {
+      for (const item of category.items ?? []) {
+        const raw = (item as MenuItem & { images?: MenuItemImageEntity[] }).images ?? [];
+        const filtered = raw.filter((img) => {
+          if (!img.isActive) return false;
+          const start = img.startAt ? new Date(img.startAt).getTime() : null;
+          const end = img.endAt ? new Date(img.endAt).getTime() : null;
+          if (start !== null && start > now) return false;
+          if (end !== null && end < now) return false;
+          return true;
+        });
+        filtered.sort((a, b) => {
+          if (b.priority !== a.priority) return b.priority - a.priority;
+          return a.sortOrder - b.sortOrder;
+        });
+        (item as MenuItem & { images: MenuItemImageEntity[] }).images = filtered;
+      }
+    }
   }
 
   async invalidateCache(storeId: string): Promise<void> {

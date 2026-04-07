@@ -20,7 +20,7 @@ export class MenuItemImageEntity {
   @Column()
   itemId: string;
 
-  @ManyToOne(() => MenuItem, { onDelete: 'CASCADE' })
+  @ManyToOne(() => MenuItem, (item) => item.images, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'itemId' })
   item: MenuItem;
 

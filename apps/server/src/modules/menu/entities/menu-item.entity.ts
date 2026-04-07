@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { MenuCategory } from '@server/modules/menu/entities/menu-category.entity';
 import { MenuOptionGroup } from '@server/modules/menu/entities/menu-option-group.entity';
+import { MenuItemImageEntity } from '@server/modules/image/entities/menu-item-image.entity';
 
 @Entity('menu_items')
 export class MenuItem {
@@ -52,6 +53,9 @@ export class MenuItem {
 
   @OneToMany(() => MenuOptionGroup, (group) => group.menuItem, { cascade: true })
   optionGroups: MenuOptionGroup[];
+
+  @OneToMany(() => MenuItemImageEntity, (img) => img.item)
+  images: MenuItemImageEntity[];
 
   @CreateDateColumn()
   createdAt: Date;

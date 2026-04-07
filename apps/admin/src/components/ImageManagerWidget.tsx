@@ -276,8 +276,14 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
                   <div className="mt-2 border-t border-gray-100 pt-2">
                     <input value={editForm.altText} onChange={(e) => setEditForm({ ...editForm, altText: e.target.value })} placeholder={`alt 텍스트 (기본: ${getDefaultAltText(entityType)})`} className={inputCls} />
                     <div className="flex gap-1 mb-1">
-                      <input type="number" value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })} placeholder="우선순위" min={0} className="flex-1 px-1.5 py-1 border border-gray-200 rounded text-[11px]" />
-                      <input type="number" value={editForm.sortOrder} onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })} placeholder="순서" min={0} className="flex-1 px-1.5 py-1 border border-gray-200 rounded text-[11px]" />
+                      <label className="flex-1 flex flex-col gap-0.5">
+                        <span className="text-[10px] text-gray-500">우선순위 (높을수록 먼저)</span>
+                        <input type="number" value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })} min={0} className="w-full px-1.5 py-1 border border-gray-200 rounded text-[11px]" />
+                      </label>
+                      <label className="flex-1 flex flex-col gap-0.5">
+                        <span className="text-[10px] text-gray-500">표시 순서 (낮을수록 먼저)</span>
+                        <input type="number" value={editForm.sortOrder} onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })} min={0} className="w-full px-1.5 py-1 border border-gray-200 rounded text-[11px]" />
+                      </label>
                     </div>
                     <div className="text-[10px] text-gray-400 mb-0.5">이벤트 기간 (비워두면 영구)</div>
                     <input type="datetime-local" value={editForm.startAt} onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })} className={inputCls} />
