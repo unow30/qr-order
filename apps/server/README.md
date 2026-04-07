@@ -19,6 +19,25 @@ QR 테이블 오더 서비스의 REST API 백엔드입니다. NestJS 기반으�
 
 ---
 
+## AWS 인프라
+
+| 서비스 | 용도 |
+|--------|------|
+| Route 53 | DNS 라우팅 |
+| ACM | SSL/TLS 인증서 |
+| CloudFront | 프론트엔드 CDN 배포 |
+| S3 | 정적 파일 및 이미지 스토리지 |
+| VPC | 네트워크 격리 |
+| Load Balancer | 백엔드 트래픽 분산 |
+| EC2 (frontend) | 프론트엔드 Docker 컨테이너 |
+| EC2 (backend) | 백엔드 Docker 컨테이너 |
+| ECR | Docker 이미지 레지스트리 |
+| ElastiCache | Redis (세션/캐시) |
+
+> 상세 아키텍처 다이어그램: [`aws-infra.pdf`](../../aws-infra.pdf)
+
+---
+
 ## 환경 변수 설정
 
 `.env.example`을 참고하여 `.env` 파일을 생성합니다.
@@ -44,6 +63,10 @@ cp .env.example .env
 | `SESSION_TTL_SECONDS` | 세션 TTL (초 단위) |
 | `ADMIN_USERNAME` | 초기 SUPER_ADMIN 계정명 |
 | `ADMIN_PASSWORD` | 초기 SUPER_ADMIN 비밀번호 |
+| `AWS_REGION` | AWS 리전 |
+| `AWS_ACCESS_KEY_ID` | AWS 액세스 키 |
+| `AWS_SECRET_ACCESS_KEY` | AWS 시크릿 키 |
+| `AWS_S3_BUCKET_NAME` | S3 버킷 이름 |
 | `PG_MERCHANT_ID` | PG 가맹점 ID |
 | `PG_SECRET_KEY` | PG 시크릿 키 |
 | `PG_API_URL` | PG API URL |
@@ -77,8 +100,6 @@ pnpm install
 # 서버만 실행
 pnpm dev:server
 
-# 또는 apps/server 디렉토리에서
-pnpm dev
 ```
 
 ### 4. 프로덕션 빌드 및 실행
@@ -138,12 +159,13 @@ src/
 ├── modules/
 │   ├── auth/                   # 인증 (로그인, JWT, 어드민 CRUD)
 │   ├── store/                  # 매장 관리
-│   ├── table/                  # 테이블 + QR 토큰
-│   ├── menu/                   # 메뉴 (카테고리, 항목, 옵션)
+│   ├── table/                  # 테이블 + QR 토큰 (qrToken 컬럼)
+│   ├── menu/                   # 메뉴 (카테고리, 항목, 옵션, 스케줄 이미지)
 │   ├── session/                # 고객 세션 (Redis)
 │   ├── cart/                   # 장바구니 (Redis)
 │   ├── order/                  # 주문 + SSE
 │   ├── payment/                # 결제
+│   ├── image/                  # 이미지 (S3 presigned URL, 스케줄 관리)
 │   ├── report/                 # 매출/주문 리포트
 │   ├── coupon/                 # 쿠폰
 │   └── review/                 # 리뷰
@@ -206,6 +228,12 @@ src/
 | 메서드 | 경로 | 설명 | 권한 |
 |--------|------|------|------|
 | POST | `/api/sessions` | 세션 생성 (QR 토큰) | 공개 |
+| POST | `/api/sessions/join` | PIN으로 기존 세션 참여 | 공개 |
+| POST | `/api/sessions/move` | 자리이동 (QR 재스캔) | 세션 |
+| DELETE | `/api/sessions` | 세션 종료 | 세션 |
+| GET | `/api/sessions/admin/tables/:tableId` | 테이블 활성 세션 조회 | 어드민 |
+| POST | `/api/sessions/admin/tables/:tableId/move` | 관리자 자리이동 | 어드민 |
+| DELETE | `/api/sessions/admin/tables/:tableId` | 강제 세션 삭제 | 어드민 |
 
 ### 장바구니 (`/api/cart`)
 
@@ -253,7 +281,8 @@ src/
 
 | 메서드 | 경로 | 설명 | 권한 |
 |--------|------|------|------|
-| POST | `/api/images` | 이미지 업로드 | 어드민 |
+| POST | `/api/images/presigned-url` | S3 업로드용 presigned URL 발급 | 어드민 |
+| GET | `/api/images/:entityType/:entityId/active` | 활성 이미지 조회 (캐시) | 공개 |
 | DELETE | `/api/images/:id` | 이미지 삭제 | 어드민 |
 
 ### 리포트 (`/api/reports`)
@@ -278,16 +307,17 @@ src/
 }
 ```
 
-| 역할 | 설명 |
-|------|------|
-| `SUPER_ADMIN` | 모든 매장에 대한 전체 권한 |
-| `STORE_ADMIN` | 본인 매장(`storeId`)에만 접근 가능 |
+| 역할                     | 설명                         |
+|------------------------|----------------------------|
+| `SUPER_ADMIN`          | 모든 매장에 대한 전체 권한            |
+| `STORE_ADMIN_READONLY` | 모든 매장에 접근 가능하나, get 요청만 가능 |
+| `STORE_ADMIN`          | 본인 매장(`storeId`)에만 접근 가능   |
 
 ### 요청 헤더
 
 ```
 Authorization: Bearer <jwt-token>
-X-Store-Id: <storeId>          # SUPER_ADMIN이 매장 전환 시 사용
+X-Store-Id: <storeId>            # SUPER_ADMIN이 매장 전환 시 사용
 X-Session-Token: <sessionToken>  # 고객 앱 요청 시 사용
 ```
 
@@ -320,8 +350,9 @@ X-Session-Token: <sessionToken>  # 고객 앱 요청 시 사용
 |----|------|-----|
 | `session:{storeId}:{sessionToken}` | 고객 세션 정보 | 2시간 |
 | `session-lookup:{sessionToken}` | 세션 → storeId 역조회 | 2시간 |
+| `tableSession:{storeId}:{tableId}` | 테이블별 활성 세션 토큰 | 2시간 |
 | `cart:{storeId}:{sessionToken}` | 장바구니 데이터 | 2시간 |
-| `menu:{storeId}:all` | 메뉴 캐시 | 5분 |
+| `menu:{storeId}:all` | 메뉴 캐시 | 동적 TTL (다음 이미지 상태 변경 시까지) |
 
 ---
 
@@ -329,7 +360,7 @@ X-Session-Token: <sessionToken>  # 고객 앱 요청 시 사용
 
 서버 시작 시 `RlsInitService`가 자동으로 RLS 정책을 생성합니다.
 
-**보호 테이블**: `menu_categories`, `orders`, `tables`, `qr_tokens`
+**보호 테이블**: `menu_categories`, `orders`, `tables`
 
 **정책 조건**:
 - `app.role = 'SUPER_ADMIN'` → 모든 행 접근 허용
@@ -381,3 +412,16 @@ X-Session-Token: <sessionToken>  # 고객 앱 요청 시 사용
 | Grafana Loki | `LOG_LOKI_URL` |
 
 웹훅 URL이 없으면 해당 채널은 무시됩니다. 외부 전송은 메인 요청 흐름에 영향을 주지 않습니다.
+
+---
+
+## 개발 단계
+
+| Phase | 내용                                                                  | 상태 |
+|-------|---------------------------------------------------------------------|------|
+| Phase 1 | 멀티테넌트 기반 (Store/Admin 엔티티, StoreContextMiddleware, RolesGuard, RLS) | ✅ 완료 |
+| Phase 2 | 어드민 프론트엔드 (역할별 접근, 매장 전환 UI)                                        | ✅ 완료 |
+| Phase 3 | 프랜차이즈 기능 (메뉴 템플릿 배포, 통합 리포트, PostgreSQL RLS)                        | ✅ 완료 |
+| Phase 4 | 세션 관리 (PIN 참여, 자리이동, 관리자 세션 강제 종료)                                  | ✅ 완료 |
+| Phase 5 | 이미지 업로드 S3 (presigned URL, 스케줄 이미지, 동적 TTL 캐시)                      | ✅ 완료 |
+| Phase 6 | Admin-readonly (읽기 권한 전용 어드민)                                | ✅ 완료 |
