@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface Store {
   id: string;
@@ -67,6 +68,10 @@ export default function StorePage() {
     return `/entry?tableId=${tableId}&token=${token}`;
   };
 
+  const buildEntryAbsoluteUrl = (tableId: string, token: string) => {
+    return `${window.location.origin}${buildEntryUrl(tableId, token)}`;
+  };
+
   // Store 상세 (테이블 목록)
   if (selectedStore) {
     return (
@@ -77,7 +82,7 @@ export default function StorePage() {
           </button>
           <h1 className="text-2xl font-bold mb-2">🛠 {selectedStore.name}</h1>
           <p className="text-sm text-slate-400 m-0">
-            {selectedStore.slug} — 테이블의 QR 링크를 클릭하면 고객 진입 화면으로 이동합니다.
+            {selectedStore.slug} — 테이블의 QR 코드를 스캔하거나 입장 링크를 클릭하면 고객 진입 화면으로 이동합니다.
           </p>
         </div>
 
@@ -100,11 +105,15 @@ export default function StorePage() {
                 <p className="text-[13px] text-slate-500 mb-3">수용 인원: {table.capacity}명</p>
                 {token ? (
                   <>
-                    <p className="flex items-center gap-2 mb-3">
-                      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Token</span>
-                      <code className="text-xs text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded">{token.slice(0, 18)}…</code>
-                    </p>
-                    <a href={buildEntryUrl(table.id, token)} className="inline-block text-sm font-semibold text-sky-400 no-underline px-4 py-2 bg-sky-900 rounded-lg">
+                    <div className="flex justify-center mb-3">
+                      <div className="inline-block p-3 bg-white rounded-lg">
+                        <QRCodeCanvas value={buildEntryAbsoluteUrl(table.id, token)} size={160} />
+                      </div>
+                    </div>
+                    <a
+                      href={buildEntryUrl(table.id, token)}
+                      className="block text-center text-sm font-semibold text-sky-400 no-underline px-4 py-2 bg-sky-900 rounded-lg"
+                    >
                       QR 입장 링크 →
                     </a>
                   </>
@@ -124,7 +133,7 @@ export default function StorePage() {
     <div className="min-h-screen bg-slate-900 text-slate-100 px-6 py-8 font-sans">
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-2">🛠 Dev — 매장 목록</h1>
-        <p className="text-sm text-slate-400 m-0">매장을 선택하면 해당 매장의 테이블과 QR 입장 링크를 확인할 수 있습니다.</p>
+        <p className="text-sm text-slate-400 m-0">매장을 선택하면 해당 매장의 테이블과 QR 코드를 확인할 수 있습니다.</p>
       </div>
 
       {loading && <p className="text-slate-400">불러오는 중...</p>}

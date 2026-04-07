@@ -12,16 +12,12 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestj
 import { TableService } from '@server/modules/table/table.service';
 import { CreateTableDto } from '@server/modules/table/dto/create-table.dto';
 import { JwtAuthGuard } from '@server/modules/auth/guards/jwt-auth.guard';
-import { ConfigService } from '@nestjs/config';
 import { CurrentStoreId } from '@server/common/decorators/current-store-id.decorator';
 
 @ApiTags('tables')
 @Controller('tables')
 export class TableController {
-  constructor(
-    private readonly tableService: TableService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly tableService: TableService) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -54,21 +50,5 @@ export class TableController {
   @ApiOperation({ summary: '테이블 삭제' })
   remove(@Param('id') id: string) {
     return this.tableService.remove(id);
-  }
-
-  @Post(':id/qr')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'QR 토큰 발급' })
-  generateQr(@Param('id') id: string) {
-    return this.tableService.generateQrToken(id);
-  }
-
-  @Get(':id/qr')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'QR 토큰 조회' })
-  getQr(@Param('id') id: string) {
-    return this.tableService.getQrToken(id);
   }
 }

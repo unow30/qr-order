@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type AdminRole = 'SUPER_ADMIN' | 'STORE_ADMIN';
+export type AdminRole = 'SUPER_ADMIN' | 'STORE_ADMIN' | 'SUPER_ADMIN_READONLY';
 
 interface AuthState {
   accessToken: string | null;
@@ -16,6 +16,8 @@ interface AuthState {
   clearAuth: () => void;
   isAuthenticated: () => boolean;
   isSuperAdmin: () => boolean;
+  isSuperAdminReadOnly: () => boolean;
+  hasSuperAdminAccess: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -40,6 +42,11 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken: null, username: null, role: null, storeIds: [], currentStoreId: null }),
       isAuthenticated: () => !!get().accessToken,
       isSuperAdmin: () => get().role === 'SUPER_ADMIN',
+      isSuperAdminReadOnly: () => get().role === 'SUPER_ADMIN_READONLY',
+      hasSuperAdminAccess: () => {
+        const r = get().role;
+        return r === 'SUPER_ADMIN' || r === 'SUPER_ADMIN_READONLY';
+      },
     }),
     { name: 'qr-order-admin-auth' },
   ),

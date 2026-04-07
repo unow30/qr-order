@@ -5,16 +5,9 @@ export interface Table {
   name: string;
   capacity: number;
   isActive: boolean;
+  qrToken: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface QrToken {
-  id: string;
-  tableId: string;
-  token: string;
-  expiresAt: Date;
-  createdAt: Date;
 }
 
 export interface CreateTableDto {

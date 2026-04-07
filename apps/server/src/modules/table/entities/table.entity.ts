@@ -4,9 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
+  BeforeInsert,
 } from 'typeorm';
-import { QrToken } from '@server/modules/table/entities/qr-token.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity('tables')
 export class TableEntity {
@@ -28,12 +28,19 @@ export class TableEntity {
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToMany(() => QrToken, (token) => token.table, { cascade: true })
-  qrTokens: QrToken[];
+  @Column({ type: 'uuid', unique: true })
+  qrToken: string;
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @BeforeInsert()
+  generateQrToken() {
+    if (!this.qrToken) {
+      this.qrToken = uuidv4();
+    }
+  }
 }

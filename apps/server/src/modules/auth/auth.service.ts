@@ -26,22 +26,39 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   // 서버 시작 시 어드민 계정이 없으면 환경변수로 초기 SUPER_ADMIN 자동 생성
+  // 추가로 SUPER_ADMIN_READONLY 시드 계정도 보장
   async onModuleInit(): Promise<void> {
     const count = await this.adminRepository.count();
-    if (count > 0) return;
+    if (count === 0) {
+      const username = this.configService.get<string>('ADMIN_USERNAME', 'admin');
+      const plainPassword = this.configService.get<string>('ADMIN_PASSWORD', 'admin1234');
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    const username = this.configService.get<string>('ADMIN_USERNAME', 'admin');
-    const plainPassword = this.configService.get<string>('ADMIN_PASSWORD', 'admin1234');
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      await this.adminRepository.save(
+        this.adminRepository.create({
+          username,
+          password: hashedPassword,
+          role: 'SUPER_ADMIN',
+          stores: [],
+        }),
+      );
+    }
 
-    await this.adminRepository.save(
-      this.adminRepository.create({
-        username,
-        password: hashedPassword,
-        role: 'SUPER_ADMIN',
-        stores: [],
-      }),
-    );
+    // SUPER_ADMIN_READONLY 시드 (username 기준 upsert)
+    const readonlyExists = await this.adminRepository.findOne({
+      where: { username: 'admin_readonly' },
+    });
+    if (!readonlyExists) {
+      const hashed = await bcrypt.hash('admin_readonly', 10);
+      await this.adminRepository.save(
+        this.adminRepository.create({
+          username: 'admin_readonly',
+          password: hashed,
+          role: 'SUPER_ADMIN_READONLY',
+          stores: [],
+        }),
+      );
+    }
   }
 
   async validateUser(

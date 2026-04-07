@@ -33,14 +33,24 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<{
       user: { userId: string; username: string; role: AdminRole; storeIds: string[] };
       storeId: string | null;
+      method: string;
     }>();
 
     const user = request.user;
     if (!user) return false;
 
-    // role 검사
+    // SUPER_ADMIN_READONLY는 GET 요청만 허용
+    if (user.role === 'SUPER_ADMIN_READONLY' && request.method !== 'GET') {
+      throw new ForbiddenException('읽기 전용 계정은 조회만 가능합니다.');
+    }
+
+    // role 검사 (SUPER_ADMIN_READONLY는 SUPER_ADMIN 요구사항을 만족)
     if (requiredRoles && requiredRoles.length > 0) {
-      if (!requiredRoles.includes(user.role)) {
+      const effectiveRoles: AdminRole[] =
+        user.role === 'SUPER_ADMIN_READONLY' && requiredRoles.includes('SUPER_ADMIN')
+          ? [...requiredRoles, 'SUPER_ADMIN_READONLY']
+          : requiredRoles;
+      if (!effectiveRoles.includes(user.role)) {
         throw new ForbiddenException('접근 권한이 없습니다.');
       }
     }

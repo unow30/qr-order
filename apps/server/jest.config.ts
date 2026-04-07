@@ -22,6 +22,7 @@ const config: Config = {
     '^@server/(.*)$': '<rootDir>/src/$1',
     '^@src/(.*)$': '<rootDir>/src/$1',
     '^@modules/(.*)$': '<rootDir>/src/modules/$1',
+    '^@test/(.*)$': '<rootDir>/test/$1',
     '^src/(.*)$': '<rootDir>/src/$1',
     '^@qr-order/shared-types$':
       '<rootDir>/../../packages/shared-types/src/index.ts',

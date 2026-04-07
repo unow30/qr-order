@@ -12,9 +12,12 @@ export class CreateAdminDto {
   @MinLength(8)
   password: string;
 
-  @ApiProperty({ enum: ['SUPER_ADMIN', 'STORE_ADMIN'], example: 'STORE_ADMIN' })
-  @IsIn(['SUPER_ADMIN', 'STORE_ADMIN'])
-  role: 'SUPER_ADMIN' | 'STORE_ADMIN';
+  @ApiProperty({
+    enum: ['SUPER_ADMIN', 'STORE_ADMIN', 'SUPER_ADMIN_READONLY'],
+    example: 'STORE_ADMIN',
+  })
+  @IsIn(['SUPER_ADMIN', 'STORE_ADMIN', 'SUPER_ADMIN_READONLY'])
+  role: 'SUPER_ADMIN' | 'STORE_ADMIN' | 'SUPER_ADMIN_READONLY';
 
   @ApiPropertyOptional({
     example: ['uuid-of-store-1', 'uuid-of-store-2'],

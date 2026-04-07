@@ -22,8 +22,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function SuperAdminRoute({ children }: { children: React.ReactNode }) {
-  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
-  if (!isSuperAdmin()) {
+  const hasSuperAdminAccess = useAuthStore((s) => s.hasSuperAdminAccess);
+  if (!hasSuperAdminAccess()) {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;

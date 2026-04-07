@@ -32,24 +32,26 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { username, role, storeIds, currentStoreId, setCurrentStoreId, clearAuth } = useAuthStore();
   const isSuperAdmin = role === 'SUPER_ADMIN';
+  const isReadOnly = role === 'SUPER_ADMIN_READONLY';
+  const hasSuperAdminAccess = isSuperAdmin || isReadOnly;
   const isMultiStoreAdmin = role === 'STORE_ADMIN' && storeIds.length > 1;
-  const showStoreSwitcher = isSuperAdmin || isMultiStoreAdmin;
+  const showStoreSwitcher = hasSuperAdminAccess || isMultiStoreAdmin;
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
 
-  const navItems = isSuperAdmin ? SUPER_ADMIN_NAV : STORE_ADMIN_NAV;
+  const navItems = hasSuperAdminAccess ? SUPER_ADMIN_NAV : STORE_ADMIN_NAV;
   const currentStore = stores.find((s) => s.id === currentStoreId);
 
   useEffect(() => {
-    if (isSuperAdmin) {
+    if (hasSuperAdminAccess) {
       getStores().then(setStores).catch(() => {});
     } else if (isMultiStoreAdmin) {
       getStores()
         .then((all) => setStores(all.filter((s) => storeIds.includes(s.id))))
         .catch(() => {});
     }
-  }, [isSuperAdmin, isMultiStoreAdmin]);
+  }, [hasSuperAdminAccess, isMultiStoreAdmin]);
 
   const handleLogout = () => {
     clearAuth();
@@ -70,6 +72,11 @@ export default function AdminLayout() {
               {isSuperAdmin && (
                 <span className="text-[10px] text-brand bg-[rgba(255,107,53,0.2)] px-1.5 py-0.5 rounded mt-1 inline-block">
                   슈퍼 어드민
+                </span>
+              )}
+              {isReadOnly && (
+                <span className="text-[10px] text-blue-300 bg-[rgba(59,130,246,0.2)] px-1.5 py-0.5 rounded mt-1 inline-block">
+                  읽기 전용
                 </span>
               )}
             </div>
@@ -128,7 +135,7 @@ export default function AdminLayout() {
               </button>
               {storeDropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 bg-white border border-gray-100 rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.1)] z-100 min-w-50">
-                  {isSuperAdmin && (
+                  {hasSuperAdminAccess && (
                     <button
                       onClick={() => { setCurrentStoreId(null); setStoreDropdownOpen(false); }}
                       className={`block w-full px-4 py-2.5 text-left border-none cursor-pointer text-[13px] text-gray-500 ${!currentStoreId ? 'bg-orange-50' : 'bg-transparent'}`}

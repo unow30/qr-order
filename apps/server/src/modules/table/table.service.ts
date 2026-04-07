@@ -1,9 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
+import { Repository } from 'typeorm';
 import { TableEntity } from '@server/modules/table/entities/table.entity';
-import { QrToken } from '@server/modules/table/entities/qr-token.entity';
 import { CreateTableDto } from '@server/modules/table/dto/create-table.dto';
 
 @Injectable()
@@ -11,9 +9,6 @@ export class TableService {
   constructor(
     @InjectRepository(TableEntity)
     private readonly tableRepository: Repository<TableEntity>,
-    @InjectRepository(QrToken)
-    private readonly qrTokenRepository: Repository<QrToken>,
-    private readonly dataSource: DataSource,
   ) {}
 
   async findAll(storeId: string | null): Promise<TableEntity[]> {
@@ -28,27 +23,19 @@ export class TableService {
   ): Promise<
     {
       table: TableEntity;
-      token: string | null;
-      expiresAt: Date | null;
+      token: string;
       isActive: boolean;
     }[]
   > {
     const tables = await this.tableRepository.find({
       where: storeId ? { storeId } : undefined,
       order: { tableNumber: 'ASC' },
-      relations: ['qrTokens'],
     });
-    return tables.map((table) => {
-      const latestToken = table.qrTokens
-        .slice()
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-      return {
-        table,
-        token: latestToken?.token ?? null,
-        expiresAt: latestToken?.expiresAt ?? null,
-        isActive: table.isActive,
-      };
-    });
+    return tables.map((table) => ({
+      table,
+      token: table.qrToken,
+      isActive: table.isActive,
+    }));
   }
 
   async findOne(id: string): Promise<TableEntity> {
@@ -69,41 +56,8 @@ export class TableService {
     await this.tableRepository.remove(table);
   }
 
-  async generateQrToken(tableId: string): Promise<QrToken> {
-    const table = await this.findOne(tableId);
-
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 1년 유효
-
-    const savedToken = await this.dataSource.transaction(async (manager) => {
-      await manager.delete(QrToken, { tableId });
-      const qrToken = manager.create(QrToken, {
-        tableId: table.id,
-        token: uuidv4(),
-        expiresAt,
-      });
-      return manager.save(QrToken, qrToken);
-    });
-    return savedToken;
-  }
-
-  async getQrToken(tableId: string): Promise<QrToken | null> {
-    return this.qrTokenRepository.findOne({
-      where: { tableId },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
   async validateQrToken(token: string): Promise<TableEntity | null> {
-    const qrToken = await this.qrTokenRepository.findOne({
-      where: { token },
-      relations: ['table'],
-    });
-
-    if (!qrToken || qrToken.expiresAt < new Date()) {
-      return null;
-    }
-
-    return qrToken.table;
+    if (!token) return null;
+    return this.tableRepository.findOne({ where: { qrToken: token } });
   }
 }

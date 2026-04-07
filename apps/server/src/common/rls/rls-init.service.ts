@@ -9,7 +9,7 @@ import { DataSource } from 'typeorm';
  * `app.store_id` 세션 변수를 기준으로 각 테이블의 행 접근을 제어합니다.
  *
  * 정책 규칙:
- *   - SUPER_ADMIN 역할 (`app.role = 'SUPER_ADMIN'`) → 모든 행 접근 허용
+ *   - SUPER_ADMIN / SUPER_ADMIN_READONLY 역할 → 모든 행 접근 허용
  *   - 그 외 → store_id 컬럼 값이 `app.store_id` 세션 변수와 일치하는 행만 접근 허용
  *   - `app.store_id`가 비어 있으면 접근 차단 (공개 엔드포인트는 RLS 미적용 테이블 사용)
  */
@@ -17,7 +17,6 @@ const PROTECTED_TABLES = [
   'menu_categories',
   'orders',
   'tables',
-  // qr_tokens는 storeId 컬럼 없음 (tables 테이블과 FK로 간접 보호됨)
 ];
 
 @Injectable()
@@ -62,11 +61,11 @@ export class RlsInitService implements OnModuleInit {
         // 기존 정책 삭제 후 재생성 (idempotent)
         await queryRunner.query(`DROP POLICY IF EXISTS "store_isolation" ON "${table}"`);
 
-        // 정책 생성: SUPER_ADMIN이거나 store_id가 일치하는 행만 접근
+        // 정책 생성: SUPER_ADMIN(또는 READONLY)이거나 store_id가 일치하는 행만 접근
         await queryRunner.query(`
           CREATE POLICY "store_isolation" ON "${table}"
           USING (
-            current_setting('app.role', true) = 'SUPER_ADMIN'
+            current_setting('app.role', true) IN ('SUPER_ADMIN', 'SUPER_ADMIN_READONLY')
             OR "storeId" = NULLIF(current_setting('app.store_id', true), '')
           )
         `);
