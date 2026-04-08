@@ -14,7 +14,7 @@ export default function ResponsiveLayout({ children }: Props) {
 
   return (
     <div className="flex min-h-screen">
-      <div className="w-full md:w-120 md:shrink-0 md:border-r md:border-gray-200">
+      <div className={`w-full md:border-r md:border-gray-200 ${showPanel ? 'md:w-[60%]' : 'md:w-120 md:shrink-0'}`}>
         {children}
       </div>
       {showPanel && <StoreImagesPanel storeId={storeId} />}

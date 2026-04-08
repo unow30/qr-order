@@ -17,14 +17,14 @@ export default function StoreImagesPanel({ storeId }: Props) {
 
   if (images.length === 0) {
     return (
-      <div className="hidden md:flex flex-1 bg-gray-100 items-center justify-center">
+      <div className="hidden md:flex md:w-[40%] bg-gray-100 items-center justify-center">
         <span className="text-gray-400 text-sm">매장 이미지 없음</span>
       </div>
     );
   }
 
   return (
-    <div className="hidden md:flex flex-1 bg-gray-50 overflow-hidden relative">
+    <div className="hidden md:flex md:w-[40%] bg-gray-50 overflow-hidden relative">
       <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {images.map((img) => (
           <img
