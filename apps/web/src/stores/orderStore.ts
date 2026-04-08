@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { Order, OrderStatus } from '@qr-order/shared-types';
 
 interface OrderState {
@@ -10,26 +11,34 @@ interface OrderState {
   clearOrders: () => void;
 }
 
-export const useOrderStore = create<OrderState>()((set) => ({
-  orders: [],
-  setOrders: (orders) => set({ orders }),
-  addOrder: (order) =>
-    set((state) => {
-      const idx = state.orders.findIndex((o) => o.id === order.id);
-      if (idx >= 0) {
-        const newOrders = [...state.orders];
-        newOrders[idx] = order;
-        return { orders: newOrders };
-      }
-      return { orders: [...state.orders, order] };
+export const useOrderStore = create<OrderState>()(
+  persist(
+    (set) => ({
+      orders: [],
+      setOrders: (orders) => set({ orders }),
+      addOrder: (order) =>
+        set((state) => {
+          const idx = state.orders.findIndex((o) => o.id === order.id);
+          if (idx >= 0) {
+            const newOrders = [...state.orders];
+            newOrders[idx] = order;
+            return { orders: newOrders };
+          }
+          return { orders: [...state.orders, order] };
+        }),
+      updateOrder: (order) =>
+        set((state) => ({
+          orders: state.orders.map((o) => (o.id === order.id ? order : o)),
+        })),
+      removeOrder: (orderId) =>
+        set((state) => ({
+          orders: state.orders.filter((o) => o.id !== orderId),
+        })),
+      clearOrders: () => set({ orders: [] }),
     }),
-  updateOrder: (order) =>
-    set((state) => ({
-      orders: state.orders.map((o) => (o.id === order.id ? order : o)),
-    })),
-  removeOrder: (orderId) =>
-    set((state) => ({
-      orders: state.orders.filter((o) => o.id !== orderId),
-    })),
-  clearOrders: () => set({ orders: [] }),
-}));
+    {
+      name: 'qr-order-orders',
+      storage: createJSONStorage(() => sessionStorage),
+    },
+  ),
+);
