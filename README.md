@@ -11,6 +11,12 @@ QR 코드 기반 테이블 오더 서비스 모노레포입니다.
 | `apps/web` | 고객용 모바일 웹앱          | https://www.qr-order-demo.it.kr/            | [바로가기](./apps/web/README.md) |
 | `apps/admin` | 어드민 대시보드            | https://admin.qr-order-demo.it.kr/          | [바로가기](./apps/admin/README.md) |
 
+## admin 로그인 계정(읽기전용)
+```
+id: ADMIN_READONLY
+pw: ADMIN_READONLY
+```
+
 ```bash
 # 의존성 설치
 pnpm install
