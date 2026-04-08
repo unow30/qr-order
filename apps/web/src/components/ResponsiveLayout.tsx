@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import { useSessionStore } from '@web/stores/sessionStore';
 import StoreImagesPanel from './StoreImagesPanel';
 
@@ -7,13 +8,16 @@ interface Props {
 
 export default function ResponsiveLayout({ children }: Props) {
   const storeId = useSessionStore((s) => s.storeId);
+  const { pathname } = useLocation();
+
+  const showPanel = storeId && pathname !== '/store';
 
   return (
     <div className="flex min-h-screen">
       <div className="w-full md:w-120 md:shrink-0 md:border-r md:border-gray-200">
         {children}
       </div>
-      {storeId && <StoreImagesPanel storeId={storeId} />}
+      {showPanel && <StoreImagesPanel storeId={storeId} />}
     </div>
   );
 }

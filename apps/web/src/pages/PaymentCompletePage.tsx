@@ -14,19 +14,23 @@ export default function PaymentCompletePage() {
   const [countdown, setCountdown] = useState(REDIRECT_SECONDS);
 
   useEffect(() => {
-    clearSession();
     clearCart();
     clearOrders();
   }, []);
 
+  const goToStore = () => {
+    clearSession();
+    navigate('/store', { replace: true });
+  };
+
   useEffect(() => {
     if (countdown <= 0) {
-      navigate('/store', { replace: true });
+      goToStore();
       return;
     }
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
-  }, [countdown, navigate]);
+  }, [countdown]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white font-sans px-6 text-center">
@@ -37,7 +41,7 @@ export default function PaymentCompletePage() {
         {countdown}초 후 처음 화면으로 이동합니다
       </p>
       <button
-        onClick={() => navigate('/store', { replace: true })}
+        onClick={goToStore}
         className="mt-4 px-6 py-2 border border-gray-300 rounded-lg text-sm text-gray-500 cursor-pointer bg-transparent"
       >
         바로 이동
