@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@admin/stores/authStore';
 import { getStores, Store } from '@admin/api/store.api';
 
@@ -30,12 +30,13 @@ const SUPER_ADMIN_NAV = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { username, role, storeIds, currentStoreId, setCurrentStoreId, clearAuth } = useAuthStore();
   const isSuperAdmin = role === 'SUPER_ADMIN';
   const isReadOnly = role === 'SUPER_ADMIN_READONLY';
   const hasSuperAdminAccess = isSuperAdmin || isReadOnly;
   const isMultiStoreAdmin = role === 'STORE_ADMIN' && storeIds.length > 1;
-  const showStoreSwitcher = hasSuperAdminAccess || isMultiStoreAdmin;
+  const showStoreSwitcher = (hasSuperAdminAccess || isMultiStoreAdmin) && pathname !== '/stores';
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -52,6 +53,10 @@ export default function AdminLayout() {
         .catch(() => {});
     }
   }, [hasSuperAdminAccess, isMultiStoreAdmin]);
+
+  useEffect(() => {
+    setStoreDropdownOpen(false);
+  }, [pathname]);
 
   const handleLogout = () => {
     clearAuth();

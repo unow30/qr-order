@@ -28,7 +28,7 @@ client.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
-  if (currentStoreId) {
+  if (currentStoreId && !config.headers['X-Store-Id']) {
     config.headers['X-Store-Id'] = currentStoreId;
   }
   return config;

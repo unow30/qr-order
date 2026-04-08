@@ -16,6 +16,7 @@ interface Props {
   entityType: ImageEntityType;
   entityId: string;
   readonly?: boolean;
+  storeId?: string;
 }
 
 interface AddForm {
@@ -62,7 +63,7 @@ function isEventImage(img: EntityImage): boolean {
   return !!(img.startAt || img.endAt);
 }
 
-export default function ImageManagerWidget({ entityType, entityId, readonly = false }: Props) {
+export default function ImageManagerWidget({ entityType, entityId, readonly = false, storeId }: Props) {
   const [images, setImages] = useState<EntityImage[] | ReviewImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<AddForm>(DEFAULT_FORM);
@@ -83,7 +84,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
         const result = await getReviewImages(entityId);
         setImages(result);
       } else {
-        const result = await getImages(entityType, entityId);
+        const result = await getImages(entityType, entityId, storeId);
         setImages(result);
       }
     } finally {
@@ -107,12 +108,14 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
     }
 
     // 매장 미선택 가드 (X-Store-Id 헤더 없이 호출 시 백엔드 400)
-    const { currentStoreId, storeIds } = useAuthStore.getState();
-    if (!currentStoreId && storeIds.length !== 1) {
-      const msg = '매장을 먼저 선택해주세요.';
-      setUploadError(msg);
-      if (typeof window !== 'undefined') window.alert(msg);
-      return;
+    if (!storeId) {
+      const { currentStoreId, storeIds } = useAuthStore.getState();
+      if (!currentStoreId && storeIds.length !== 1) {
+        const msg = '매장을 먼저 선택해주세요.';
+        setUploadError(msg);
+        if (typeof window !== 'undefined') window.alert(msg);
+        return;
+      }
     }
 
     setUploading(true);
@@ -125,7 +128,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
         contentType: file.type,
         contentLength: file.size,
         entityType,
-      });
+      }, storeId);
       await uploadToS3(presignedUrl, file);
       setForm((prev) => ({ ...prev, imageUrl }));
       setUploadError(null);
@@ -151,7 +154,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
         sortOrder: parseInt(form.sortOrder) || 0,
         startAt: form.startAt || null,
         endAt: form.endAt || null,
-      });
+      }, storeId);
       setForm(DEFAULT_FORM);
       setPreviewUrl(null);
       setUploadError(null);
@@ -168,7 +171,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
   const handleToggleActive = async (img: EntityImage) => {
     await updateImage(entityType as Exclude<ImageEntityType, 'reviews'>, entityId, img.id, {
       isActive: !img.isActive,
-    });
+    }, storeId);
     fetchImages();
   };
 
@@ -194,7 +197,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
       sortOrder: parseInt(editForm.sortOrder) || 0,
       startAt: editForm.startAt || null,
       endAt: editForm.endAt || null,
-    });
+    }, storeId);
     setEditId(null);
     fetchImages();
   };
@@ -204,7 +207,7 @@ export default function ImageManagerWidget({ entityType, entityId, readonly = fa
     if (isReview) {
       await deleteReviewImage(entityId, img.id);
     } else {
-      await deleteImage(entityType as Exclude<ImageEntityType, 'reviews'>, entityId, img.id);
+      await deleteImage(entityType as Exclude<ImageEntityType, 'reviews'>, entityId, img.id, storeId);
     }
     fetchImages();
   };

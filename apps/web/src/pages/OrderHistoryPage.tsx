@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useOrderStore } from '@web/stores/orderStore';
+import { useSessionStore } from '@web/stores/sessionStore';
 import { getMyOrders, cancelOrderItem } from '@web/api/order.api';
 import { createPayment, confirmPayment } from '@web/api/payment.api';
 import { Order, OrderStatus, PaymentMethod } from '@qr-order/shared-types';
@@ -16,7 +17,13 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string }> = {
 
 export default function OrderHistoryPage() {
   const navigate = useNavigate();
+  const sessionToken = useSessionStore((s) => s.sessionToken);
   const { orders, setOrders, updateOrder, removeOrder } = useOrderStore();
+
+  // sessionToken 자체가 없으면 접근 불가 (expiresAt 만료 여부는 무관)
+  if (!sessionToken) {
+    return <Navigate to="/store" replace />;
+  }
   const [loading, setLoading] = useState(true);
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [cancellingItemId, setCancellingItemId] = useState<string | null>(null);

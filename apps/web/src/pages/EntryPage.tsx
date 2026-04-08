@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createSession, joinSession, moveSession, deleteSessionApi } from '@web/api/session.api';
 import { useSessionStore } from '@web/stores/sessionStore';
+import { getMyOrders } from '@web/api/order.api';
 import type { SessionConflictResponse } from '@qr-order/shared-types';
 
 export default function EntryPage() {
@@ -54,8 +55,29 @@ export default function EntryPage() {
       return;
     }
 
-    // 세션 없음 → 새 세션 생성
-    attemptCreateSession(tableId, qrToken);
+    // 세션 만료 또는 없음
+    const { sessionToken } = useSessionStore.getState();
+
+    if (sessionToken) {
+      // 만료된 로컬 세션 존재 → DB에서 미결제 주문 선확인
+      getMyOrders()
+        .then((orders) => {
+          if (orders.length > 0) {
+            // 미결제 주문 있음 → 주문내역으로 이동 (새 세션 생성 건너뜀)
+            navigate('/order-history', { replace: true });
+          } else {
+            // 미결제 주문 없음 → 기존 흐름
+            attemptCreateSession(tableId, qrToken);
+          }
+        })
+        .catch(() => {
+          // 오류 시 기존 흐름으로 폴백
+          attemptCreateSession(tableId, qrToken);
+        });
+    } else {
+      // 토큰 자체 없음 → 기존 흐름
+      attemptCreateSession(tableId, qrToken);
+    }
   }, []);
 
   /** 서버 세션 삭제 후 로컬 세션 정리 */

@@ -40,6 +40,25 @@ interface SessionData {
 고객 QR 스캔
     │
     ▼
+[0] EntryPage — 클라이언트 로컬 세션 확인
+    │  localStorage(sessionToken, expiresAt) 점검
+    │
+    ├─ isSessionValid() true + 같은 테이블 → /menu (끝)
+    │
+    ├─ isSessionValid() true + 다른 테이블 → 자리이동 다이얼로그
+    │
+    └─ isSessionValid() false (만료 or 없음)
+         │
+         ├─ sessionToken 있음 (만료된 로컬 세션)
+         │    │
+         │    ▼
+         │  GET /orders/my  ← Redis 검증 없이 DB 직접 조회
+         │    ├─ PENDING 주문 있음 → /order-history  ※세션 생성 건너뜀
+         │    └─ 없음 또는 오류 → [1] createSession 시도
+         │
+         └─ sessionToken 없음 → [1] createSession 시도
+    │
+    ▼
 [1] POST /sessions  ──────────────── createSession()
     │  QR 토큰 검증 (TableEntity.qrToken)
     │  table-session SET NX (원자적, 중복 방지)
@@ -62,7 +81,7 @@ interface SessionData {
     │  old table-session 삭제 + new table-session 생성 + SessionData 갱신
     │
     ├─ (장바구니 조작 반복) ──────────────────────────────────────
-    │    PUT  /cart/items     → renewSession() 호출 (TTL 갱신)
+    │    PUT  /cart/items     → renewSession() 호출 (Redis TTL + 클라이언트 expiresAt 동시 갱신)
     │    DELETE /cart/items/:id
     │
     ├─ (주문 생성) ───────────────────────────────────────────────
@@ -83,6 +102,7 @@ interface SessionData {
     │  트랜잭션: Payment → COMPLETED, Order → CONFIRMED
     │  SSE 이벤트 발행
     │  deleteSession() ← 결제 완료 시 세션 자동 삭제
+    │    (Redis session이 이미 만료된 경우 no-op으로 처리됨)
     │
     ▼
 [종료 A] 정상 종료 (결제 완료)
@@ -102,6 +122,8 @@ interface SessionData {
 
 [종료 D] TTL 만료 (2시간 무활동)
       └─ Redis가 자동으로 모든 키 삭제
+      └─ 클라이언트 localStorage의 sessionToken은 유지됨
+         → 다음 QR 스캔 시 [0] 진입 후 DB 주문 확인
 ```
 
 ---
@@ -232,6 +254,8 @@ SessionService.deleteSession(order.sessionToken)  [best-effort, catch 무시]
 | 타 매장으로 자리 이동 시도 | `CROSS_STORE_BLOCKED` 에러 반환 |
 | 인원 초과 상태에서 joinSession | 400 반환, 세션 변경 없음 |
 | confirmPayment에서 세션 삭제 실패 | best-effort: 에러 무시, TTL로 자동 만료 |
+| Redis 세션 만료, 클라이언트 sessionToken 유지 | QR 재스캔 시 DB PENDING 주문 확인 → 있으면 /order-history, 없으면 신규 세션 생성 |
+| Redis 세션 만료 후 /order-history 직접 접근 | sessionToken 있으면 DB 조회 허용, 없으면 /store 리다이렉트 |
 
 ---
 
@@ -245,3 +269,7 @@ SessionService.deleteSession(order.sessionToken)  [best-effort, catch 무시]
 | `src/modules/cart/cart.service.ts` | 장바구니 (세션 TTL 동기화, renewSession 호출) |
 | `src/modules/order/order.service.ts` | 주문 생성 시 세션 검증 및 장바구니 정리 |
 | `src/modules/payment/payment.service.ts` | 결제 완료 시 세션 자동 삭제 |
+| `apps/web/src/pages/EntryPage.tsx` | QR 스캔 진입점 — 세션 만료 시 DB 주문 선확인 |
+| `apps/web/src/pages/OrderHistoryPage.tsx` | sessionToken 기반 가드 (expiresAt 무관) |
+| `apps/web/src/stores/sessionStore.ts` | renewExpiry()로 클라이언트 expiresAt 동기화 |
+| `apps/web/src/api/cart.api.ts` | addCartItem 성공 시 renewExpiry() 자동 호출 |

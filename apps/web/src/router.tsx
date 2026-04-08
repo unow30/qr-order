@@ -40,7 +40,7 @@ export default function AppRouter() {
         />
         <Route
           path="/order-history"
-          element={<RequireSession><OrderHistoryPage /></RequireSession>}
+          element={<OrderHistoryPage />}
         />
         <Route
           path="/order-status/:id"

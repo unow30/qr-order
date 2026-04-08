@@ -220,7 +220,7 @@ export default function StoreManagePage() {
                     {imageOpenId === store.id && (
                       <div className="px-4 py-2.5 bg-[#fff8f5] rounded-b-lg border-2 border-[#eee] border-t border-t-[#f0f0f0]">
                         <div className="font-semibold text-xs text-[#555] mb-2">매장 이미지 관리</div>
-                        <ImageManagerWidget entityType="stores" entityId={store.id} />
+                        <ImageManagerWidget entityType="stores" entityId={store.id} storeId={store.id} />
                       </div>
                     )}
                   </div>
