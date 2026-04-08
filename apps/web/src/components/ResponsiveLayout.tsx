@@ -10,7 +10,8 @@ export default function ResponsiveLayout({ children }: Props) {
   const storeId = useSessionStore((s) => s.storeId);
   const { pathname } = useLocation();
 
-  const showPanel = storeId && pathname !== '/store';
+  const PANEL_PATHS = ['/menu', '/cart', '/order-history', '/order-status', '/payment-complete'];
+  const showPanel = Boolean(storeId) && PANEL_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
 
   return (
     <div className="flex min-h-screen">
