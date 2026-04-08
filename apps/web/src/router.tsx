@@ -8,6 +8,7 @@ import OrderHistoryPage from '@web/pages/OrderHistoryPage';
 import OrderStatusPage from '@web/pages/OrderStatusPage';
 import StorePage from '@web/pages/StorePage.tsx';
 import PaymentCompletePage from '@web/pages/PaymentCompletePage';
+import ResponsiveLayout from '@web/components/ResponsiveLayout';
 
 function RequireSession({ children }: { children: React.ReactNode }) {
   const isSessionValid = useSessionStore((s) => s.isSessionValid);
@@ -20,6 +21,7 @@ function RequireSession({ children }: { children: React.ReactNode }) {
 export default function AppRouter() {
   return (
     <BrowserRouter>
+      <ResponsiveLayout>
       <Routes>
         <Route path="/store" element={<StorePage />} />
         <Route path="/entry" element={<EntryPage />} />
@@ -46,6 +48,7 @@ export default function AppRouter() {
         />
         <Route path="/payment-complete" element={<PaymentCompletePage />} />
       </Routes>
+      </ResponsiveLayout>
     </BrowserRouter>
   );
 }

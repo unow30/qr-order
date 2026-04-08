@@ -90,9 +90,9 @@ export default function MenuPage() {
         ))}
       </div>
 
-      {/* 플로팅 버튼 영역 */}
+      {/* 하단 버튼 영역 */}
       {(hasOrders || cartItems.length > 0) && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px] flex flex-col gap-2">
+        <div className="px-4 pb-6 flex flex-col gap-2">
           {hasOrders && (
             <button
               onClick={() => navigate('/order-history')}

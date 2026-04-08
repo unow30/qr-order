@@ -22,6 +22,8 @@ interface SessionState {
   }) => void;
   clearSession: () => void;
   isSessionValid: () => boolean;
+  /** 서버 renewSession과 동기화 — TTL(초) 만큼 expiresAt 연장 */
+  renewExpiry: (ttlSeconds?: number) => void;
 }
 
 export const useSessionStore = create<SessionState>()(
@@ -57,6 +59,10 @@ export const useSessionStore = create<SessionState>()(
         const { expiresAt } = get();
         if (!expiresAt) return false;
         return new Date(expiresAt) > new Date();
+      },
+      renewExpiry: (ttlSeconds = 7200) => {
+        const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
+        set({ expiresAt });
       },
     }),
     { name: 'qr-order-session' },

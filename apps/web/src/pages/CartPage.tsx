@@ -69,7 +69,7 @@ export default function CartPage() {
       addOrder(order);
       clearCart();
       clearCoupon();
-      navigate('/order-history', { replace: true });
+      navigate('/menu', { replace: true });
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || '알 수 없는 오류';
       alert(`주문 처리 중 오류: ${msg}`);
@@ -195,7 +195,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[440px]">
+      <div className="fixed bottom-4 left-0 right-0 md:right-auto md:w-[480px] flex flex-col items-center px-[5%] md:px-5">
         <button
           onClick={handleOrder}
           disabled={orderLoading}

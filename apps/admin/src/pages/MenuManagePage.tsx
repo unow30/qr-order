@@ -21,6 +21,10 @@ import {
   createItem,
   deleteItem,
   updateStock,
+  createOptionGroup as apiCreateOptionGroup,
+  deleteOptionGroup as apiDeleteOptionGroup,
+  createOption as apiCreateOption,
+  deleteOption as apiDeleteOption,
   reorderCategories as apiReorderCategories,
   reorderItems as apiReorderItems,
   reorderOptionGroups as apiReorderOptionGroups,
@@ -44,7 +48,15 @@ interface StockEditState {
 
 // ─── SortableOptionRow ────────────────────────────────────────────────────────
 
-function SortableOptionRow({ option, disabled }: { option: MenuOption; disabled: boolean }) {
+function SortableOptionRow({
+  option,
+  disabled,
+  onDelete,
+}: {
+  option: MenuOption;
+  disabled: boolean;
+  onDelete?: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: option.id,
     disabled,
@@ -66,12 +78,20 @@ function SortableOptionRow({ option, disabled }: { option: MenuOption; disabled:
           ⠿
         </span>
       )}
-      <span className="text-[13px] text-[#555]">{option.name}</span>
+      <span className="text-[13px] text-[#555] flex-1">{option.name}</span>
       {option.additionalPrice > 0 && (
         <span className="text-[12px] text-[#888]">+{option.additionalPrice.toLocaleString()}원</span>
       )}
       {!option.isAvailable && (
         <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#9ca3af]">품절</span>
+      )}
+      {!disabled && onDelete && (
+        <button
+          onClick={onDelete}
+          className="ml-1 bg-transparent border-none text-[#ccc] hover:text-[#e53935] cursor-pointer text-base leading-none"
+        >
+          ×
+        </button>
       )}
     </div>
   );
@@ -83,9 +103,19 @@ interface OptionGroupCardProps {
   group: MenuOptionGroup;
   disabled: boolean;
   onOptionDragEnd: (groupId: string, event: DragEndEvent) => void;
+  onDeleteGroup?: () => void;
+  onDeleteOption?: (optionId: string) => void;
+  onAddOption?: (name: string, price: number) => void;
 }
 
-function SortableOptionGroupCard({ group, disabled, onOptionDragEnd }: OptionGroupCardProps) {
+function SortableOptionGroupCard({
+  group,
+  disabled,
+  onOptionDragEnd,
+  onDeleteGroup,
+  onDeleteOption,
+  onAddOption,
+}: OptionGroupCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: group.id,
     disabled,
@@ -94,6 +124,19 @@ function SortableOptionGroupCard({ group, disabled, onOptionDragEnd }: OptionGro
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+  };
+
+  const [addingOption, setAddingOption] = useState(false);
+  const [newOptName, setNewOptName] = useState('');
+  const [newOptPrice, setNewOptPrice] = useState('');
+
+  const handleAddOption = () => {
+    const name = newOptName.trim();
+    if (!name) return;
+    onAddOption?.(name, parseInt(newOptPrice) || 0);
+    setNewOptName('');
+    setNewOptPrice('');
+    setAddingOption(false);
   };
 
   const optionIds = (group.options ?? []).map((o) => o.id);
@@ -122,7 +165,23 @@ function SortableOptionGroupCard({ group, disabled, onOptionDragEnd }: OptionGro
         }`}>
           {group.isRequired ? '필수' : '선택'}
         </span>
-        <span className="ml-auto text-[11px] text-[#9ca3af]">최대 {group.maxSelect}개</span>
+        <span className="text-[11px] text-[#9ca3af]">최대 {group.maxSelect}개</span>
+        {!disabled && (
+          <div className="ml-auto flex gap-1">
+            <button
+              onClick={() => setAddingOption((v) => !v)}
+              className="text-[11px] px-2 py-0.5 border border-[#6366f1] text-[#6366f1] bg-transparent rounded cursor-pointer"
+            >
+              + 옵션
+            </button>
+            <button
+              onClick={onDeleteGroup}
+              className="bg-transparent border-none text-[#ccc] hover:text-[#e53935] cursor-pointer text-base leading-none"
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
       <div className="px-2 py-1">
         <DndContext
@@ -132,10 +191,47 @@ function SortableOptionGroupCard({ group, disabled, onOptionDragEnd }: OptionGro
         >
           <SortableContext items={optionIds} strategy={verticalListSortingStrategy}>
             {(group.options ?? []).map((opt) => (
-              <SortableOptionRow key={opt.id} option={opt} disabled={disabled} />
+              <SortableOptionRow
+                key={opt.id}
+                option={opt}
+                disabled={disabled}
+                onDelete={onDeleteOption ? () => onDeleteOption(opt.id) : undefined}
+              />
             ))}
           </SortableContext>
         </DndContext>
+        {addingOption && (
+          <div className="flex gap-1.5 mt-1.5 px-1">
+            <input
+              value={newOptName}
+              onChange={(e) => setNewOptName(e.target.value)}
+              placeholder="옵션명"
+              className="flex-1 px-2 py-1 border border-[#d1d5db] rounded text-[13px]"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddOption()}
+            />
+            <input
+              value={newOptPrice}
+              onChange={(e) => setNewOptPrice(e.target.value)}
+              placeholder="추가금액"
+              type="number"
+              min={0}
+              className="w-[80px] px-2 py-1 border border-[#d1d5db] rounded text-[13px]"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddOption()}
+            />
+            <button
+              onClick={handleAddOption}
+              className="px-2.5 py-1 bg-[#6366f1] text-white border-none rounded text-[12px] cursor-pointer"
+            >
+              추가
+            </button>
+            <button
+              onClick={() => setAddingOption(false)}
+              className="px-2 py-1 bg-transparent border border-[#d1d5db] rounded text-[12px] cursor-pointer"
+            >
+              취소
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -159,6 +255,10 @@ interface MenuItemRowProps {
   onDeleteRequest: (item: MenuItem) => void;
   onOptionGroupDragEnd: (menuItemId: string, event: DragEndEvent) => void;
   onOptionDragEnd: (groupId: string, event: DragEndEvent) => void;
+  onDeleteOptionGroup: (groupId: string) => void;
+  onDeleteOption: (optionId: string) => void;
+  onAddOption: (groupId: string, name: string, price: number) => void;
+  onAddOptionGroup: (menuItemId: string, name: string, isRequired: boolean, maxSelect: number) => void;
 }
 
 function SortableMenuItemRow({
@@ -177,6 +277,10 @@ function SortableMenuItemRow({
   onDeleteRequest,
   onOptionGroupDragEnd,
   onOptionDragEnd,
+  onDeleteOptionGroup,
+  onDeleteOption,
+  onAddOption,
+  onAddOptionGroup,
 }: MenuItemRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -187,6 +291,21 @@ function SortableMenuItemRow({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+  };
+
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupRequired, setNewGroupRequired] = useState(false);
+  const [newGroupMax, setNewGroupMax] = useState('1');
+
+  const handleAddGroup = () => {
+    const name = newGroupName.trim();
+    if (!name) return;
+    onAddOptionGroup(item.id, name, newGroupRequired, parseInt(newGroupMax) || 1);
+    setNewGroupName('');
+    setNewGroupRequired(false);
+    setNewGroupMax('1');
+    setAddingGroup(false);
   };
 
   const optionGroups = item.optionGroups ?? [];
@@ -227,18 +346,16 @@ function SortableMenuItemRow({
           </div>
         </div>
         <div className="flex gap-1.5">
-          {optionGroups.length > 0 && (
-            <button
-              onClick={onToggleOptionGroups}
-              className={`px-2 py-0.5 border rounded-md cursor-pointer text-[11px] ${
-                expandedOptionGroups
-                  ? 'bg-[#6366f1] text-white border-[#6366f1]'
-                  : 'bg-transparent text-[#6366f1] border-[#6366f1]'
-              }`}
-            >
-              옵션 {optionGroups.length}
-            </button>
-          )}
+          <button
+            onClick={onToggleOptionGroups}
+            className={`px-2 py-0.5 border rounded-md cursor-pointer text-[11px] ${
+              expandedOptionGroups
+                ? 'bg-[#6366f1] text-white border-[#6366f1]'
+                : 'bg-transparent text-[#6366f1] border-[#6366f1]'
+            }`}
+          >
+            옵션{optionGroups.length > 0 ? ` ${optionGroups.length}` : ''}
+          </button>
           {!isAllStores && (
             <>
               <button
@@ -315,9 +432,19 @@ function SortableMenuItemRow({
       )}
 
       {/* 옵션 그룹 패널 */}
-      {expandedOptionGroups && optionGroups.length > 0 && (
+      {expandedOptionGroups && (
         <div className="mb-2 px-3 py-2 bg-[#f5f3ff] rounded-lg border border-[#ddd6fe]">
-          <div className="text-[12px] text-[#7c3aed] font-semibold mb-1">옵션 그룹</div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[12px] text-[#7c3aed] font-semibold">옵션 그룹</span>
+            {!isAllStores && (
+              <button
+                onClick={() => setAddingGroup((v) => !v)}
+                className="text-[11px] px-2 py-0.5 border border-[#7c3aed] text-[#7c3aed] bg-transparent rounded cursor-pointer"
+              >
+                + 그룹 추가
+              </button>
+            )}
+          </div>
           <DndContext
             sensors={groupSensors}
             collisionDetection={closestCenter}
@@ -330,10 +457,61 @@ function SortableMenuItemRow({
                   group={group}
                   disabled={isAllStores}
                   onOptionDragEnd={onOptionDragEnd}
+                  onDeleteGroup={() => onDeleteOptionGroup(group.id)}
+                  onDeleteOption={(optionId) => onDeleteOption(optionId)}
+                  onAddOption={(name, price) => onAddOption(group.id, name, price)}
                 />
               ))}
             </SortableContext>
           </DndContext>
+          {optionGroups.length === 0 && (
+            <p className="text-[#aaa] text-[12px] mt-1">옵션 그룹이 없습니다.</p>
+          )}
+          {!isAllStores && addingGroup && (
+            <div className="mt-2 p-3 bg-white rounded-lg border border-[#c4b5fd] flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="그룹명 (예: 사이즈, 토핑)"
+                  className="flex-1 px-2 py-1.5 border border-[#d1d5db] rounded text-[13px]"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddGroup()}
+                />
+                <input
+                  value={newGroupMax}
+                  onChange={(e) => setNewGroupMax(e.target.value)}
+                  placeholder="최대 선택"
+                  type="number"
+                  min={1}
+                  className="w-[70px] px-2 py-1.5 border border-[#d1d5db] rounded text-[13px]"
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-1.5 text-[12px] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newGroupRequired}
+                    onChange={(e) => setNewGroupRequired(e.target.checked)}
+                  />
+                  필수 선택
+                </label>
+                <div className="flex gap-2 ml-auto">
+                  <button
+                    onClick={handleAddGroup}
+                    className="px-3 py-1 bg-[#7c3aed] text-white border-none rounded text-[12px] cursor-pointer"
+                  >
+                    추가
+                  </button>
+                  <button
+                    onClick={() => setAddingGroup(false)}
+                    className="px-3 py-1 bg-transparent border border-[#d1d5db] rounded text-[12px] cursor-pointer"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -361,6 +539,10 @@ interface CategoryCardProps {
   onToggleOptionGroups: (itemId: string) => void;
   onOptionGroupDragEnd: (menuItemId: string, event: DragEndEvent) => void;
   onOptionDragEnd: (groupId: string, event: DragEndEvent) => void;
+  onDeleteOptionGroup: (groupId: string) => void;
+  onDeleteOption: (optionId: string) => void;
+  onAddOption: (groupId: string, name: string, price: number) => void;
+  onAddOptionGroup: (menuItemId: string, name: string, isRequired: boolean, maxSelect: number) => void;
 }
 
 function SortableCategoryCard({
@@ -382,6 +564,10 @@ function SortableCategoryCard({
   onToggleOptionGroups,
   onOptionGroupDragEnd,
   onOptionDragEnd,
+  onDeleteOptionGroup,
+  onDeleteOption,
+  onAddOption,
+  onAddOptionGroup,
 }: CategoryCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: cat.id,
@@ -474,6 +660,10 @@ function SortableCategoryCard({
               onDeleteRequest={onDeleteItemRequest}
               onOptionGroupDragEnd={onOptionGroupDragEnd}
               onOptionDragEnd={onOptionDragEnd}
+              onDeleteOptionGroup={onDeleteOptionGroup}
+              onDeleteOption={onDeleteOption}
+              onAddOption={onAddOption}
+              onAddOptionGroup={onAddOptionGroup}
             />
           ))}
         </SortableContext>
@@ -673,6 +863,31 @@ export default function MenuManagePage() {
     }
   };
 
+  const handleDeleteOptionGroup = async (groupId: string) => {
+    await apiDeleteOptionGroup(groupId);
+    fetchMenu();
+  };
+
+  const handleDeleteOption = async (optionId: string) => {
+    await apiDeleteOption(optionId);
+    fetchMenu();
+  };
+
+  const handleAddOption = async (groupId: string, name: string, price: number) => {
+    await apiCreateOption({ groupId, name, additionalPrice: price });
+    fetchMenu();
+  };
+
+  const handleAddOptionGroup = async (
+    menuItemId: string,
+    name: string,
+    isRequired: boolean,
+    maxSelect: number,
+  ) => {
+    await apiCreateOptionGroup({ menuItemId, name, isRequired, maxSelect, options: [] });
+    fetchMenu();
+  };
+
   const dialogMessage = deleteTarget?.type === 'category'
     ? `'${deleteTarget.name}' 카테고리를 삭제하면 해당 메뉴도 모두 삭제됩니다.`
     : `'${deleteTarget?.name}' 메뉴를 삭제하시겠습니까?`;
@@ -781,6 +996,10 @@ export default function MenuManagePage() {
               onToggleOptionGroups={handleToggleOptionGroups}
               onOptionGroupDragEnd={handleOptionGroupDragEnd}
               onOptionDragEnd={handleOptionDragEnd}
+              onDeleteOptionGroup={handleDeleteOptionGroup}
+              onDeleteOption={handleDeleteOption}
+              onAddOption={handleAddOption}
+              onAddOptionGroup={handleAddOptionGroup}
             />
           ))}
         </SortableContext>

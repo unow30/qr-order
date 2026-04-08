@@ -5,6 +5,7 @@ import {
   UpdateMenuCategoryDto,
   CreateMenuItemDto,
   UpdateMenuItemDto,
+  CreateMenuOptionGroupDto,
   ReorderMenuCategoriesDto,
   ReorderMenuItemsDto,
   ReorderOptionGroupsDto,
@@ -27,6 +28,13 @@ export const reorderCategories = (dto: ReorderMenuCategoriesDto): Promise<void> 
   client.patch('/menu/categories/reorder', dto);
 export const reorderItems = (dto: ReorderMenuItemsDto): Promise<void> =>
   client.patch('/menu/items/reorder', dto);
+export const createOptionGroup = (dto: CreateMenuOptionGroupDto) =>
+  client.post('/menu/option-groups', dto);
+export const deleteOptionGroup = (id: string): Promise<void> =>
+  client.delete(`/menu/option-groups/${id}`);
+export const createOption = (dto: { groupId: string; name: string; additionalPrice: number }) =>
+  client.post('/menu/options', dto);
+export const deleteOption = (id: string): Promise<void> => client.delete(`/menu/options/${id}`);
 export const reorderOptionGroups = (dto: ReorderOptionGroupsDto): Promise<void> =>
   client.patch('/menu/option-groups/reorder', dto);
 export const reorderOptions = (dto: ReorderOptionsDto): Promise<void> =>

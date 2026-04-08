@@ -176,6 +176,26 @@ export class MenuService {
     return saved;
   }
 
+  async deleteOptionGroup(storeId: string, groupId: string): Promise<void> {
+    await this.optionGroupRepository.delete({ id: groupId });
+    await this.invalidateCache(storeId);
+  }
+
+  async createOption(
+    storeId: string,
+    dto: { groupId: string; name: string; additionalPrice: number },
+  ): Promise<MenuOption> {
+    const option = this.optionRepository.create(dto);
+    const saved = await this.optionRepository.save(option);
+    await this.invalidateCache(storeId);
+    return saved;
+  }
+
+  async deleteOption(storeId: string, optionId: string): Promise<void> {
+    await this.optionRepository.delete({ id: optionId });
+    await this.invalidateCache(storeId);
+  }
+
   /**
    * F10: 재고 수량 차감 (주문 생성 시 호출)
    * 재고 관리가 활성화된 아이템만 처리

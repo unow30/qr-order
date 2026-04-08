@@ -127,6 +127,33 @@ export class MenuController {
     return this.menuService.reorderOptionGroups(storeId, dto);
   }
 
+  @Delete('option-groups/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '옵션 그룹 삭제' })
+  deleteOptionGroup(@CurrentStoreId() storeId: string, @Param('id') id: string) {
+    return this.menuService.deleteOptionGroup(storeId, id);
+  }
+
+  @Post('options')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '옵션 생성' })
+  createOption(
+    @CurrentStoreId() storeId: string,
+    @Body() dto: { groupId: string; name: string; additionalPrice: number },
+  ) {
+    return this.menuService.createOption(storeId, dto);
+  }
+
+  @Delete('options/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '옵션 삭제' })
+  deleteOption(@CurrentStoreId() storeId: string, @Param('id') id: string) {
+    return this.menuService.deleteOption(storeId, id);
+  }
+
   @Patch('options/reorder')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
