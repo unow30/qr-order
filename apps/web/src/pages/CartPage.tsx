@@ -94,7 +94,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="max-w-[480px] mx-auto font-sans pb-24">
+    <div className="max-w-[480px] mx-auto font-sans">
       <header className="p-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
         <h2 className="m-0">장바구니</h2>
@@ -193,16 +193,16 @@ export default function CartPage() {
             <span>{payAmount.toLocaleString()}원</span>
           </div>
         </div>
-      </div>
 
-      <div className="fixed bottom-4 left-0 right-0 md:right-auto md:w-[480px] flex flex-col items-center px-[5%] md:px-5">
-        <button
-          onClick={handleOrder}
-          disabled={orderLoading}
-          className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${orderLoading ? 'opacity-70' : ''}`}
-        >
-          {orderLoading ? '주문 중...' : `${payAmount.toLocaleString()}원 주문하기`}
-        </button>
+        <div className="flex flex-col gap-2 pt-2 pb-2">
+          <button
+            onClick={handleOrder}
+            disabled={orderLoading}
+            className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${orderLoading ? 'opacity-70' : ''}`}
+          >
+            {orderLoading ? '주문 중...' : `${payAmount.toLocaleString()}원 주문하기`}
+          </button>
+        </div>
       </div>
     </div>
   );

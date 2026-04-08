@@ -118,7 +118,7 @@ export default function MenuDetailPage() {
   if (!item) return <div className="p-4">메뉴를 불러오는 중...</div>;
 
   return (
-    <div className="max-w-[480px] mx-auto font-sans pb-24">
+    <div className="max-w-[480px] mx-auto font-sans">
       <header className="p-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="bg-none border-none text-xl cursor-pointer">←</button>
         <h2 className="m-0 text-lg">{item.name}</h2>
@@ -200,16 +200,16 @@ export default function MenuDetailPage() {
           <span className="text-lg font-semibold">{quantity}</span>
           <button onClick={() => setQuantity((q) => q + 1)} className="w-9 h-9 rounded-full border border-gray-200 text-xl cursor-pointer">+</button>
         </div>
-      </div>
 
-      <div className="fixed bottom-4 left-0 right-0 md:right-auto md:w-[480px] flex flex-col gap-2 px-4">
-        <button
-          onClick={handleAddToCart}
-          disabled={loading}
-          className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-        >
-          {totalPrice.toLocaleString()}원 · 장바구니 담기
-        </button>
+        <div className="flex flex-col gap-2 pt-6 pb-2">
+          <button
+            onClick={handleAddToCart}
+            disabled={loading}
+            className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+          >
+            {totalPrice.toLocaleString()}원 · 장바구니 담기
+          </button>
+        </div>
       </div>
     </div>
   );
