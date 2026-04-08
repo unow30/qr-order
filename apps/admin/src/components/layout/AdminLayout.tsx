@@ -36,7 +36,7 @@ export default function AdminLayout() {
   const isReadOnly = role === 'SUPER_ADMIN_READONLY';
   const hasSuperAdminAccess = isSuperAdmin || isReadOnly;
   const isMultiStoreAdmin = role === 'STORE_ADMIN' && storeIds.length > 1;
-  const showStoreSwitcher = (hasSuperAdminAccess || isMultiStoreAdmin) && pathname !== '/stores';
+  const showStoreSwitcher = (hasSuperAdminAccess || isMultiStoreAdmin) && pathname !== '/stores' && pathname !== '/reports';
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -128,7 +128,7 @@ export default function AdminLayout() {
           </button>
 
           {/* 매장 선택기 */}
-          {showStoreSwitcher ? (
+          {showStoreSwitcher && (
             <div className="relative">
               <button
                 onClick={() => setStoreDropdownOpen(!storeDropdownOpen)}
@@ -160,11 +160,7 @@ export default function AdminLayout() {
                 </div>
               )}
             </div>
-          ) : currentStore ? (
-            <span className="px-2.5 py-1 bg-orange-50 rounded-md text-[13px] text-brand font-semibold">
-              🏪 {currentStore.name}
-            </span>
-          ) : null}
+          )}
         </header>
 
         <main className="flex-1 overflow-auto p-6 bg-[#f5f7fa]">
