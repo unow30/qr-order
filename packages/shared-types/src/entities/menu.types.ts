@@ -38,7 +38,10 @@ export interface MenuOptionGroup {
   name: string;
   isRequired: boolean;
   maxSelect: number;
+  sortOrder: number;
   options: MenuOption[];
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface MenuOption {
@@ -47,4 +50,7 @@ export interface MenuOption {
   name: string;
   additionalPrice: number;
   isAvailable: boolean;
+  sortOrder: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }

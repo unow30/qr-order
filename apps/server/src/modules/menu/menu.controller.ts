@@ -22,6 +22,8 @@ import {
   DeployMenuDto,
   ReorderMenuCategoriesDto,
   ReorderMenuItemsDto,
+  ReorderOptionGroupsDto,
+  ReorderOptionsDto,
 } from '@qr-order/shared-types';
 import { RolesGuard } from '@server/common/guards/roles.guard';
 import { Roles } from '@server/common/decorators/roles.decorator';
@@ -115,6 +117,22 @@ export class MenuController {
   @ApiOperation({ summary: '옵션 그룹 생성' })
   createOptionGroup(@CurrentStoreId() storeId: string, @Body() dto: CreateMenuOptionGroupDto) {
     return this.menuService.createOptionGroup(storeId, dto);
+  }
+
+  @Patch('option-groups/reorder')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '옵션 그룹 순서 일괄 변경' })
+  reorderOptionGroups(@CurrentStoreId() storeId: string, @Body() dto: ReorderOptionGroupsDto) {
+    return this.menuService.reorderOptionGroups(storeId, dto);
+  }
+
+  @Patch('options/reorder')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '옵션 순서 일괄 변경' })
+  reorderOptions(@CurrentStoreId() storeId: string, @Body() dto: ReorderOptionsDto) {
+    return this.menuService.reorderOptions(storeId, dto);
   }
 
   @Post('deploy')

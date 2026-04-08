@@ -19,6 +19,8 @@ import {
   DeployMenuResult,
   ReorderMenuCategoriesDto,
   ReorderMenuItemsDto,
+  ReorderOptionGroupsDto,
+  ReorderOptionsDto,
 } from '@qr-order/shared-types';
 
 @Injectable()
@@ -42,15 +44,8 @@ export class MenuService {
   }
 
   async getMenu(storeId: string | null): Promise<MenuCategory[]> {
-    // storeId가 null이면 (SUPER_ADMIN 전체 보기) 캐시 없이 전체 조회
     if (!storeId) {
-      const categories = await this.categoryRepository.find({
-        where: { isActive: true },
-        relations: ['items', 'items.optionGroups', 'items.optionGroups.options', 'items.images'],
-        order: { sortOrder: 'ASC', items: { sortOrder: 'ASC' } },
-      });
-      this.applyActiveImages(categories);
-      return categories;
+      return [];
     }
 
     const cacheKey = this.getMenuCacheKey(storeId);
@@ -65,9 +60,31 @@ export class MenuService {
       order: { sortOrder: 'ASC', items: { sortOrder: 'ASC' } },
     });
     this.applyActiveImages(categories);
+    this.sortOptionGroupsAndOptions(categories);
 
     await this.redis.setex(cacheKey, REDIS_KEYS.menu.ttl, JSON.stringify(categories));
     return categories;
+  }
+
+  /**
+   * 각 아이템의 optionGroups와 options를 sortOrder ASC → createdAt ASC → id ASC 순으로 정렬
+   */
+  private sortOptionGroupsAndOptions(categories: MenuCategory[]): void {
+    const cmp = (a: { sortOrder: number; createdAt: Date; id: string }, b: { sortOrder: number; createdAt: Date; id: string }) => {
+      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      if (aTime !== bTime) return aTime - bTime;
+      return a.id.localeCompare(b.id);
+    };
+    for (const category of categories) {
+      for (const item of category.items ?? []) {
+        item.optionGroups?.sort(cmp);
+        for (const group of item.optionGroups ?? []) {
+          group.options?.sort(cmp);
+        }
+      }
+    }
   }
 
   /**
@@ -253,6 +270,32 @@ export class MenuService {
     await this.invalidateCache(storeId).catch(() => {});
   }
 
+  async reorderOptionGroups(storeId: string, dto: ReorderOptionGroupsDto): Promise<void> {
+    const ids = dto.orders.map((o) => o.id);
+    const groups = await this.optionGroupRepository.find({ where: { id: In(ids) } });
+    groups.forEach((group) => {
+      const match = dto.orders.find((o) => o.id === group.id);
+      if (match) group.sortOrder = match.sortOrder;
+    });
+    await this.dataSource.transaction(async (manager) => {
+      await manager.save(MenuOptionGroup, groups);
+    });
+    await this.invalidateCache(storeId).catch(() => {});
+  }
+
+  async reorderOptions(storeId: string, dto: ReorderOptionsDto): Promise<void> {
+    const ids = dto.orders.map((o) => o.id);
+    const options = await this.optionRepository.find({ where: { id: In(ids) } });
+    options.forEach((opt) => {
+      const match = dto.orders.find((o) => o.id === opt.id);
+      if (match) opt.sortOrder = match.sortOrder;
+    });
+    await this.dataSource.transaction(async (manager) => {
+      await manager.save(MenuOption, options);
+    });
+    await this.invalidateCache(storeId).catch(() => {});
+  }
+
   async reorderItems(storeId: string, dto: ReorderMenuItemsDto): Promise<void> {
     const ids = dto.orders.map((o) => o.id);
     const items = await this.itemRepository.find({ where: { storeId, id: In(ids) } });
@@ -339,11 +382,13 @@ export class MenuService {
                   name: srcGroup.name,
                   isRequired: srcGroup.isRequired,
                   maxSelect: srcGroup.maxSelect,
+                  sortOrder: srcGroup.sortOrder,
                   options: srcGroup.options.map((opt) =>
                     manager.create(MenuOption, {
                       name: opt.name,
                       additionalPrice: opt.additionalPrice,
                       isAvailable: opt.isAvailable,
+                      sortOrder: opt.sortOrder,
                     }),
                   ),
                 }),

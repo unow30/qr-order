@@ -7,6 +7,8 @@ import {
   UpdateMenuItemDto,
   ReorderMenuCategoriesDto,
   ReorderMenuItemsDto,
+  ReorderOptionGroupsDto,
+  ReorderOptionsDto,
 } from '@qr-order/shared-types';
 
 export const getMenu = (): Promise<MenuCategory[]> => client.get('/menu');
@@ -25,3 +27,7 @@ export const reorderCategories = (dto: ReorderMenuCategoriesDto): Promise<void> 
   client.patch('/menu/categories/reorder', dto);
 export const reorderItems = (dto: ReorderMenuItemsDto): Promise<void> =>
   client.patch('/menu/items/reorder', dto);
+export const reorderOptionGroups = (dto: ReorderOptionGroupsDto): Promise<void> =>
+  client.patch('/menu/option-groups/reorder', dto);
+export const reorderOptions = (dto: ReorderOptionsDto): Promise<void> =>
+  client.patch('/menu/options/reorder', dto);

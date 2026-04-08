@@ -26,6 +26,9 @@ export class MenuOption {
   @Column({ default: true })
   isAvailable: boolean;
 
+  @Column({ default: 0 })
+  sortOrder: number;
+
   @ManyToOne(() => MenuOptionGroup, (group) => group.options, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'groupId' })
   group: MenuOptionGroup;

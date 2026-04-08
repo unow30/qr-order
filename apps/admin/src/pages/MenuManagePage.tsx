@@ -23,8 +23,10 @@ import {
   updateStock,
   reorderCategories as apiReorderCategories,
   reorderItems as apiReorderItems,
+  reorderOptionGroups as apiReorderOptionGroups,
+  reorderOptions as apiReorderOptions,
 } from '@admin/api/menu.api';
-import { MenuCategory, MenuItem } from '@qr-order/shared-types';
+import { MenuCategory, MenuItem, MenuOptionGroup, MenuOption } from '@qr-order/shared-types';
 import ConfirmDialog from '@admin/components/ConfirmDialog';
 import { useAuthStore } from '@admin/stores/authStore';
 import { useStoreNames } from '@admin/hooks/useStoreNames';
@@ -40,18 +42,123 @@ interface StockEditState {
   stock: number;
 }
 
+// ─── SortableOptionRow ────────────────────────────────────────────────────────
+
+function SortableOptionRow({ option, disabled }: { option: MenuOption; disabled: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: option.id,
+    disabled,
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-1.5 py-1 pl-2">
+      {!disabled && (
+        <span
+          {...attributes}
+          {...listeners}
+          className="cursor-grab text-[#ccc] text-sm select-none"
+          title="드래그하여 옵션 순서 변경"
+        >
+          ⠿
+        </span>
+      )}
+      <span className="text-[13px] text-[#555]">{option.name}</span>
+      {option.additionalPrice > 0 && (
+        <span className="text-[12px] text-[#888]">+{option.additionalPrice.toLocaleString()}원</span>
+      )}
+      {!option.isAvailable && (
+        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#9ca3af]">품절</span>
+      )}
+    </div>
+  );
+}
+
+// ─── SortableOptionGroupCard ──────────────────────────────────────────────────
+
+interface OptionGroupCardProps {
+  group: MenuOptionGroup;
+  disabled: boolean;
+  onOptionDragEnd: (groupId: string, event: DragEndEvent) => void;
+}
+
+function SortableOptionGroupCard({ group, disabled, onOptionDragEnd }: OptionGroupCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: group.id,
+    disabled,
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const optionIds = (group.options ?? []).map((o) => o.id);
+  const optionSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  return (
+    <div ref={setNodeRef} style={style} className="mt-2 border border-[#e5e7eb] rounded-lg bg-[#fafafa]">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#e5e7eb]">
+        {!disabled && (
+          <span
+            {...attributes}
+            {...listeners}
+            className="cursor-grab text-[#ccc] text-base select-none"
+            title="드래그하여 옵션 그룹 순서 변경"
+          >
+            ⠿
+          </span>
+        )}
+        <span className="font-medium text-[13px]">{group.name}</span>
+        <span className={`ml-1 text-[11px] px-1.5 py-0.5 rounded-full ${
+          group.isRequired
+            ? 'bg-[#fee2e2] text-[#dc2626]'
+            : 'bg-[#e0f2fe] text-[#0369a1]'
+        }`}>
+          {group.isRequired ? '필수' : '선택'}
+        </span>
+        <span className="ml-auto text-[11px] text-[#9ca3af]">최대 {group.maxSelect}개</span>
+      </div>
+      <div className="px-2 py-1">
+        <DndContext
+          sensors={optionSensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(e) => onOptionDragEnd(group.id, e)}
+        >
+          <SortableContext items={optionIds} strategy={verticalListSortingStrategy}>
+            {(group.options ?? []).map((opt) => (
+              <SortableOptionRow key={opt.id} option={opt} disabled={disabled} />
+            ))}
+          </SortableContext>
+        </DndContext>
+      </div>
+    </div>
+  );
+}
+
+// ─── SortableMenuItemRow ──────────────────────────────────────────────────────
+
 interface MenuItemRowProps {
   item: MenuItem;
   isAllStores: boolean;
   stockEdit: StockEditState | null;
   stockSaving: boolean;
   imageOpenId: string | null;
+  expandedOptionGroups: boolean;
+  onToggleOptionGroups: () => void;
   onOpenStockEdit: (item: MenuItem) => void;
   onCloseStockEdit: () => void;
   onStockChange: (field: 'stockEnabled' | 'stock', value: boolean | number) => void;
   onStockSave: () => void;
   onImageToggle: (id: string) => void;
   onDeleteRequest: (item: MenuItem) => void;
+  onOptionGroupDragEnd: (menuItemId: string, event: DragEndEvent) => void;
+  onOptionDragEnd: (groupId: string, event: DragEndEvent) => void;
 }
 
 function SortableMenuItemRow({
@@ -60,24 +167,33 @@ function SortableMenuItemRow({
   stockEdit,
   stockSaving,
   imageOpenId,
+  expandedOptionGroups,
+  onToggleOptionGroups,
   onOpenStockEdit,
   onCloseStockEdit,
   onStockChange,
   onStockSave,
   onImageToggle,
   onDeleteRequest,
+  onOptionGroupDragEnd,
+  onOptionDragEnd,
 }: MenuItemRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     disabled: isAllStores,
   });
 
-  // dnd-kit transform style 유지 (라이브러리 요구사항)
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const optionGroups = item.optionGroups ?? [];
+  const groupIds = optionGroups.map((g) => g.id);
+  const groupSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -110,30 +226,44 @@ function SortableMenuItemRow({
             )}
           </div>
         </div>
-        {!isAllStores && (
-          <div className="flex gap-1.5">
+        <div className="flex gap-1.5">
+          {optionGroups.length > 0 && (
             <button
-              onClick={() => stockEdit?.itemId === item.id ? onCloseStockEdit() : onOpenStockEdit(item)}
-              className={`px-2 py-0.5 border border-[#2563eb] rounded-md cursor-pointer text-[11px] ${
-                stockEdit?.itemId === item.id ? 'bg-[#2563eb] text-white' : 'bg-transparent text-[#2563eb]'
+              onClick={onToggleOptionGroups}
+              className={`px-2 py-0.5 border rounded-md cursor-pointer text-[11px] ${
+                expandedOptionGroups
+                  ? 'bg-[#6366f1] text-white border-[#6366f1]'
+                  : 'bg-transparent text-[#6366f1] border-[#6366f1]'
               }`}
             >
-              재고
+              옵션 {optionGroups.length}
             </button>
-            <button
-              onClick={() => onImageToggle(`item-${item.id}`)}
-              className={`px-2 py-0.5 border border-[#ff6b35] rounded-md cursor-pointer text-[11px] ${
-                imageOpenId === `item-${item.id}` ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-brand'
-              }`}
-            >
-              🖼️
-            </button>
-            <button
-              onClick={() => onDeleteRequest(item)}
-              className="bg-transparent border-none text-[#bbb] cursor-pointer text-base"
-            >×</button>
-          </div>
-        )}
+          )}
+          {!isAllStores && (
+            <>
+              <button
+                onClick={() => stockEdit?.itemId === item.id ? onCloseStockEdit() : onOpenStockEdit(item)}
+                className={`px-2 py-0.5 border border-[#2563eb] rounded-md cursor-pointer text-[11px] ${
+                  stockEdit?.itemId === item.id ? 'bg-[#2563eb] text-white' : 'bg-transparent text-[#2563eb]'
+                }`}
+              >
+                재고
+              </button>
+              <button
+                onClick={() => onImageToggle(`item-${item.id}`)}
+                className={`px-2 py-0.5 border border-[#ff6b35] rounded-md cursor-pointer text-[11px] ${
+                  imageOpenId === `item-${item.id}` ? 'bg-[#ff6b35] text-white' : 'bg-transparent text-brand'
+                }`}
+              >
+                🖼️
+              </button>
+              <button
+                onClick={() => onDeleteRequest(item)}
+                className="bg-transparent border-none text-[#bbb] cursor-pointer text-base"
+              >×</button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 재고 편집 패널 */}
@@ -183,9 +313,34 @@ function SortableMenuItemRow({
           <ImageManagerWidget entityType="menu-items" entityId={item.id} readonly={isAllStores} />
         </div>
       )}
+
+      {/* 옵션 그룹 패널 */}
+      {expandedOptionGroups && optionGroups.length > 0 && (
+        <div className="mb-2 px-3 py-2 bg-[#f5f3ff] rounded-lg border border-[#ddd6fe]">
+          <div className="text-[12px] text-[#7c3aed] font-semibold mb-1">옵션 그룹</div>
+          <DndContext
+            sensors={groupSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(e) => onOptionGroupDragEnd(item.id, e)}
+          >
+            <SortableContext items={groupIds} strategy={verticalListSortingStrategy}>
+              {optionGroups.map((group) => (
+                <SortableOptionGroupCard
+                  key={group.id}
+                  group={group}
+                  disabled={isAllStores}
+                  onOptionDragEnd={onOptionDragEnd}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        </div>
+      )}
     </div>
   );
 }
+
+// ─── SortableCategoryCard ─────────────────────────────────────────────────────
 
 interface CategoryCardProps {
   cat: MenuCategory;
@@ -194,6 +349,7 @@ interface CategoryCardProps {
   stockEdit: StockEditState | null;
   stockSaving: boolean;
   imageOpenId: string | null;
+  expandedItemIds: Set<string>;
   onOpenStockEdit: (item: MenuItem) => void;
   onCloseStockEdit: () => void;
   onStockChange: (field: 'stockEnabled' | 'stock', value: boolean | number) => void;
@@ -202,6 +358,9 @@ interface CategoryCardProps {
   onDeleteCategoryRequest: (cat: MenuCategory) => void;
   onDeleteItemRequest: (item: MenuItem) => void;
   onItemDragEnd: (categoryId: string, event: DragEndEvent) => void;
+  onToggleOptionGroups: (itemId: string) => void;
+  onOptionGroupDragEnd: (menuItemId: string, event: DragEndEvent) => void;
+  onOptionDragEnd: (groupId: string, event: DragEndEvent) => void;
 }
 
 function SortableCategoryCard({
@@ -211,6 +370,7 @@ function SortableCategoryCard({
   stockEdit,
   stockSaving,
   imageOpenId,
+  expandedItemIds,
   onOpenStockEdit,
   onCloseStockEdit,
   onStockChange,
@@ -219,13 +379,15 @@ function SortableCategoryCard({
   onDeleteCategoryRequest,
   onDeleteItemRequest,
   onItemDragEnd,
+  onToggleOptionGroups,
+  onOptionGroupDragEnd,
+  onOptionDragEnd,
 }: CategoryCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: cat.id,
     disabled: isAllStores,
   });
 
-  // dnd-kit transform style 유지 (라이브러리 요구사항)
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -302,12 +464,16 @@ function SortableCategoryCard({
               stockEdit={stockEdit}
               stockSaving={stockSaving}
               imageOpenId={imageOpenId}
+              expandedOptionGroups={expandedItemIds.has(item.id)}
+              onToggleOptionGroups={() => onToggleOptionGroups(item.id)}
               onOpenStockEdit={onOpenStockEdit}
               onCloseStockEdit={onCloseStockEdit}
               onStockChange={onStockChange}
               onStockSave={onStockSave}
               onImageToggle={onImageToggle}
               onDeleteRequest={onDeleteItemRequest}
+              onOptionGroupDragEnd={onOptionGroupDragEnd}
+              onOptionDragEnd={onOptionDragEnd}
             />
           ))}
         </SortableContext>
@@ -316,6 +482,8 @@ function SortableCategoryCard({
     </div>
   );
 }
+
+// ─── MenuManagePage ───────────────────────────────────────────────────────────
 
 export default function MenuManagePage() {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -327,6 +495,7 @@ export default function MenuManagePage() {
   const [stockEdit, setStockEdit] = useState<StockEditState | null>(null);
   const [stockSaving, setStockSaving] = useState(false);
   const [imageOpenId, setImageOpenId] = useState<string | null>(null);
+  const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(new Set());
   const { currentStoreId, isSuperAdmin } = useAuthStore();
   const superAdmin = isSuperAdmin();
   const isAllStores = superAdmin && !currentStoreId;
@@ -394,6 +563,15 @@ export default function MenuManagePage() {
     setImageOpenId((prev) => (prev === id ? null : id));
   };
 
+  const handleToggleOptionGroups = (itemId: string) => {
+    setExpandedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
+
   const handleCategoryDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -423,6 +601,73 @@ export default function MenuManagePage() {
     setCategories(updated);
     try {
       await apiReorderItems({ orders: reorderedItems.map((item, i) => ({ id: item.id, sortOrder: i })) });
+    } catch {
+      fetchMenu();
+    }
+  };
+
+  const handleOptionGroupDragEnd = async (menuItemId: string, event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    let catIdx = -1, itemIdx = -1;
+    categories.forEach((cat, ci) => {
+      (cat.items ?? []).forEach((item, ii) => {
+        if (item.id === menuItemId) { catIdx = ci; itemIdx = ii; }
+      });
+    });
+    if (catIdx === -1) return;
+    const groups = categories[catIdx].items![itemIdx].optionGroups ?? [];
+    const oldIndex = groups.findIndex((g) => g.id === active.id);
+    const newIndex = groups.findIndex((g) => g.id === over.id);
+    const reorderedGroups = arrayMove(groups, oldIndex, newIndex);
+    const updated = categories.map((cat, ci) =>
+      ci !== catIdx ? cat : {
+        ...cat,
+        items: (cat.items ?? []).map((item, ii) =>
+          ii !== itemIdx ? item : { ...item, optionGroups: reorderedGroups },
+        ),
+      },
+    );
+    setCategories(updated);
+    try {
+      await apiReorderOptionGroups({ orders: reorderedGroups.map((g, i) => ({ id: g.id, sortOrder: i })) });
+    } catch {
+      fetchMenu();
+    }
+  };
+
+  const handleOptionDragEnd = async (groupId: string, event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    let catIdx = -1, itemIdx = -1, groupIdx = -1;
+    categories.forEach((cat, ci) => {
+      (cat.items ?? []).forEach((item, ii) => {
+        (item.optionGroups ?? []).forEach((g, gi) => {
+          if (g.id === groupId) { catIdx = ci; itemIdx = ii; groupIdx = gi; }
+        });
+      });
+    });
+    if (catIdx === -1) return;
+    const options = categories[catIdx].items![itemIdx].optionGroups![groupIdx].options ?? [];
+    const oldIndex = options.findIndex((o) => o.id === active.id);
+    const newIndex = options.findIndex((o) => o.id === over.id);
+    const reorderedOptions = arrayMove(options, oldIndex, newIndex);
+    const updated = categories.map((cat, ci) =>
+      ci !== catIdx ? cat : {
+        ...cat,
+        items: (cat.items ?? []).map((item, ii) =>
+          ii !== itemIdx ? item : {
+            ...item,
+            optionGroups: (item.optionGroups ?? []).map((g, gi) =>
+              gi !== groupIdx ? g : { ...g, options: reorderedOptions },
+            ),
+          },
+        ),
+      },
+    );
+    setCategories(updated);
+    try {
+      await apiReorderOptions({ orders: reorderedOptions.map((o, i) => ({ id: o.id, sortOrder: i })) });
     } catch {
       fetchMenu();
     }
@@ -524,6 +769,7 @@ export default function MenuManagePage() {
               stockEdit={stockEdit}
               stockSaving={stockSaving}
               imageOpenId={imageOpenId}
+              expandedItemIds={expandedItemIds}
               onOpenStockEdit={openStockEdit}
               onCloseStockEdit={() => setStockEdit(null)}
               onStockChange={handleStockChange}
@@ -532,6 +778,9 @@ export default function MenuManagePage() {
               onDeleteCategoryRequest={(c) => setDeleteTarget({ type: 'category', id: c.id, name: c.name })}
               onDeleteItemRequest={(item) => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
               onItemDragEnd={handleItemDragEnd}
+              onToggleOptionGroups={handleToggleOptionGroups}
+              onOptionGroupDragEnd={handleOptionGroupDragEnd}
+              onOptionDragEnd={handleOptionDragEnd}
             />
           ))}
         </SortableContext>

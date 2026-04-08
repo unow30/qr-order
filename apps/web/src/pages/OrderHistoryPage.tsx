@@ -59,7 +59,7 @@ export default function OrderHistoryPage() {
         pgPaymentKey: `sim_${Date.now()}`,
         amount: paymentResult.amount,
       });
-      removeOrder(order.id);
+      navigate('/payment-complete', { replace: true });
     } catch {
       alert('결제 처리 중 오류가 발생했습니다.');
     } finally {

@@ -16,7 +16,16 @@ client.interceptors.request.use((config) => {
 
 client.interceptors.response.use(
   (response) => response.data?.data ?? response.data,
-  (error) => Promise.reject(error),
+  (error) => {
+    if (error?.response?.status === 401) {
+      useSessionStore.getState().clearSession();
+      const path = window.location.pathname;
+      if (path !== '/store' && path !== '/entry') {
+        window.location.href = '/store';
+      }
+    }
+    return Promise.reject(error);
+  },
 );
 
 export default client;

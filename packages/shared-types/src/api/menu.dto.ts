@@ -72,3 +72,11 @@ export interface ReorderMenuCategoriesDto {
 export interface ReorderMenuItemsDto {
   orders: Array<{ id: string; sortOrder: number }>;
 }
+
+export interface ReorderOptionGroupsDto {
+  orders: Array<{ id: string; sortOrder: number }>;
+}
+
+export interface ReorderOptionsDto {
+  orders: Array<{ id: string; sortOrder: number }>;
+}

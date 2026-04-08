@@ -22,13 +22,23 @@ export default function MenuPage() {
   const [pinDismissed, setPinDismissed] = useState(false);
 
   useEffect(() => {
-    Promise.all([getMenu(), getCart()])
-      .then(([menu, cart]) => {
+    let done = 0;
+    const finish = () => {
+      if (++done === 2) setLoading(false);
+    };
+
+    getMenu()
+      .then((menu) => {
         setCategories(menu);
         if (menu.length > 0) setActiveCategory(menu[0].id);
-        setCart(cart);
       })
-      .finally(() => setLoading(false));
+      .catch(() => {})
+      .finally(finish);
+
+    getCart()
+      .then((cart) => setCart(cart))
+      .catch(() => {})
+      .finally(finish);
   }, []);
 
   const activeItems = categories.find((c) => c.id === activeCategory)?.items ?? [];

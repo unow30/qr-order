@@ -7,6 +7,7 @@ import CartPage from '@web/pages/CartPage';
 import OrderHistoryPage from '@web/pages/OrderHistoryPage';
 import OrderStatusPage from '@web/pages/OrderStatusPage';
 import StorePage from '@web/pages/StorePage.tsx';
+import PaymentCompletePage from '@web/pages/PaymentCompletePage';
 
 function RequireSession({ children }: { children: React.ReactNode }) {
   const isSessionValid = useSessionStore((s) => s.isSessionValid);
@@ -43,6 +44,7 @@ export default function AppRouter() {
           path="/order-status/:id"
           element={<RequireSession><OrderStatusPage /></RequireSession>}
         />
+        <Route path="/payment-complete" element={<PaymentCompletePage />} />
       </Routes>
     </BrowserRouter>
   );
