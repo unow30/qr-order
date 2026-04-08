@@ -202,7 +202,7 @@ export default function MenuDetailPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-4 left-0 right-0 md:right-auto md:w-[480px] flex flex-col items-center px-[5%] md:px-5">
+      <div className="fixed bottom-4 left-0 right-0 md:right-auto md:w-[480px] flex flex-col gap-2 px-4">
         <button
           onClick={handleAddToCart}
           disabled={loading}
