@@ -97,45 +97,31 @@ export default function EntryPage() {
 
     try {
       const res = await moveSession({ qrToken: moveTarget.qrToken });
-      setSession({
-        sessionToken: res.sessionToken,
-        tableId: res.tableId,
-        tableNumber: res.tableNumber,
-        tableName: res.tableName,
-        storeId: res.storeId,
-        storeName: res.storeName,
-        expiresAt: res.expiresAt,
-        pin: res.pin,
-      });
+      setSession(res);
       navigate('/menu', { replace: true });
     } catch (err: any) {
       const status = err.response?.status;
       const data = err.response?.data;
-      const messagePayload = data?.message;
-      const errorCode =
-        typeof messagePayload === 'object' ? messagePayload?.code : undefined;
 
-      if (status === 409 && messagePayload?.requirePin) {
+      if (status === 409 && data?.requirePin) {
         // 이동 대상 테이블에 이미 세션 존재 → 기존 세션 정리 후 PIN 입력
         await cleanupSession();
         setPinRequired(true);
-        setTableInfo(messagePayload as SessionConflictResponse);
-        setMoveConfirm(false);
-      } else if (errorCode === 'CROSS_STORE_BLOCKED') {
-        const text =
-          (typeof messagePayload === 'object' && messagePayload?.message) ||
-          '다른 매장의 테이블로는 이동할 수 없습니다. 결제 완료 후 새 매장의 QR을 다시 스캔해주세요.';
-        if (typeof window !== 'undefined') window.alert(text);
-        setMoveConfirm(false);
+        setTableInfo(data as SessionConflictResponse);
+      } else if (data?.code === 'CROSS_STORE_BLOCKED') {
+        window.alert(
+          data?.message ||
+          '다른 매장의 테이블로는 이동할 수 없습니다. 결제 완료 후 새 매장의 QR을 다시 스캔해주세요.',
+        );
         navigate('/menu', { replace: true });
       } else {
         // 기타 오류 → 기존 세션 정리 후 새 세션 생성
         await cleanupSession();
-        setMoveConfirm(false);
         attemptCreateSession(moveTarget.tableId, moveTarget.qrToken);
       }
     } finally {
       setMoving(false);
+      setMoveConfirm(false);
     }
   };
 
@@ -155,9 +141,9 @@ export default function EntryPage() {
         const status = err.response?.status;
         const data = err.response?.data;
 
-        if (status === 409 && data?.message?.requirePin) {
+        if (status === 409 && data?.requirePin) {
           setPinRequired(true);
-          setTableInfo(data.message as SessionConflictResponse);
+          setTableInfo(data as SessionConflictResponse);
           setLoading(false);
         } else {
           setError('QR 코드가 만료되었거나 유효하지 않습니다. 다시 스캔해 주세요.');
