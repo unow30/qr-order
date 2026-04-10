@@ -1,5 +1,10 @@
 import { PaymentMethod } from '../entities/payment.types';
 
+export interface AdminProcessPaymentDto {
+  orderId: string;
+  method: PaymentMethod;
+}
+
 export interface CreatePaymentDto {
   orderId: string;
   method: PaymentMethod;

@@ -39,6 +39,7 @@ export interface Order {
   discountAmount: number;
   finalAmount: number;
   note?: string;
+  isPaid?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

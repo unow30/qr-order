@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMenu } from '@web/api/menu.api';
 import { getCart } from '@web/api/cart.api';
+import { getMyOrders } from '@web/api/order.api';
 import { useCartStore } from '@web/stores/cartStore';
 import { useSessionStore } from '@web/stores/sessionStore';
 import { useOrderStore } from '@web/stores/orderStore';
-import { MenuCategory, MenuItem } from '@qr-order/shared-types';
+import { MenuCategory, MenuItem, OrderStatus } from '@qr-order/shared-types';
 
 export default function MenuPage() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function MenuPage() {
   const storeName = useSessionStore((s) => s.storeName);
   const pin = useSessionStore((s) => s.pin);
   const hasOrders = useOrderStore((s) => s.orders.length > 0);
+  const setOrders = useOrderStore((s) => s.setOrders);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export default function MenuPage() {
   useEffect(() => {
     let done = 0;
     const finish = () => {
-      if (++done === 2) setLoading(false);
+      if (++done === 3) setLoading(false);
     };
 
     getMenu()
@@ -37,6 +39,13 @@ export default function MenuPage() {
 
     getCart()
       .then((cart) => setCart(cart))
+      .catch(() => {})
+      .finally(finish);
+
+    getMyOrders()
+      .then((orders) => {
+        setOrders(orders.filter((o) => o.status === OrderStatus.PENDING));
+      })
       .catch(() => {})
       .finally(finish);
   }, []);
