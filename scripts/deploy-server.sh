@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # deploy-server.sh
 # NestJS 서버 이미지를 빌드하여 ECR에 push하고 EC2에 배포합니다.
+
+# GIT_SHA는 현재 HEAD의 커밋 해시를 사용하므로,
+# 커밋하지 않은 변경사항도 빌드에는 포함되지만 이미지 태그는 마지막 커밋 해시로 붙습니다.
+# latest 태그로는 항상 최신 빌드가 올라가므로 배포에는 문제없습니다.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
