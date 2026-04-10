@@ -142,11 +142,12 @@ export class PaymentService {
 
   async processAdminPayment(
     dto: AdminProcessPaymentDto,
-    storeId: string,
+    storeId: string | null,
   ): Promise<PaymentEntity> {
     const order = await this.orderService.findOne(dto.orderId);
 
-    if (order.storeId !== storeId) {
+    // storeId가 있을 때만 매장 소속 검증 (SUPER_ADMIN 전체 보기 모드는 null → 생략)
+    if (storeId && order.storeId !== storeId) {
       throw new BadRequestException('해당 매장의 주문이 아닙니다.');
     }
 

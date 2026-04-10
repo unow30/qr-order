@@ -30,11 +30,6 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   [OrderStatus.READY]: OrderStatus.SERVED,
 };
 
-const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  [PaymentMethod.CARD]: '카드',
-  [PaymentMethod.CASH]: '현금',
-  [PaymentMethod.MOBILE]: '모바일',
-};
 
 export default function OrderManagePage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -183,18 +178,13 @@ export default function OrderManagePage() {
                   </button>
                 )}
                 {order.status === OrderStatus.SERVED && !order.isPaid && (
-                  <div className="flex gap-1.5">
-                    {Object.values(PaymentMethod).map((method) => (
-                      <button
-                        key={method}
-                        onClick={() => handlePayment(order, method)}
-                        disabled={payingOrderId === order.id}
-                        className={`flex-1 py-2 bg-[#1565c0] text-white border-none rounded-lg text-[13px] font-semibold ${payingOrderId === order.id ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                      >
-                        {payingOrderId === order.id ? '처리 중...' : `${PAYMENT_METHOD_LABELS[method]} 결제`}
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => handlePayment(order, PaymentMethod.CARD)}
+                    disabled={payingOrderId === order.id}
+                    className={`w-full py-2.5 bg-[#1565c0] text-white border-none rounded-lg text-sm font-semibold ${payingOrderId === order.id ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    {payingOrderId === order.id ? '처리 중...' : '결제하기'}
+                  </button>
                 )}
                 <button
                   onClick={() => setCancelTarget(order)}

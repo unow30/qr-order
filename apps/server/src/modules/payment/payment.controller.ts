@@ -35,7 +35,7 @@ export class PaymentController {
   @ApiOperation({ summary: '어드민 현장 결제 처리' })
   processAdminPayment(
     @Body() dto: AdminProcessPaymentDto,
-    @CurrentStoreId() storeId: string,
+    @CurrentStoreId(false) storeId: string | null,
   ) {
     return this.paymentService.processAdminPayment(dto, storeId);
   }
