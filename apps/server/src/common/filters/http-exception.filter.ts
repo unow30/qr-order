@@ -19,19 +19,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
-    const errorMessage =
+    const responseBody: Record<string, unknown> =
       typeof exceptionResponse === 'string'
-        ? exceptionResponse
-        : (exceptionResponse as { message: string | string[] }).message;
+        ? { message: exceptionResponse }
+        : (exceptionResponse as Record<string, unknown>);
 
     this.logger.error(
-      `${request.method} ${request.url} ${status} - ${JSON.stringify(errorMessage)}`,
+      `${request.method} ${request.url} ${status} - ${JSON.stringify(responseBody)}`,
     );
 
     response.status(status).json({
       success: false,
       statusCode: status,
-      message: errorMessage,
+      ...responseBody,
       timestamp: new Date().toISOString(),
       path: request.url,
     });
