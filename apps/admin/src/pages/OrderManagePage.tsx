@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getOrders, updateOrderStatus } from '@admin/api/order.api';
-import { Order, OrderStatus } from '@qr-order/shared-types';
+import { processAdminPayment } from '@admin/api/payment.api';
+import { Order, OrderStatus, PaymentMethod } from '@qr-order/shared-types';
 import { useAuthStore } from '@admin/stores/authStore';
 import { useStoreNames } from '@admin/hooks/useStoreNames';
 import { useOrdersSSE } from '@admin/hooks/useOrdersSSE';
@@ -29,11 +30,18 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   [OrderStatus.READY]: OrderStatus.SERVED,
 };
 
+const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  [PaymentMethod.CARD]: '카드',
+  [PaymentMethod.CASH]: '현금',
+  [PaymentMethod.MOBILE]: '모바일',
+};
+
 export default function OrderManagePage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const { currentStoreId, isSuperAdmin } = useAuthStore();
   const superAdmin = isSuperAdmin();
   const isAllStores = superAdmin && !currentStoreId;
@@ -55,6 +63,18 @@ export default function OrderManagePage() {
     fetchOrders();
   };
 
+  const handlePayment = async (order: Order, method: PaymentMethod) => {
+    setPayingOrderId(order.id);
+    try {
+      await processAdminPayment(order.id, method);
+      fetchOrders();
+    } catch {
+      alert('결제 처리 중 오류가 발생했습니다.');
+    } finally {
+      setPayingOrderId(null);
+    }
+  };
+
   const handleCancelConfirm = async () => {
     if (!cancelTarget) return;
     setCancelling(true);
@@ -68,7 +88,7 @@ export default function OrderManagePage() {
   };
 
   const activeOrders = orders
-    .filter((o) => o.status !== OrderStatus.SERVED && o.status !== OrderStatus.CANCELLED)
+    .filter((o) => o.status !== OrderStatus.CANCELLED && !(o.status === OrderStatus.SERVED && o.isPaid))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   if (loading) return <div>주문 목록 불러오는 중...</div>;
@@ -161,6 +181,20 @@ export default function OrderManagePage() {
                   >
                     {STATUS_LABELS[nextStatus]} →
                   </button>
+                )}
+                {order.status === OrderStatus.SERVED && !order.isPaid && (
+                  <div className="flex gap-1.5">
+                    {Object.values(PaymentMethod).map((method) => (
+                      <button
+                        key={method}
+                        onClick={() => handlePayment(order, method)}
+                        disabled={payingOrderId === order.id}
+                        className={`flex-1 py-2 bg-[#1565c0] text-white border-none rounded-lg text-[13px] font-semibold ${payingOrderId === order.id ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        {payingOrderId === order.id ? '처리 중...' : `${PAYMENT_METHOD_LABELS[method]} 결제`}
+                      </button>
+                    ))}
+                  </div>
                 )}
                 <button
                   onClick={() => setCancelTarget(order)}

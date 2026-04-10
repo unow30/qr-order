@@ -5,6 +5,7 @@ import { OrderService } from '@server/modules/order/order.service';
 import { OrderSseService } from '@server/modules/order/order-sse.service';
 import { Order } from '@server/modules/order/entities/order.entity';
 import { OrderItem } from '@server/modules/order/entities/order-item.entity';
+import { PaymentEntity } from '@server/modules/payment/entities/payment.entity';
 import { CartModule } from '@server/modules/cart/cart.module';
 import { SessionModule } from '@server/modules/session/session.module';
 import { CouponModule } from '@server/modules/coupon/coupon.module';
@@ -12,7 +13,7 @@ import { MenuModule } from '@server/modules/menu/menu.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem]),
+    TypeOrmModule.forFeature([Order, OrderItem, PaymentEntity]),
     CartModule,
     SessionModule,
     CouponModule,

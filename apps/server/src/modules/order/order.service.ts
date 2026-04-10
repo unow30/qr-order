@@ -1,14 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Order } from '@server/modules/order/entities/order.entity';
 import { OrderItem } from '@server/modules/order/entities/order-item.entity';
+import { PaymentEntity } from '@server/modules/payment/entities/payment.entity';
 import { CartService } from '@server/modules/cart/cart.service';
 import { SessionService } from '@server/modules/session/session.service';
 import { OrderSseService } from '@server/modules/order/order-sse.service';
 import { CouponService } from '@server/modules/coupon/coupon.service';
 import { MenuService } from '@server/modules/menu/menu.service';
-import { OrderStatus, CreateOrderDto, UpdateOrderStatusDto } from '@qr-order/shared-types';
+import { OrderStatus, PaymentStatus, CreateOrderDto, UpdateOrderStatusDto } from '@qr-order/shared-types';
 
 /** 더 이상 상태 변경이 불가능한 최종 주문 상태 */
 const FINAL_ORDER_STATUSES = [OrderStatus.SERVED, OrderStatus.CANCELLED];
@@ -18,6 +19,8 @@ export class OrderService {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
+    @InjectRepository(PaymentEntity)
+    private readonly paymentRepository: Repository<PaymentEntity>,
     private readonly cartService: CartService,
     private readonly sessionService: SessionService,
     private readonly orderSseService: OrderSseService,
@@ -311,12 +314,23 @@ export class OrderService {
     return order;
   }
 
-  async findAll(storeId: string | null): Promise<Order[]> {
-    return this.orderRepository.find({
+  async findAll(storeId: string | null): Promise<(Order & { isPaid: boolean })[]> {
+    const orders = await this.orderRepository.find({
       where: storeId ? { storeId } : {},
       relations: ['items'],
       order: { createdAt: 'DESC' },
     });
+
+    if (orders.length === 0) return orders.map((o) => ({ ...o, isPaid: false }));
+
+    const orderIds = orders.map((o) => o.id);
+    const completedPayments = await this.paymentRepository.find({
+      where: { orderId: In(orderIds), status: PaymentStatus.COMPLETED },
+      select: ['orderId'],
+    });
+    const paidOrderIds = new Set(completedPayments.map((p) => p.orderId));
+
+    return orders.map((o) => ({ ...o, isPaid: paidOrderIds.has(o.id) }));
   }
 
   async findByTable(storeId: string, tableId: string): Promise<Order[]> {

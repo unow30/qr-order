@@ -9,7 +9,9 @@ import {
   CreatePaymentDto,
   ConfirmPaymentDto,
   WebhookPaymentDto,
+  AdminProcessPaymentDto,
   PaymentStatus,
+  PaymentMethod,
   OrderStatus,
 } from '@qr-order/shared-types';
 
@@ -136,6 +138,40 @@ export class PaymentService {
     }
 
     await this.paymentRepository.save(payment);
+  }
+
+  async processAdminPayment(
+    dto: AdminProcessPaymentDto,
+    storeId: string,
+  ): Promise<PaymentEntity> {
+    const order = await this.orderService.findOne(dto.orderId);
+
+    if (order.storeId !== storeId) {
+      throw new BadRequestException('해당 매장의 주문이 아닙니다.');
+    }
+
+    const existingCompleted = await this.paymentRepository.findOne({
+      where: { orderId: dto.orderId, status: PaymentStatus.COMPLETED },
+    });
+    if (existingCompleted) {
+      throw new BadRequestException('이미 결제가 완료된 주문입니다.');
+    }
+
+    const payment = this.paymentRepository.create({
+      orderId: dto.orderId,
+      storeId: order.storeId,
+      amount: order.finalAmount,
+      method: dto.method as PaymentMethod,
+      status: PaymentStatus.COMPLETED,
+      paidAt: new Date(),
+    });
+
+    const saved = await this.paymentRepository.save(payment);
+
+    // SSE 이벤트 발행 → 어드민 SSE 훅이 fetchOrders() 재호출 트리거
+    this.orderService.emitStatusChange(dto.orderId, order.status, order.storeId);
+
+    return saved;
   }
 
   async findByOrder(orderId: string): Promise<PaymentEntity | null> {
