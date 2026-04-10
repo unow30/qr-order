@@ -1,139 +1,139 @@
-name: Deploy Frontend to EC2 via ECR
-
-on:
-  push:
-    branches:
-      - main
-      - test
-    paths:
-      - 'apps/web/**'
-      - 'apps/admin/**'
-      - 'packages/shared-types/**'
-      - 'nginx/nginx.frontend.conf'
-      - 'docker-compose.frontend.yml'
-      - '.github/workflows/deploy-frontend.yml'
-
-jobs:
-  build-and-push:
-    name: Build & Push to ECR
-    runs-on: ubuntu-latest
-    environment: qr-order-frontend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Ensure target directory exists
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.FRONTEND_EC2_HOST }}
-          username: ${{ secrets.FRONTEND_EC2_USER }}
-          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
-          script: |
-            sudo mkdir -p /var/www/qr-order
-            sudo chown $USER:$USER /var/www/qr-order  
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.EC2_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.EC2_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Create .env.production for web
-        run: echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > apps/web/.env.production
-
-      - name: Create .env.production for admin
-        run: echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > apps/admin/.env.production
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      # web, admin 이미지를 병렬로 빌드 후 ECR push
-      - name: Build & push web image
-        run: |
-          docker build \
-            -f apps/web/Dockerfile \
-            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest \
-            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:${{ github.sha }} \
-            .
-          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Build & push admin image
-        run: |
-          docker build \
-            -f apps/admin/Dockerfile \
-            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest \
-            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:${{ github.sha }} \
-            .
-          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:${{ github.sha }}
-
-  deploy:
-    name: Deploy to EC2
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    environment: qr-order-frontend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Copy compose file to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.FRONTEND_EC2_HOST }}
-          username: ${{ secrets.FRONTEND_EC2_USER }}
-          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
-          source: "docker-compose.frontend.yml,nginx/nginx.frontend.conf"
-          target: /var/www/qr-order
-          strip_components: 0
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.FRONTEND_EC2_HOST }}
-          username: ${{ secrets.FRONTEND_EC2_USER }}
-          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
-          script: |
-            # ECR 로그인
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
-              | docker login --username AWS \
-                --password-stdin ${{ secrets.ECR_REGISTRY }}
-
-            # 최신 이미지 pull
-            docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest
-            docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest
-
-            # 폴더 생성
-            mkdir -p /var/www/qr-order
-
-            # 프로젝트 디렉토리로 이동
-            cd /var/www/qr-order
-
-            # compose 재시작 (이미지는 이미 pull됨, --no-build로 빌드 스킵)
-            echo "=== ls /var/www/qr-order ==="
-            ls -la /var/www/qr-order
-
-            ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
-            docker-compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
-            COMPOSE_EXIT=$?
-            echo "=== docker-compose exit code: $COMPOSE_EXIT ==="
-
-            # 컨테이너 상태 확인
-            echo "=== docker ps -a ==="
-            docker ps -a
-
-            # 실패 시 로그 출력
-            if [ $COMPOSE_EXIT -ne 0 ]; then
-              echo "=== docker-compose logs ==="
-              ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
-              docker-compose -f docker-compose.frontend.yml logs --tail=50
-              exit $COMPOSE_EXIT
-            fi
-
-            # 오래된 이미지 정리
-            docker image prune -f
-
+#name: Deploy Frontend to EC2 via ECR
+#
+#on:
+#  push:
+#    branches:
+#      - main
+#      - test
+#    paths:
+#      - 'apps/web/**'
+#      - 'apps/admin/**'
+#      - 'packages/shared-types/**'
+#      - 'nginx/nginx.frontend.conf'
+#      - 'docker-compose.frontend.yml'
+#      - '.github/workflows/deploy-frontend.yml'
+#
+#jobs:
+#  build-and-push:
+#    name: Build & Push to ECR
+#    runs-on: ubuntu-latest
+#    environment: qr-order-frontend
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Ensure target directory exists
+#        uses: appleboy/ssh-action@v1
+#        with:
+#          host: ${{ secrets.FRONTEND_EC2_HOST }}
+#          username: ${{ secrets.FRONTEND_EC2_USER }}
+#          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
+#          script: |
+#            sudo mkdir -p /var/www/qr-order
+#            sudo chown $USER:$USER /var/www/qr-order
+#
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-access-key-id: ${{ secrets.EC2_AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.EC2_AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ secrets.AWS_REGION }}
+#
+#      - name: Create .env.production for web
+#        run: echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > apps/web/.env.production
+#
+#      - name: Create .env.production for admin
+#        run: echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > apps/admin/.env.production
+#
+#      - name: Login to Amazon ECR
+#        id: login-ecr
+#        uses: aws-actions/amazon-ecr-login@v2
+#
+#      # web, admin 이미지를 병렬로 빌드 후 ECR push
+#      - name: Build & push web image
+#        run: |
+#          docker build \
+#            -f apps/web/Dockerfile \
+#            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest \
+#            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:${{ github.sha }} \
+#            .
+#          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest
+#          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:${{ github.sha }}
+#
+#      - name: Build & push admin image
+#        run: |
+#          docker build \
+#            -f apps/admin/Dockerfile \
+#            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest \
+#            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:${{ github.sha }} \
+#            .
+#          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest
+#          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:${{ github.sha }}
+#
+#  deploy:
+#    name: Deploy to EC2
+#    runs-on: ubuntu-latest
+#    needs: build-and-push
+#    environment: qr-order-frontend
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Copy compose file to EC2
+#        uses: appleboy/scp-action@v0.1.7
+#        with:
+#          host: ${{ secrets.FRONTEND_EC2_HOST }}
+#          username: ${{ secrets.FRONTEND_EC2_USER }}
+#          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
+#          source: "docker-compose.frontend.yml,nginx/nginx.frontend.conf"
+#          target: /var/www/qr-order
+#          strip_components: 0
+#
+#      - name: Deploy via SSH
+#        uses: appleboy/ssh-action@v1
+#        with:
+#          host: ${{ secrets.FRONTEND_EC2_HOST }}
+#          username: ${{ secrets.FRONTEND_EC2_USER }}
+#          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
+#          script: |
+#            # ECR 로그인
+#            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
+#              | docker login --username AWS \
+#                --password-stdin ${{ secrets.ECR_REGISTRY }}
+#
+#            # 최신 이미지 pull
+#            docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.WEB_IMAGE_NAME }}:latest
+#            docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ADMIN_IMAGE_NAME }}:latest
+#
+#            # 폴더 생성
+#            mkdir -p /var/www/qr-order
+#
+#            # 프로젝트 디렉토리로 이동
+#            cd /var/www/qr-order
+#
+#            # compose 재시작 (이미지는 이미 pull됨, --no-build로 빌드 스킵)
+#            echo "=== ls /var/www/qr-order ==="
+#            ls -la /var/www/qr-order
+#
+#            ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
+#            docker-compose -f docker-compose.frontend.yml up -d --no-build --force-recreate
+#            COMPOSE_EXIT=$?
+#            echo "=== docker-compose exit code: $COMPOSE_EXIT ==="
+#
+#            # 컨테이너 상태 확인
+#            echo "=== docker ps -a ==="
+#            docker ps -a
+#
+#            # 실패 시 로그 출력
+#            if [ $COMPOSE_EXIT -ne 0 ]; then
+#              echo "=== docker-compose logs ==="
+#              ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
+#              docker-compose -f docker-compose.frontend.yml logs --tail=50
+#              exit $COMPOSE_EXIT
+#            fi
+#
+#            # 오래된 이미지 정리
+#            docker image prune -f
+#

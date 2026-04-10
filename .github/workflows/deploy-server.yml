@@ -1,157 +1,157 @@
-name: Deploy Server to EC2 via ECR
-
-on:
-  push:
-    branches:
-      - main
-      - test
-    paths:
-      - 'apps/server/**'
-      - 'packages/shared-types/**'
-      - 'nginx/nginx.server.conf'
-      - 'docker-compose.server.yml'
-      - '.github/workflows/deploy-server.yml'
-
-jobs:
-  build-and-push:
-    name: Build & Push to ECR
-    runs-on: ubuntu-latest
-    environment: qr-order-backend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.EC2_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.EC2_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Create .env.production
-        run: |
-          cat > apps/server/.env.production << EOF
-          NODE_ENV=${{ secrets.NODE_ENV }}
-          PORT=${{ secrets.PORT }}
-          DATABASE_HOST=${{ secrets.DATABASE_HOST }}
-          DATABASE_PORT=${{ secrets.DATABASE_PORT }}
-          DATABASE_USER=${{ secrets.DATABASE_USER }}
-          DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-          DATABASE_NAME=${{ secrets.DATABASE_NAME }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
-          SESSION_TTL_SECONDS=${{ secrets.SESSION_TTL_SECONDS }}
-          ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
-          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
-          CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
-          TYPEORM_SYNC=${{ secrets.TYPEORM_SYNC }}
-          REDIS_HOST=${{ secrets.REDIS_HOST }}
-          REDIS_PORT=${{ secrets.REDIS_PORT }}
-          REDIS_TLS=true
-          DATABASE_SSL=true
-          S3_AWS_ACCESS_KEY_ID=${{secrets.S3_AWS_ACCESS_KEY_ID}}
-          S3_AWS_SECRET_ACCESS_KEY=${{secrets.S3_AWS_SECRET_ACCESS_KEY}}
-          S3_BUCKET_NAME=${{secrets.S3_BUCKET_NAME}}
-          AWS_REGION=${{secrets.AWS_REGION}}
-          CLOUDFRONT_DOMAIN=${{secrets.CLOUDFRONT_DOMAIN}}
-          EOF
-          # 들여쓰기 공백 제거
-          sed -i 's/^[[:space:]]*//' apps/server/.env.production
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build & push server image
-        run: |
-          docker build \
-            -f apps/server/Dockerfile \
-            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:latest \
-            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:${{ github.sha }} \
-            .
-          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:${{ github.sha }}
-
-  deploy:
-    name: Deploy to EC2
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    environment: qr-order-backend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Ensure target directory exists
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.BACKEND_EC2_HOST }}
-          username: ${{ secrets.BACKEND_EC2_USER }}
-          key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
-          script: |
-            sudo mkdir -p /var/www/qr-order
-            sudo chown $USER:$USER /var/www/qr-order
-
-      - name: Copy compose file to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.BACKEND_EC2_HOST }}
-          username: ${{ secrets.BACKEND_EC2_USER }}
-          key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
-          source: "docker-compose.server.yml,nginx/nginx.server.conf"
-          target: /var/www/qr-order
-          strip_components: 0
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        env:
-          SERVER_ENV: ${{ secrets.SERVER_ENV }}
-        with:
-          host: ${{ secrets.BACKEND_EC2_HOST }}
-          username: ${{ secrets.BACKEND_EC2_USER }}
-          key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
-          envs: SERVER_ENV
-          script: |
-            # .env 파일 생성
-            mkdir -p /var/www/qr-order/apps/server
-            echo "$SERVER_ENV" > /var/www/qr-order/apps/server/.env
-
-            # ECR 로그인
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
-              | docker login --username AWS \
-                --password-stdin ${{ secrets.ECR_REGISTRY }}
-
-            # 최신 이미지 pull
-            docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:latest
-
-            # 폴더 생성
-            mkdir -p /var/www/qr-order
-
-            # 프로젝트 디렉토리로 이동
-            cd /var/www/qr-order
-
-            # compose 재시작
-            echo "=== ls /var/www/qr-order ==="
-            ls -la /var/www/qr-order
-
-            ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
-            docker-compose -f docker-compose.server.yml up -d --no-build --force-recreate
-            COMPOSE_EXIT=$?
-            echo "=== docker-compose exit code: $COMPOSE_EXIT ==="
-
-            # 컨테이너 상태 확인
-            echo "=== docker ps -a ==="
-            docker ps -a
-
-            # 실패 시 로그 출력
-            if [ $COMPOSE_EXIT -ne 0 ]; then
-              echo "=== docker-compose logs ==="
-              ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
-              docker-compose -f docker-compose.server.yml logs --tail=50
-              exit $COMPOSE_EXIT
-            fi
-
-            # 오래된 이미지 정리
-            docker image prune -f
-            
+#name: Deploy Server to EC2 via ECR
+#
+#on:
+#  push:
+#    branches:
+#      - main
+#      - test
+#    paths:
+#      - 'apps/server/**'
+#      - 'packages/shared-types/**'
+#      - 'nginx/nginx.server.conf'
+#      - 'docker-compose.server.yml'
+#      - '.github/workflows/deploy-server.yml'
+#
+#jobs:
+#  build-and-push:
+#    name: Build & Push to ECR
+#    runs-on: ubuntu-latest
+#    environment: qr-order-backend
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-access-key-id: ${{ secrets.EC2_AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.EC2_AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ secrets.AWS_REGION }}
+#
+#      - name: Create .env.production
+#        run: |
+#          cat > apps/server/.env.production << EOF
+#          NODE_ENV=${{ secrets.NODE_ENV }}
+#          PORT=${{ secrets.PORT }}
+#          DATABASE_HOST=${{ secrets.DATABASE_HOST }}
+#          DATABASE_PORT=${{ secrets.DATABASE_PORT }}
+#          DATABASE_USER=${{ secrets.DATABASE_USER }}
+#          DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+#          DATABASE_NAME=${{ secrets.DATABASE_NAME }}
+#          JWT_SECRET=${{ secrets.JWT_SECRET }}
+#          JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
+#          SESSION_TTL_SECONDS=${{ secrets.SESSION_TTL_SECONDS }}
+#          ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
+#          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+#          CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+#          TYPEORM_SYNC=${{ secrets.TYPEORM_SYNC }}
+#          REDIS_HOST=${{ secrets.REDIS_HOST }}
+#          REDIS_PORT=${{ secrets.REDIS_PORT }}
+#          REDIS_TLS=true
+#          DATABASE_SSL=true
+#          S3_AWS_ACCESS_KEY_ID=${{secrets.S3_AWS_ACCESS_KEY_ID}}
+#          S3_AWS_SECRET_ACCESS_KEY=${{secrets.S3_AWS_SECRET_ACCESS_KEY}}
+#          S3_BUCKET_NAME=${{secrets.S3_BUCKET_NAME}}
+#          AWS_REGION=${{secrets.AWS_REGION}}
+#          CLOUDFRONT_DOMAIN=${{secrets.CLOUDFRONT_DOMAIN}}
+#          EOF
+#          # 들여쓰기 공백 제거
+#          sed -i 's/^[[:space:]]*//' apps/server/.env.production
+#
+#      - name: Login to Amazon ECR
+#        id: login-ecr
+#        uses: aws-actions/amazon-ecr-login@v2
+#
+#      - name: Build & push server image
+#        run: |
+#          docker build \
+#            -f apps/server/Dockerfile \
+#            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:latest \
+#            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:${{ github.sha }} \
+#            .
+#          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:latest
+#          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:${{ github.sha }}
+#
+#  deploy:
+#    name: Deploy to EC2
+#    runs-on: ubuntu-latest
+#    needs: build-and-push
+#    environment: qr-order-backend
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Ensure target directory exists
+#        uses: appleboy/ssh-action@v1
+#        with:
+#          host: ${{ secrets.BACKEND_EC2_HOST }}
+#          username: ${{ secrets.BACKEND_EC2_USER }}
+#          key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
+#          script: |
+#            sudo mkdir -p /var/www/qr-order
+#            sudo chown $USER:$USER /var/www/qr-order
+#
+#      - name: Copy compose file to EC2
+#        uses: appleboy/scp-action@v0.1.7
+#        with:
+#          host: ${{ secrets.BACKEND_EC2_HOST }}
+#          username: ${{ secrets.BACKEND_EC2_USER }}
+#          key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
+#          source: "docker-compose.server.yml,nginx/nginx.server.conf"
+#          target: /var/www/qr-order
+#          strip_components: 0
+#
+#      - name: Deploy via SSH
+#        uses: appleboy/ssh-action@v1
+#        env:
+#          SERVER_ENV: ${{ secrets.SERVER_ENV }}
+#        with:
+#          host: ${{ secrets.BACKEND_EC2_HOST }}
+#          username: ${{ secrets.BACKEND_EC2_USER }}
+#          key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
+#          envs: SERVER_ENV
+#          script: |
+#            # .env 파일 생성
+#            mkdir -p /var/www/qr-order/apps/server
+#            echo "$SERVER_ENV" > /var/www/qr-order/apps/server/.env
+#
+#            # ECR 로그인
+#            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
+#              | docker login --username AWS \
+#                --password-stdin ${{ secrets.ECR_REGISTRY }}
+#
+#            # 최신 이미지 pull
+#            docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.SERVER_IMAGE_NAME }}:latest
+#
+#            # 폴더 생성
+#            mkdir -p /var/www/qr-order
+#
+#            # 프로젝트 디렉토리로 이동
+#            cd /var/www/qr-order
+#
+#            # compose 재시작
+#            echo "=== ls /var/www/qr-order ==="
+#            ls -la /var/www/qr-order
+#
+#            ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
+#            docker-compose -f docker-compose.server.yml up -d --no-build --force-recreate
+#            COMPOSE_EXIT=$?
+#            echo "=== docker-compose exit code: $COMPOSE_EXIT ==="
+#
+#            # 컨테이너 상태 확인
+#            echo "=== docker ps -a ==="
+#            docker ps -a
+#
+#            # 실패 시 로그 출력
+#            if [ $COMPOSE_EXIT -ne 0 ]; then
+#              echo "=== docker-compose logs ==="
+#              ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
+#              docker-compose -f docker-compose.server.yml logs --tail=50
+#              exit $COMPOSE_EXIT
+#            fi
+#
+#            # 오래된 이미지 정리
+#            docker image prune -f
+#
