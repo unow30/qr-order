@@ -37,6 +37,7 @@ export default function OrderManagePage() {
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+  const [closedOrderIds, setClosedOrderIds] = useState<Set<string>>(new Set());
   const { currentStoreId, isSuperAdmin } = useAuthStore();
   const superAdmin = isSuperAdmin();
   const isAllStores = superAdmin && !currentStoreId;
@@ -62,9 +63,15 @@ export default function OrderManagePage() {
     setPayingOrderId(order.id);
     try {
       await processAdminPayment(order.id, method);
-      fetchOrders();
-    } catch {
-      alert('결제 처리 중 오류가 발생했습니다.');
+      setClosedOrderIds((prev) => new Set([...prev, order.id]));
+    } catch (err: any) {
+      const msg: string = err?.response?.data?.message ?? '';
+      if (msg.includes('이미 결제가 완료된')) {
+        // 고객이 이미 결제 완료한 주문 → 닫기
+        setClosedOrderIds((prev) => new Set([...prev, order.id]));
+      } else {
+        alert('결제 처리 중 오류가 발생했습니다.');
+      }
     } finally {
       setPayingOrderId(null);
     }
@@ -75,7 +82,7 @@ export default function OrderManagePage() {
     setCancelling(true);
     try {
       await updateOrderStatus(cancelTarget.id, { status: OrderStatus.CANCELLED });
-      fetchOrders();
+      setClosedOrderIds((prev) => new Set([...prev, cancelTarget.id]));
     } finally {
       setCancelling(false);
       setCancelTarget(null);
@@ -83,7 +90,7 @@ export default function OrderManagePage() {
   };
 
   const activeOrders = orders
-    .filter((o) => o.status !== OrderStatus.CANCELLED && !(o.status === OrderStatus.SERVED && o.isPaid))
+    .filter((o) => o.status !== OrderStatus.CANCELLED && !closedOrderIds.has(o.id))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   if (loading) return <div>주문 목록 불러오는 중...</div>;
