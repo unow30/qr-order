@@ -15,23 +15,15 @@ export default function StoreImagesPanel({ storeId }: Props) {
       .catch(() => setImages([]));
   }, [storeId]);
 
-  if (images.length === 0) {
-    return (
-      <div className="hidden md:flex md:w-[40%] bg-gray-100 items-center justify-center">
-        <span className="text-gray-400 text-sm">매장 이미지 없음</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="hidden md:flex md:w-[40%] bg-gray-50 overflow-hidden relative">
+    <div className="hidden md:flex md:w-[60%] bg-gray-50 overflow-hidden relative">
       <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {images.map((img) => (
+        {images.length === 0 ? <span className="text-gray-400 text-sm">매장 이미지 없음</span> : images.map((img) => (
           <img
             key={img.id}
             src={img.imageUrl}
-            alt={img.altText ?? '매장 이미지'}
-            className="snap-center shrink-0 w-full h-full object-cover"
+            alt={img.altText ?? '매장 이미지2'}
+            className="snap-center shrink-0 w-full aspect-video object-cover"
           />
         ))}
       </div>
