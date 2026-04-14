@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderController } from '@server/modules/order/order.controller';
 import { OrderService } from '@server/modules/order/order.service';
@@ -15,7 +15,7 @@ import { MenuModule } from '@server/modules/menu/menu.module';
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, PaymentEntity]),
     CartModule,
-    SessionModule,
+    forwardRef(() => SessionModule),
     CouponModule,
     MenuModule,
   ],

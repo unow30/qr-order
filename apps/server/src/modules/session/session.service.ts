@@ -5,12 +5,14 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { REDIS_CLIENT } from '@server/config/redis.config';
 import { REDIS_KEYS, SessionData } from '@server/common/redis/redis-keys';
 import { TableService } from '@server/modules/table/table.service';
 import { StoreService } from '@server/modules/store/store.service';
+import { OrderService } from '@server/modules/order/order.service';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import {
@@ -35,6 +37,8 @@ export class SessionService {
     private readonly tableService: TableService,
     private readonly storeService: StoreService,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => OrderService))
+    private readonly orderService: OrderService,
   ) {
     this.ttl = configService.get<number>('SESSION_TTL_SECONDS', 7200);
   }
@@ -324,6 +328,7 @@ export class SessionService {
         ttlToUse,
         JSON.stringify(sessionData),
       ),
+      this.orderService.updateTableId(storeId, sessionToken, newTable.id, newTable.tableNumber),
     ]);
 
     return {
@@ -423,6 +428,7 @@ export class SessionService {
       this.redis.del(fromKey),
       this.redis.setex(toKey, ttlToUse, activeSessionToken),
       this.redis.setex(sessionKey, ttlToUse, JSON.stringify(sessionData)),
+      this.orderService.updateTableId(storeId, activeSessionToken, targetTable.id, targetTable.tableNumber),
     ]);
 
     return {

@@ -333,6 +333,18 @@ export class OrderService {
     return orders.map((o) => ({ ...o, isPaid: paidOrderIds.has(o.id) }));
   }
 
+  async updateTableId(
+    storeId: string,
+    sessionToken: string,
+    newTableId: string,
+    newTableNumber: number,
+  ): Promise<void> {
+    await this.orderRepository.update(
+      { storeId, sessionToken },
+      { tableId: newTableId, tableNumber: newTableNumber },
+    );
+  }
+
   async findByTable(storeId: string, tableId: string): Promise<Order[]> {
     return this.orderRepository.find({
       where: { storeId, tableId },

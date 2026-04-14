@@ -17,6 +17,10 @@ id: ADMIN_READONLY
 pw: ADMIN_READONLY
 ```
 
+## 설계 문서
+
+[QR 코드 주문 시스템 설계 및 이슈 해결 과정](./DESIGN.md)
+
 ```bash
 # 의존성 설치
 pnpm install
