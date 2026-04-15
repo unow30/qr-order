@@ -14,7 +14,7 @@ import { MenuModule } from '@server/modules/menu/menu.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, PaymentEntity]),
-    CartModule,
+    forwardRef(() => CartModule),
     forwardRef(() => SessionModule),
     CouponModule,
     MenuModule,

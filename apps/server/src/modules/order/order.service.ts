@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { Order } from '@server/modules/order/entities/order.entity';
@@ -21,7 +21,9 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(PaymentEntity)
     private readonly paymentRepository: Repository<PaymentEntity>,
+    @Inject(forwardRef(() => CartService))
     private readonly cartService: CartService,
+    @Inject(forwardRef(() => SessionService))
     private readonly sessionService: SessionService,
     private readonly orderSseService: OrderSseService,
     private readonly couponService: CouponService,

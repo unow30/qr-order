@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { REDIS_CLIENT } from '@server/config/redis.config';
@@ -14,6 +14,7 @@ export class CartService {
   constructor(
     @Inject(REDIS_CLIENT)
     private readonly redis: Redis,
+    @Inject(forwardRef(() => SessionService))
     private readonly sessionService: SessionService,
     @InjectRepository(MenuItem)
     private readonly menuItemRepository: Repository<MenuItem>,
