@@ -38,27 +38,7 @@ RUN pnpm --filter @qr-order/admin build
 FROM nginx:alpine AS production
 
 COPY --from=builder /app/apps/admin/dist /usr/share/nginx/html/admin
-
-RUN printf 'server {\n\
-    listen 80;\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-\n\
-    location /admin/ {\n\
-        try_files $uri $uri/ /admin/index.html;\n\
-    }\n\
-\n\
-    location = /admin {\n\
-        return 301 /admin/;\n\
-    }\n\
-\n\
-    location / {\n\
-        return 301 /admin/;\n\
-    }\n\
-\n\
-    gzip on;\n\
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;\n\
-}\n' > /etc/nginx/conf.d/default.conf
+COPY apps/admin/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

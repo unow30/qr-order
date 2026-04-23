@@ -38,20 +38,7 @@ RUN pnpm --filter @qr-order/web build
 FROM nginx:alpine AS production
 
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
-
-# SPA 라우팅을 위한 nginx 설정
-RUN printf 'server {\n\
-    listen 80;\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-\n\
-    location / {\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-\n\
-    gzip on;\n\
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;\n\
-}\n' > /etc/nginx/conf.d/default.conf
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
