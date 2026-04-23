@@ -17,7 +17,7 @@ export default function StoreImagesPanel({ storeId }: Props) {
   }, [storeId]);
 
   return (
-    <div className="hidden md:flex md:w-[60%] bg-zinc-100 overflow-x-hidden relative h-full">
+    <div className="hidden md:flex md:w-[60%] bg-zinc-100 overflow-x-hidden relative min-h-0">
       <div
         className="flex w-full h-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onScroll={(e) => {

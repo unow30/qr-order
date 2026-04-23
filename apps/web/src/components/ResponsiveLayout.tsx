@@ -14,13 +14,13 @@ export default function ResponsiveLayout({ children }: Props) {
   const showPanel = Boolean(storeId) && PANEL_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
 
   return (
-    <div className="flex h-screen bg-zinc-50">
+    <div className="flex bg-zinc-50" style={{ height: '100dvh' }}>
       {/* 앱 영역: 배너 있을 때 40%, 없을 때 중앙 정렬 + 최대폭 제한 */}
       <div
         className={
           showPanel
-            ? 'w-full md:w-[40%] md:border-r md:border-zinc-200 bg-white h-full overflow-y-auto'
-            : 'w-full md:max-w-[440px] md:mx-auto md:border-x md:border-zinc-200 bg-white h-full overflow-y-auto'
+            ? 'w-full md:w-[40%] md:border-r md:border-zinc-200 bg-white min-h-0 overflow-y-auto'
+            : 'w-full md:max-w-[440px] md:mx-auto md:border-x md:border-zinc-200 bg-white min-h-0 overflow-y-auto'
         }
       >
         {children}
