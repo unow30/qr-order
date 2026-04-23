@@ -415,6 +415,30 @@ X-Session-Token: <sessionToken>  # 고객 앱 요청 시 사용
 
 ---
 
+## 배포 구성 (Docker + nginx)
+
+백엔드는 [`docker-compose.server.yml`](../../docker-compose.server.yml)로 독립 배포됩니다.
+
+### 서비스 구성
+
+| 서비스 | 이미지 | 설명 |
+|--------|--------|------|
+| `server` | ECR `qr-order-server:latest` | NestJS 앱 (PM2, `stop_grace_period: 10s`) |
+| `nginx` | `nginx:alpine` | `nginx/nginx.server.conf` 마운트, `server:3000` 리버스 프록시 |
+
+### nginx.server.conf ([nginx/nginx.server.conf](../../nginx/nginx.server.conf))
+
+- `server.qr-order-demo.it.kr` 수신 → `/api/**`, `/api/docs` 등 모든 요청을 NestJS(`server:3000`)로 전달
+- `/health-check` 엔드포인트 자체 응답
+- CORS 허용 도메인: `www.qr-order-demo.it.kr`, `admin.qr-order-demo.it.kr`
+- SSE 지원: `proxy_buffering off`, `proxy_read_timeout 3600s`
+- 업스트림 장애(502/503/504) 시 CORS 헤더 포함 fallback 응답
+
+> 프론트엔드(web/admin) 쪽도 동일한 2계층 nginx 구조를 사용합니다.
+> — [apps/web/README.md](../web/README.md#nginx-구성) · [apps/admin/README.md](../admin/README.md#nginx-구성)
+
+---
+
 ## 개발 단계
 
 | Phase | 내용                                                                  | 상태 |

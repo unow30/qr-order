@@ -86,6 +86,9 @@ pnpm test            # 테스트 실행
 
 | Phase | 내용 | 상태 |
 |-------|------|------|
-| Phase 1 | JWT 역할 분리(SUPER_ADMIN/STORE_ADMIN), X-Store-Id 헤더, Redis 키 네임스페이스, PostgreSQL RLS | 완료 |
-| Phase 2 | 어드민 프론트엔드 — 매장 전환 UI, 역할 기반 네비게이션 | 완료 |
-| Phase 3 | 메뉴 템플릿 배포(F6), 통합 매출 리포트(F7), RLS 정책 적용(F8) | 완료 |
+| Phase 1 | JWT 역할 분리(SUPER_ADMIN/STORE_ADMIN), X-Store-Id 헤더, Redis 키 네임스페이스, PostgreSQL RLS | ✅ 완료 |
+| Phase 2 | 어드민 프론트엔드 — 매장 전환 UI, 역할 기반 네비게이션 | ✅ 완료 |
+| Phase 3 | 메뉴 템플릿 배포(F6), 통합 매출 리포트(F7), RLS 정책 적용(F8) | ✅ 완료 |
+| Phase 4 | 세션 관리 (PIN 참여, 자리이동, 관리자 세션 강제 종료) | ✅ 완료 |
+| Phase 5 | 이미지 업로드 S3 (presigned URL, 스케줄 이미지, 동적 TTL 캐시) | ✅ 완료 |
+| Phase 6 | Admin-readonly (읽기 권한 전용 어드민) | ✅ 완료 |

@@ -205,6 +205,36 @@ POST /api/auth/login
 
 ---
 
+## nginx 구성
+
+어드민 앱은 **2계층 nginx** 구조로 서빙됩니다.
+
+### Layer 1 — 엣지 리버스 프록시 ([nginx/nginx.frontend.conf](../../nginx/nginx.frontend.conf))
+
+인프라 레벨에서 외부 요청을 수신해 내부 컨테이너로 라우팅합니다.
+
+- `admin.qr-order-demo.it.kr` → `admin:80` 업스트림으로 프록시 전달
+- `/health-check` 엔드포인트 자체 응답
+- 업스트림 장애(502/503/504) 시 fallback HTML 반환
+
+### Layer 2 — SPA 서빙 ([apps/admin/nginx.conf](./nginx.conf))
+
+Dockerfile이 `dist/`를 이미지에 복사한 뒤, 컨테이너 내부 nginx가 정적 파일을 직접 서빙합니다.
+
+| 경로 | Cache-Control | 설명 |
+|------|--------------|------|
+| `/assets/` | `public, max-age=31536000, immutable` | Vite 해시 번들 — 브라우저 영구 캐시 |
+| `/` (그 외) | `no-cache, must-revalidate` | `index.html` — 항상 최신 버전 확인 |
+
+- `try_files $uri $uri/ /index.html` — SPA 클라이언트 라우팅(새로고침) 대응
+- gzip 압축 활성화
+
+### 분리 이유
+
+엣지(Layer 1)는 **인프라 관심사**(도메인 라우팅, 헬스체크, 장애 fallback)만 담당하고, 앱 내부(Layer 2)는 **런타임 관심사**(SPA 라우팅 fallback, 정적 캐시 정책)만 담당합니다. 각 앱을 독립적으로 ECR에 배포하거나 교체해도 엣지 설정을 변경할 필요가 없습니다.
+
+---
+
 ## 개발 단계
 
 | Phase | 내용 | 상태 |
@@ -214,4 +244,4 @@ POST /api/auth/login
 | Phase 3 | 프랜차이즈 기능 (메뉴 템플릿 배포, 통합 리포트, PostgreSQL RLS) | ✅ 완료 |
 | Phase 4 | 세션 관리 (PIN 참여, 자리이동, 관리자 세션 강제 종료) | ✅ 완료 |
 | Phase 5 | 이미지 업로드 S3 (presigned URL, 스케줄 이미지, 동적 TTL 캐시) | ✅ 완료 |
-| Phase 6 | Admin-readonly API (어드민 전용 읽기 엔드포인트 정리) | 🔲 예정 |
+| Phase 6 | Admin-readonly (읽기 권한 전용 어드민) | ✅ 완료 |
