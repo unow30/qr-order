@@ -28,7 +28,6 @@ export default function CartPage() {
   const handleRemove = async (cartItemId: string) => {
     const cart = await removeCartItem(cartItemId);
     setCart(cart);
-    // 상품 변경 시 쿠폰 초기화
     clearCoupon();
     setCouponResult(null);
     setCouponInput('');
@@ -80,66 +79,95 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-[480px] mx-auto p-8 font-sans text-center">
-        <header className="flex items-center gap-3 mb-8">
-          <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
-          <h2 className="m-0">장바구니</h2>
+      <div className="flex flex-col min-h-screen bg-white">
+        <header className="px-4 py-3 bg-white border-b border-zinc-100 sticky top-0 z-10 flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-zinc-700 text-lg leading-none w-7 h-7 flex items-center justify-center"
+          >
+            ←
+          </button>
+          <h1 className="text-base font-extrabold text-zinc-900 tracking-[-0.3px]">장바구니</h1>
         </header>
-        <p className="text-gray-400">장바구니가 비어 있습니다.</p>
-        <button onClick={() => navigate('/menu')} className="mt-4 px-6 py-3 bg-[#ff6b35] text-white border-none rounded-lg cursor-pointer">
-          메뉴 보기
-        </button>
+        <div className="flex flex-col items-center justify-center flex-1 gap-2 px-6 text-center">
+          <div className="w-12 h-12 rounded-[10px] bg-zinc-100 flex items-center justify-center text-xl">
+            🛒
+          </div>
+          <p className="text-sm font-bold text-zinc-900">장바구니가 비어있어요</p>
+          <p className="text-[11px] text-zinc-500">메뉴에서 원하는 항목을 담아보세요</p>
+          <button
+            onClick={() => navigate('/menu')}
+            className="mt-4 px-5 h-11 rounded-xl bg-zinc-900 text-white text-[13px] font-bold tracking-[-0.1px]"
+          >
+            메뉴 보기
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-[480px] mx-auto font-sans">
-      <header className="p-4 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
-        <h2 className="m-0">장바구니</h2>
+    <div className="flex flex-col min-h-screen bg-white">
+      <header className="px-4 py-3 bg-white border-b border-zinc-100 sticky top-0 z-10 flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-zinc-700 text-lg leading-none w-7 h-7 flex items-center justify-center"
+        >
+          ←
+        </button>
+        <h1 className="text-base font-extrabold text-zinc-900 tracking-[-0.3px]">장바구니</h1>
       </header>
 
-      <div className="px-4">
-        {hasPendingOrder && (
-          <div className="mb-3 px-3 py-2.5 bg-orange-50 border border-orange-200 rounded-lg text-[13px] text-orange-700">
-            기존 주문에 추가됩니다
-          </div>
-        )}
+      {hasPendingOrder && (
+        <div className="px-4 py-2.5 bg-brand-50 text-[11px] text-zinc-700">
+          <b className="text-brand-700">기존 주문에 추가</b>
+          <span className="text-zinc-500 ml-1.5">결제 시 함께 처리됩니다</span>
+        </div>
+      )}
+
+      <div className="flex-1">
         {items.map((item) => (
-          <div key={item.cartItemId} className="py-4 border-b border-gray-100">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="mb-1 font-semibold">{item.menuItemName}</p>
-                {item.selectedOptions.map((opt) => (
-                  <p key={opt.optionId} className="mb-0.5 text-xs text-gray-400">
-                    {opt.optionName} {opt.additionalPrice > 0 && `(+${opt.additionalPrice.toLocaleString()}원)`}
-                  </p>
-                ))}
-                <p className="mt-1 text-[13px] text-gray-500">
-                  {item.quantity}개 · {item.totalPrice.toLocaleString()}원
+          <div
+            key={item.cartItemId}
+            className="flex justify-between items-start gap-3 px-4 py-3.5 border-b border-zinc-100"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-zinc-900 truncate">{item.menuItemName}</p>
+              {item.selectedOptions.map((opt) => (
+                <p key={opt.optionId} className="mt-0.5 text-[11px] text-zinc-500">
+                  {opt.optionName}
+                  {opt.additionalPrice > 0 && ` (+${opt.additionalPrice.toLocaleString()}원)`}
                 </p>
-              </div>
-              <button
-                onClick={() => handleRemove(item.cartItemId)}
-                className="bg-transparent border-none text-gray-300 cursor-pointer text-xl"
-              >
-                ×
-              </button>
+              ))}
+              <p className="mt-1 text-[11px] text-zinc-500">
+                {item.quantity}개 · <span className="text-zinc-900 font-bold">{item.totalPrice.toLocaleString()}원</span>
+              </p>
             </div>
+            <button
+              onClick={() => handleRemove(item.cartItemId)}
+              className="text-zinc-400 hover:text-zinc-600 text-base leading-none"
+              aria-label="삭제"
+            >
+              ✕
+            </button>
           </div>
         ))}
 
-        {/* 쿠폰 입력 */}
-        <div className="py-4 border-b border-gray-100">
-          <p className="mb-2 font-semibold text-sm">쿠폰 할인</p>
+        {/* 쿠폰 */}
+        <div className="px-4 py-4 border-b border-zinc-100">
+          <p className="mb-2 text-sm font-bold text-zinc-900">쿠폰 할인</p>
           {discountAmount > 0 ? (
-            <div className="flex items-center justify-between px-3.5 py-2.5 bg-green-50 rounded-lg border border-green-300">
-              <div>
-                <span className="text-sm font-semibold text-green-800 font-mono">{couponCode}</span>
-                <span className="text-[13px] text-green-800 ml-2">— {discountAmount.toLocaleString()}원 할인</span>
+            <div className="flex items-center justify-between px-3 py-2.5 bg-brand-50 rounded-[10px]">
+              <div className="text-[13px]">
+                <span className="font-bold text-brand-700 font-mono tracking-[1px]">{couponCode}</span>
+                <span className="text-zinc-700 ml-2">−{discountAmount.toLocaleString()}원 할인</span>
               </div>
-              <button onClick={handleRemoveCoupon} className="bg-transparent border-none text-gray-400 cursor-pointer text-lg">×</button>
+              <button
+                onClick={handleRemoveCoupon}
+                className="text-zinc-400 hover:text-zinc-600 text-base leading-none"
+              >
+                ✕
+              </button>
             </div>
           ) : (
             <div className="flex gap-2">
@@ -148,61 +176,62 @@ export default function CartPage() {
                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                 placeholder="쿠폰 코드 입력"
                 onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono"
+                className="flex-1 border-2 border-zinc-200 rounded-[10px] focus:border-zinc-900 focus:outline-none bg-white px-3 py-2.5 text-sm font-mono tracking-[1px]"
               />
               <button
                 onClick={handleApplyCoupon}
                 disabled={couponLoading || !couponInput.trim()}
-                className={`px-4 py-2 bg-gray-800 text-white border-none rounded-lg cursor-pointer text-sm ${couponLoading ? 'opacity-60' : ''}`}
+                className="px-4 h-11 rounded-xl bg-zinc-900 text-white text-[13px] font-bold tracking-[-0.1px] disabled:opacity-50"
               >
                 {couponLoading ? '...' : '적용'}
               </button>
             </div>
           )}
           {couponResult && !couponResult.valid && (
-            <p className="mt-1.5 text-[13px] text-red-600">{couponResult.message}</p>
+            <p className="mt-2 text-[11px] text-red-600">{couponResult.message}</p>
           )}
         </div>
 
         {/* 요청사항 */}
-        <div className="py-4 border-b border-gray-100">
-          <p className="mb-2 font-semibold text-sm">요청사항</p>
+        <div className="px-4 py-4 border-b border-zinc-100">
+          <p className="mb-2 text-sm font-bold text-zinc-900">요청사항</p>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="주문 요청사항을 입력해 주세요."
-            className="w-full p-3 rounded-lg border border-gray-200 text-sm resize-none box-border"
+            className="w-full border-2 border-zinc-200 rounded-[10px] focus:border-zinc-900 focus:outline-none bg-white px-3 py-2.5 text-sm resize-none"
             rows={3}
           />
         </div>
 
-        {/* 금액 합계 */}
-        <div className="py-4">
-          <div className="flex justify-between text-sm text-gray-500 mb-2">
+        {/* 합계 */}
+        <div className="px-4 py-4">
+          <div className="flex justify-between text-[13px] text-zinc-500 mb-2">
             <span>주문 금액</span>
             <span>{totalAmount.toLocaleString()}원</span>
           </div>
           {discountAmount > 0 && (
-            <div className="flex justify-between text-sm text-emerald-600 mb-2">
+            <div className="flex justify-between text-[13px] text-brand-700 mb-2">
               <span>쿠폰 할인</span>
-              <span>-{discountAmount.toLocaleString()}원</span>
+              <span>−{discountAmount.toLocaleString()}원</span>
             </div>
           )}
-          <div className="flex justify-between font-bold text-base">
-            <span>결제 금액</span>
-            <span>{payAmount.toLocaleString()}원</span>
+          <div className="flex justify-between items-center pt-2 border-t border-zinc-100">
+            <span className="text-sm font-bold text-zinc-900">결제 금액</span>
+            <span className="text-lg font-extrabold text-zinc-900">{payAmount.toLocaleString()}원</span>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-2 pt-2 pb-2">
-          <button
-            onClick={handleOrder}
-            disabled={orderLoading}
-            className={`w-full p-4 bg-[#ff6b35] text-white border-none rounded-xl text-base cursor-pointer ${orderLoading ? 'opacity-70' : ''}`}
-          >
-            {orderLoading ? '주문 중...' : `${payAmount.toLocaleString()}원 주문하기`}
-          </button>
-        </div>
+      {/* 하단 sticky CTA */}
+      <div className="flex flex-col gap-2 px-3.5 py-3.5 border-t border-zinc-100 bg-white sticky bottom-0">
+        <button
+          onClick={handleOrder}
+          disabled={orderLoading}
+          className="w-full h-11 rounded-xl bg-brand-500 text-white text-[13px] font-bold tracking-[-0.1px] disabled:opacity-50"
+        >
+          {orderLoading ? '주문 중...' : `${payAmount.toLocaleString()}원 주문하기`}
+        </button>
       </div>
     </div>
   );

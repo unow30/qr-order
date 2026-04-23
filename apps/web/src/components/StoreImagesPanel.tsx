@@ -8,6 +8,7 @@ interface Props {
 
 export default function StoreImagesPanel({ storeId }: Props) {
   const [images, setImages] = useState<EntityImage[]>([]);
+  const [activeIdx, setActiveIdx] = useState(0);
 
   useEffect(() => {
     getStoreActiveImages(storeId)
@@ -16,21 +17,40 @@ export default function StoreImagesPanel({ storeId }: Props) {
   }, [storeId]);
 
   return (
-    <div className="hidden md:flex md:w-[60%] bg-gray-50 overflow-hidden relative">
-      <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {images.length === 0 ? <span className="text-gray-400 text-sm">매장 이미지 없음</span> : images.map((img) => (
-          <img
-            key={img.id}
-            src={img.imageUrl}
-            alt={img.altText ?? '매장 이미지2'}
-            className="snap-center shrink-0 w-full aspect-video object-cover"
-          />
-        ))}
+    <div className="hidden md:flex md:w-[60%] bg-zinc-100 overflow-x-hidden relative h-full">
+      <div
+        className="flex w-full h-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          if (el.clientWidth === 0) return;
+          setActiveIdx(Math.round(el.scrollLeft / el.clientWidth));
+        }}
+      >
+        {images.length === 0 ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-zinc-400 text-sm">매장 이미지 없음</span>
+          </div>
+        ) : (
+          images.map((img) => (
+            <div key={img.id} className="snap-center shrink-0 w-full h-full overflow-y-auto">
+              <img
+                src={img.imageUrl}
+                alt={img.altText ?? '매장 이미지'}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          ))
+        )}
       </div>
       {images.length > 1 && (
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 pointer-events-none">
-          {images.map((img) => (
-            <span key={img.id} className="w-2 h-2 rounded-full bg-white/70" />
+        <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+          {images.map((img, i) => (
+            <span
+              key={img.id}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === activeIdx ? 'w-5 bg-white' : 'w-1.5 bg-white/50'
+              }`}
+            />
           ))}
         </div>
       )}

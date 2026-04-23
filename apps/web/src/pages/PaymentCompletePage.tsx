@@ -33,16 +33,18 @@ export default function PaymentCompletePage() {
   }, [countdown]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white font-sans px-6 text-center">
-      <div className="text-6xl mb-6">🙏</div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-3">감사합니다</h1>
-      <p className="text-lg text-gray-600 mb-1">안녕히 가십시오</p>
-      <p className="text-sm text-gray-400 mt-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white px-6 text-center gap-2">
+      <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center text-2xl mb-2">
+        🙏
+      </div>
+      <h1 className="text-lg font-extrabold text-zinc-900 tracking-[-0.3px]">결제가 완료되었습니다</h1>
+      <p className="text-[13px] text-zinc-700">감사합니다 · 안녕히 가십시오</p>
+      <p className="text-[11px] text-zinc-500 mt-4">
         {countdown}초 후 처음 화면으로 이동합니다
       </p>
       <button
         onClick={goToStore}
-        className="mt-4 px-6 py-2 border border-gray-300 rounded-lg text-sm text-gray-500 cursor-pointer bg-transparent"
+        className="mt-3 px-5 h-11 rounded-xl bg-zinc-100 text-zinc-800 text-xs font-bold tracking-[-0.1px]"
       >
         바로 이동
       </button>

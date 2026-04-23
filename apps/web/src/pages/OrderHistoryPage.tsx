@@ -6,13 +6,13 @@ import { getMyOrders, cancelOrderItem } from '@web/api/order.api';
 import { createPayment, confirmPayment } from '@web/api/payment.api';
 import { Order, OrderStatus, PaymentMethod } from '@qr-order/shared-types';
 
-const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string }> = {
-  [OrderStatus.PENDING]: { label: '대기중', color: 'bg-orange-100 text-orange-700' },
-  [OrderStatus.CONFIRMED]: { label: '결제완료', color: 'bg-gray-100 text-gray-600' },
-  [OrderStatus.PREPARING]: { label: '조리중', color: 'bg-gray-100 text-gray-600' },
-  [OrderStatus.READY]: { label: '서빙대기', color: 'bg-gray-100 text-gray-600' },
-  [OrderStatus.SERVED]: { label: '서빙완료', color: 'bg-gray-100 text-gray-600' },
-  [OrderStatus.CANCELLED]: { label: '취소됨', color: 'bg-red-100 text-red-600' },
+const STATUS_CONFIG: Record<OrderStatus, { label: string; pill: string }> = {
+  [OrderStatus.PENDING]: { label: '대기중', pill: 'bg-brand-50 text-brand-700' },
+  [OrderStatus.CONFIRMED]: { label: '결제완료', pill: 'bg-blue-50 text-blue-700' },
+  [OrderStatus.PREPARING]: { label: '조리중', pill: 'bg-blue-50 text-blue-700' },
+  [OrderStatus.READY]: { label: '서빙대기', pill: 'bg-blue-50 text-blue-700' },
+  [OrderStatus.SERVED]: { label: '서빙완료', pill: 'bg-zinc-100 text-zinc-700' },
+  [OrderStatus.CANCELLED]: { label: '취소됨', pill: 'bg-red-50 text-red-700' },
 };
 
 export default function OrderHistoryPage() {
@@ -20,7 +20,6 @@ export default function OrderHistoryPage() {
   const sessionToken = useSessionStore((s) => s.sessionToken);
   const { orders, setOrders, updateOrder, removeOrder } = useOrderStore();
 
-  // sessionToken 자체가 없으면 접근 불가 (expiresAt 만료 여부는 무관)
   if (!sessionToken) {
     return <Navigate to="/store" replace />;
   }
@@ -75,122 +74,155 @@ export default function OrderHistoryPage() {
   };
 
   if (loading) {
-    return <div className="max-w-120 mx-auto p-4">주문내역을 불러오는 중...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-5">
+        <div
+          className="w-11 h-11 rounded-full border-[3px] border-zinc-100 border-t-brand-500"
+          style={{ animation: 'spin 1s linear infinite' }}
+        />
+        <p className="text-[11px] text-zinc-500">주문내역을 불러오는 중...</p>
+      </div>
+    );
   }
 
   if (orders.length === 0) {
     return (
-      <div className="max-w-120 mx-auto p-8 font-sans text-center">
-        <header className="flex items-center gap-3 mb-8">
-          <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
-          <h2 className="m-0">주문내역</h2>
+      <div className="flex flex-col min-h-screen bg-white">
+        <header className="px-4 py-3 bg-white border-b border-zinc-100 sticky top-0 z-10 flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-zinc-700 text-lg leading-none w-7 h-7 flex items-center justify-center"
+          >
+            ←
+          </button>
+          <h1 className="text-base font-extrabold text-zinc-900 tracking-[-0.3px]">주문내역</h1>
         </header>
-        <p className="text-gray-400">주문 내역이 없습니다.</p>
-        <button
-          onClick={() => navigate('/menu')}
-          className="mt-4 px-6 py-3 bg-brand text-white border-none rounded-lg cursor-pointer"
-        >
-          메뉴 보기
-        </button>
+        <div className="flex flex-col items-center justify-center flex-1 gap-2 px-6 text-center">
+          <div className="w-12 h-12 rounded-[10px] bg-zinc-100 flex items-center justify-center text-xl">
+            📋
+          </div>
+          <p className="text-sm font-bold text-zinc-900">주문 내역이 없어요</p>
+          <p className="text-[11px] text-zinc-500">메뉴에서 주문을 시작해 보세요</p>
+          <button
+            onClick={() => navigate('/menu')}
+            className="mt-4 px-5 h-11 rounded-xl bg-zinc-900 text-white text-[13px] font-bold tracking-[-0.1px]"
+          >
+            메뉴 보기
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-120 mx-auto font-sans pb-6">
-      <header className="p-4 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="bg-transparent border-none text-xl cursor-pointer">←</button>
-        <h2 className="m-0">주문내역</h2>
+    <div className="flex flex-col min-h-screen bg-white">
+      <header className="px-4 py-3 bg-white border-b border-zinc-100 sticky top-0 z-10 flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-zinc-700 text-lg leading-none w-7 h-7 flex items-center justify-center"
+        >
+          ←
+        </button>
+        <h1 className="text-base font-extrabold text-zinc-900 tracking-[-0.3px]">주문내역</h1>
       </header>
 
-      <div className="px-4 space-y-4">
+      <div className="flex-1">
         {orders.map((order) => {
           const isPending = order.status === OrderStatus.PENDING;
           const activeItems = order.items?.filter((i) => !i.cancelledAt) ?? [];
           const cfg = STATUS_CONFIG[order.status];
 
           return (
-            <div key={order.id} className="bg-gray-50 rounded-xl p-4">
+            <div key={order.id} className="px-4 py-3.5 border-b border-zinc-100">
               {/* 주문 헤더 */}
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-[13px] text-gray-500">
-                  {new Date(order.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+              <div className="flex justify-between items-center mb-2.5">
+                <span className="text-[11px] text-zinc-500">
+                  {new Date(order.createdAt).toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </span>
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${cfg.color}`}>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-[0.2px] ${cfg.pill}`}
+                >
                   {cfg.label}
                 </span>
               </div>
 
-              {/* 주문 항목 */}
+              {/* 항목 */}
               {activeItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center mb-2">
-                  <div className="flex-1">
-                    <span className="text-sm">{item.menuItemName} ×{item.quantity}</span>
+                <div key={item.id} className="flex justify-between items-center mb-1.5">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[13px] text-zinc-800">
+                      {item.menuItemName} ×{item.quantity}
+                    </span>
                     {item.selectedOptions?.length > 0 && (
-                      <p className="text-[11px] text-gray-400 mt-0.5 mb-0">
+                      <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-1">
                         {item.selectedOptions.map((o) => o.optionName).join(', ')}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">{item.totalPrice.toLocaleString()}원</span>
+                    <span className="text-[13px] font-bold text-zinc-900">
+                      {item.totalPrice.toLocaleString()}원
+                    </span>
                     {isPending && (
                       <button
                         onClick={() => handleCancelItem(order, item.id)}
                         disabled={cancellingItemId === item.id}
-                        className="text-red-400 bg-transparent border-none cursor-pointer text-lg leading-none disabled:opacity-50"
+                        className="text-zinc-400 hover:text-zinc-600 text-base leading-none disabled:opacity-50"
                       >
-                        ×
+                        ✕
                       </button>
                     )}
                   </div>
                 </div>
               ))}
 
-              {/* 취소 불가 안내 */}
               {!isPending && order.status !== OrderStatus.CANCELLED && (
-                <p className="text-[11px] text-gray-400 mt-1 mb-0">
+                <p className="text-[11px] text-zinc-400 mt-1">
                   {cfg.label} 상태에서는 취소할 수 없습니다
                 </p>
               )}
 
-              <hr className="border-t border-gray-200 my-3" />
-
               {/* 금액 */}
-              {order.discountAmount > 0 && (
-                <>
-                  <div className="flex justify-between text-[13px] text-gray-500 mb-1">
-                    <span>소계</span>
-                    <span>{order.totalAmount.toLocaleString()}원</span>
-                  </div>
-                  <div className="flex justify-between text-[13px] text-emerald-600 mb-2">
-                    <span>쿠폰 할인</span>
-                    <span>-{order.discountAmount.toLocaleString()}원</span>
-                  </div>
-                </>
-              )}
-              <div className="flex justify-between font-bold">
-                <span>결제 금액</span>
-                <span className="text-brand">{order.finalAmount.toLocaleString()}원</span>
+              <div className="mt-3 pt-3 border-t border-zinc-100">
+                {order.discountAmount > 0 && (
+                  <>
+                    <div className="flex justify-between text-[11px] text-zinc-500 mb-1">
+                      <span>소계</span>
+                      <span>{order.totalAmount.toLocaleString()}원</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-brand-700 mb-1.5">
+                      <span>쿠폰 할인</span>
+                      <span>−{order.discountAmount.toLocaleString()}원</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] font-bold text-zinc-900">결제 금액</span>
+                  <span className="text-sm font-extrabold text-zinc-900">
+                    {order.finalAmount.toLocaleString()}원
+                  </span>
+                </div>
               </div>
 
-              {/* PENDING: 추가 주문 + 결제 버튼 */}
               {isPending && (
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => navigate('/menu')}
-                    className="flex-1 p-3 bg-gray-200 text-gray-700 border-none rounded-lg text-sm cursor-pointer"
+                    className="flex-1 h-11 rounded-xl bg-zinc-100 text-zinc-800 text-xs font-bold tracking-[-0.1px]"
                   >
-                    추가 주문하기
+                    메뉴 더보기
                   </button>
                   <button
                     onClick={() => handlePayment(order)}
                     disabled={payingOrderId === order.id}
-                    className={`flex-1 p-3 bg-brand text-white border-none rounded-lg text-sm cursor-pointer ${payingOrderId === order.id ? 'opacity-70' : ''}`}
+                    className="flex-1 h-11 rounded-xl bg-brand-500 text-white text-[13px] font-bold tracking-[-0.1px] disabled:opacity-50"
                   >
                     {payingOrderId === order.id
                       ? '처리 중...'
-                      : `${order.finalAmount.toLocaleString()}원 결제하기`}
+                      : `${order.finalAmount.toLocaleString()}원 결제`}
                   </button>
                 </div>
               )}
