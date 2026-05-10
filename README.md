@@ -13,8 +13,8 @@ QR 코드 기반 테이블 오더 서비스 모노레포입니다.
 
 ## admin 로그인 계정(읽기전용)
 ```
-id: ADMIN_READONLY
-pw: ADMIN_READONLY
+id: admin_readonly
+pw: admin_readonly
 ```
 
 ## 설계 문서
